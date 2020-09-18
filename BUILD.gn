@@ -4,6 +4,9 @@ all_tests = [
 ]
 
 executable("kbot") {
+  include_dirs = [
+    "//src"
+  ]
   sources = [ "src/main.cpp" ]
 }
 

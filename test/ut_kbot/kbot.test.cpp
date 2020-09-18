@@ -3,6 +3,10 @@
 #include <cstdint>
 #include <stdio.h>
 
-TEST(KBotTest, TrueIsTrue) {
-  EXPECT_EQ(true, true);
+TEST(KBotTest, YoutubeBotInstantiated) {
+  ASSERT_NO_THROW(YoutubeBot{});
+}
+
+TEST_F(KBotTestFixture, YouTubeBotRuns) {
+  ASSERT_NO_THROW(bot.run());
 }

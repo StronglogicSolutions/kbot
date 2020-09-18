@@ -6,20 +6,26 @@
 
 #include "gtest/gtest.h"
 
+#include "youtube/youtube.hpp"
+
 
 class KBotTestFixture: public ::testing::Test
 {
 
 protected:
 
-    void SetUp() override
-    {
+    void SetUp() override {
+
     }
-    void TearDown() override
-    {
+    void TearDown() override {
+
     }
 
 public:
+ KBotTestFixture()
+ : bot(YoutubeBot{}) {}
+
+ YoutubeBot bot;
 
 };
 
