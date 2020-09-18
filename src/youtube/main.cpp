@@ -4,7 +4,7 @@
 int main(int argc, char** argv) {
   YoutubeBot bot{};
 
-  bot.run();
+  std::cout << bot.getName() << std::endl;
 
   return 0;
 }

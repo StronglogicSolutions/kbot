@@ -1,0 +1,14 @@
+source_set("youtube_bot_sources") {
+  include_dirs = [
+    "//src"
+  ]
+
+  libs = [
+    "pthread"
+  ]
+
+  sources = [
+    "main.cpp",
+  ]
+}
+

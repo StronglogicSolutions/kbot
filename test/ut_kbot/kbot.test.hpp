@@ -9,24 +9,21 @@
 #include "youtube/youtube.hpp"
 
 
-class KBotTestFixture: public ::testing::Test
-{
+class KBotTestFixture: public ::testing::Test {
+ protected:
+  YoutubeBot bot;
 
-protected:
+  void SetUp() override {
 
-    void SetUp() override {
+  }
 
-    }
-    void TearDown() override {
+  void TearDown() override {
 
-    }
+  }
 
-public:
- KBotTestFixture()
- : bot(YoutubeBot{}) {}
-
- YoutubeBot bot;
-
+ public:
+  KBotTestFixture()
+  : bot(YoutubeBot{}) {}
 };
 
 #endif // __KBOT_TEST_HPP__

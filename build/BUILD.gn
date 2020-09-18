@@ -9,6 +9,11 @@ config("compiler_defaults") {
       "-pthread",
     ]
   }
+  if (is_debug) {
+    cflags += [
+      "-g"
+    ]
+  }
 }
 
 config("executable_ldconfig") {

@@ -3,11 +3,19 @@
 
 #include <iostream>
 #include <interfaces/interfaces.hpp>
+#include <chrono>
 
-class YoutubeBot : public Bot {
+class YoutubeBot : public Bot, public Worker {
  public:
-  virtual void run() override {
-    std::cout << "Youtube Bot is running" << std::endl;
+  YoutubeBot()
+  : Bot("YoutubeBot") {}
+
+  virtual void loop() override {
+    while (m_is_running) {
+      m_loops++;
+      std::cout << "YouTube bot loop" << std::endl;
+      std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    }
   }
 };
 
