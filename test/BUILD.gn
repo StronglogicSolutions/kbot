@@ -1,0 +1,50 @@
+# Common config used to gen tests
+
+# include gtest.h in test targets.
+config("googletest_config") {
+  defines = [ "GTEST_LANG_CXX17=1" ]
+  include_dirs = [
+    "//third_party/googletest/googletest/include",
+    "//third_party/googletest/googlemock/include",
+  ]
+
+  cflags = [
+      "-pthread",
+  ]
+  libs = [
+    "pthread",
+  ]
+
+}
+
+source_set("gtest") {
+  testonly = true
+  include_dirs = [ "//third_party/googletest/googletest" ]
+  public_configs = [ ":googletest_config" ]
+  all_dependent_configs = [ ":googletest_config" ]
+  sources = [ "//third_party/googletest/googletest/src/gtest-all.cc" ]
+}
+
+#Don't include a file with main() if you include this
+source_set("gtest_main") {
+  testonly = true
+  configs += [ ":googletest_config" ]
+  sources = [ "//third_party/googletest/googletest/src/gtest_main.cc" ]
+}
+
+source_set("gmock") {
+  testonly = true
+  include_dirs = [ "//third_party/googletest/googlemock" ]
+  public_configs = [ ":googletest_config" ]
+  all_dependent_configs = [ ":googletest_config" ]
+  sources = [ "//third_party/googletest/googlemock/src/gmock-all.cc" ]
+}
+
+group("gtest_and_gmock") {
+  testonly = true
+
+  public_deps = [
+    ":gmock",
+    ":gtest",
+  ]
+}

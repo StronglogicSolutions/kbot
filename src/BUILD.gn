@@ -1,0 +1,12 @@
+source_set("kbot_sources") {
+
+  sources = [
+    "main.cpp",
+  ]
+}
+
+executable("kbot") {
+  sources = [
+    "main.cpp",
+  ]
+}

@@ -1,0 +1,16 @@
+executable("ut_kbot") {
+
+  testonly = true
+
+  deps = [
+    "//test:gtest_main",
+    "//test:gtest_and_gmock"
+  ]
+
+  # include_dirs = [
+  # ]
+
+  sources = [
+    "kbot.test.cpp",
+  ]
+}
