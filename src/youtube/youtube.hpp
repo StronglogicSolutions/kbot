@@ -6,11 +6,27 @@
 #include <api/api.hpp>
 #include <chrono>
 
+/**
+ * YouTubeBot
+ *
+ * @interface {Bot}
+ *
+ * Specializes in using the Google YouTube Data API
+ *
+ */
 class YoutubeBot : public Bot, public Worker {
  public:
+ /**
+  * @constructor
+  */
   YoutubeBot()
-  : Bot("YoutubeBot") {}
+  : Bot("YouTubeBot") {}
 
+  /**
+   * loop
+   *
+   * The loop method runs on its own thread
+   */
   virtual void loop() override {
     while (m_is_running) {
       m_loops++;
@@ -19,9 +35,15 @@ class YoutubeBot : public Bot, public Worker {
     }
   }
 
-  virtual std::unique_ptr<Api> GetApi(std::string name = "") {
+  /**
+   * GetAPI
+   *
+   * @param
+   * @returns
+   */
+  virtual std::unique_ptr<API> GetAPI(std::string name = "") {
     if (name.empty()) {
-      return std::make_unique<DefaultApi>();
+      return std::make_unique<DefaultAPI>();
     }
     return nullptr;
   }

@@ -19,6 +19,6 @@ TEST_F(YoutubeBotTestFixture, BotStartsAndStopsThread) {
 }
 
 TEST_F(YoutubeBotTestFixture, GetApiReturnsDefaultApi) {
-  std::unique_ptr<Api> api = bot.GetApi();
+  std::unique_ptr<API> api = bot.GetAPI();
   EXPECT_EQ(api->GetType(), "Default API");
 }

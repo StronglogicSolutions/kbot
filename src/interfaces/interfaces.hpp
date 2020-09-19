@@ -5,7 +5,7 @@
 #include <thread>
 #include <memory>
 
-class Api {
+class API {
  public:
   virtual std::string GetType() = 0;
 };
@@ -18,7 +18,7 @@ class Bot {
   virtual ~Bot() {}
   std::string GetName() { return m_name; }
 
-  virtual std::unique_ptr<Api> GetApi(std::string name) = 0;
+  virtual std::unique_ptr<API> GetAPI(std::string name) = 0;
 
  private:
   std::string m_name;

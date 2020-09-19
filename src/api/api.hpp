@@ -3,7 +3,7 @@
 
 #include "interfaces/interfaces.hpp"
 
-class DefaultApi : public Api {
+class DefaultAPI : public API {
 public:
 
 virtual std::string GetType() override {
