@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <interfaces/interfaces.hpp>
+#include <api/api.hpp>
 #include <chrono>
 
 class YoutubeBot : public Bot, public Worker {
@@ -17,6 +18,14 @@ class YoutubeBot : public Bot, public Worker {
       std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
   }
+
+  virtual std::unique_ptr<Api> GetApi(std::string name = "") {
+    if (name.empty()) {
+      return std::make_unique<DefaultApi>();
+    }
+    return nullptr;
+  }
+
 };
 
 #endif // __YOUTUBE_HPP__

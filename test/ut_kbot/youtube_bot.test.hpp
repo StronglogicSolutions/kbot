@@ -1,5 +1,5 @@
-#ifndef __KBOT_TEST_HPP__
-#define __KBOT_TEST_HPP__
+#ifndef __YOUTUBE_TEST_HPP__
+#define __YOUTUBE_TEST_HPP__
 
 #include <string>
 #include <iostream>
@@ -9,7 +9,7 @@
 #include "youtube/youtube.hpp"
 
 
-class KBotTestFixture: public ::testing::Test {
+class YoutubeBotTestFixture: public ::testing::Test {
  protected:
   YoutubeBot bot;
 
@@ -22,8 +22,8 @@ class KBotTestFixture: public ::testing::Test {
   }
 
  public:
-  KBotTestFixture()
+  YoutubeBotTestFixture()
   : bot(YoutubeBot{}) {}
 };
 
-#endif // __KBOT_TEST_HPP__
+#endif // __YOUTUBE_TEST_HPP__

@@ -13,6 +13,6 @@ executable("ut_kbot") {
   ]
 
   sources = [
-    "kbot.test.cpp",
+    "youtube_bot.test.cpp",
   ]
 }

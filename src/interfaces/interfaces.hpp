@@ -3,6 +3,12 @@
 
 #include <string>
 #include <thread>
+#include <memory>
+
+class Api {
+ public:
+  virtual std::string GetType() = 0;
+};
 
 class Bot {
  public:
@@ -10,7 +16,10 @@ class Bot {
   : m_name(name) {}
 
   virtual ~Bot() {}
-  std::string getName() { return m_name; }
+  std::string GetName() { return m_name; }
+
+  virtual std::unique_ptr<Api> GetApi(std::string name) = 0;
+
  private:
   std::string m_name;
 };
