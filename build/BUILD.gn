@@ -7,6 +7,7 @@ config("compiler_defaults") {
     cflags = [
       "-fPIC",
       "-pthread",
+      "-lcpr",
     ]
   }
   if (is_debug) {

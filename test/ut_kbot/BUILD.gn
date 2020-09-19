@@ -1,6 +1,15 @@
 executable("ut_kbot") {
 
+  public_deps = [
+    "//src/youtube:youtube_bot_sources"
+  ]
   testonly = true
+
+  libs = [
+    "pthread",
+    "cpr"
+  ]
+
 
   deps = [
 
@@ -9,10 +18,10 @@ executable("ut_kbot") {
   ]
 
   include_dirs = [
-    "//src"
+    "//src",
   ]
 
   sources = [
-    "youtube_bot.test.cpp",
+    "youtube_bot.test.cpp"
   ]
 }

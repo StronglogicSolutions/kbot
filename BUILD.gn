@@ -9,6 +9,10 @@ executable("youtube_bot") {
   include_dirs = [
     "//src"
   ]
+
+  sources = [
+    "//src/youtube/main.cpp"
+  ]
 }
 group("tests") {
   testonly = true

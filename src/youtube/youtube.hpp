@@ -45,6 +45,10 @@ class YoutubeBot : public Bot, public Worker {
     if (name.empty()) {
       return std::make_unique<DefaultAPI>();
     }
+    else
+    if (name.compare("Request API")) {
+      return std::make_unique<RequestAPI>();
+    }
     return nullptr;
   }
 
