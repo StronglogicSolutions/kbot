@@ -7,7 +7,15 @@ executable("youtube_bot") {
     "//src/youtube:youtube_bot_sources"
   ]
   include_dirs = [
-    "//src"
+    "//src",
+    "//third_party/json/include",
+  ]
+
+  libs = [
+    "pthread",
+    "crypto",
+    "cpr",
+    "curl"
   ]
 
   sources = [

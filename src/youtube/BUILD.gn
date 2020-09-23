@@ -15,11 +15,12 @@ source_set("youtube_bot_sources") {
 
   include_dirs = [
     "//src",
-    "//third_party/cpr/build/lib/"
+    "//third_party/json/include",
   ]
 
   libs = [
     "pthread",
+    "crypto",
     "cpr",
     "curl"
   ]

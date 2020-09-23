@@ -11,7 +11,7 @@
 
 class YoutubeBotTestFixture: public ::testing::Test {
  protected:
-  YoutubeBot bot;
+  YouTubeBot bot;
 
   void SetUp() override {
 
@@ -23,7 +23,7 @@ class YoutubeBotTestFixture: public ::testing::Test {
 
  public:
   YoutubeBotTestFixture()
-  : bot(YoutubeBot{}) {}
+  : bot(YouTubeBot{}) {}
 };
 
 #endif // __YOUTUBE_TEST_HPP__

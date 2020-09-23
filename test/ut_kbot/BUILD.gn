@@ -19,6 +19,7 @@ executable("ut_kbot") {
 
   include_dirs = [
     "//src",
+    "//third_party/json/include",
   ]
 
   sources = [

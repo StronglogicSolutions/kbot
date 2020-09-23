@@ -4,6 +4,7 @@
 #include <iostream>
 #include <interfaces/interfaces.hpp>
 #include <api/api.hpp>
+#include <api/youtube_data_api.hpp>
 #include <chrono>
 
 /**
@@ -14,12 +15,12 @@
  * Specializes in using the Google YouTube Data API
  *
  */
-class YoutubeBot : public Bot, public Worker {
+class YouTubeBot : public Bot, public Worker {
  public:
  /**
   * @constructor
   */
-  YoutubeBot()
+  YouTubeBot()
   : Bot("YouTubeBot") {}
 
   /**
@@ -46,8 +47,12 @@ class YoutubeBot : public Bot, public Worker {
       return std::make_unique<DefaultAPI>();
     }
     else
-    if (name.compare("Request API")) {
+    if (name.compare("Request API") == 0) {
       return std::make_unique<RequestAPI>();
+    }
+    else
+    if (name.compare("YouTube Data API") == 0) {
+      return std::make_unique<YouTubeDataAPI>();
     }
     return nullptr;
   }
