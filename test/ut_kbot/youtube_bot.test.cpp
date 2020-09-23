@@ -57,4 +57,9 @@ TEST_F(YoutubeBotTestFixture, YouTubeDataAPI) {
   EXPECT_EQ(auth_json["scope"].dump(),        auth_data.scope);
   EXPECT_EQ(auth_json["token_type"].dump(),   auth_data.token_type);
   EXPECT_EQ(auth_json["expiry_date"].dump(),  auth_data.expiry_date);
+
+  std::string channel_info = static_cast<YouTubeDataAPI*>(youtube_api.get())->GetChannelInfo();
+  std::cout << channel_info << std::endl;
+
+  EXPECT_EQ(channel_info.empty(), false);
 }

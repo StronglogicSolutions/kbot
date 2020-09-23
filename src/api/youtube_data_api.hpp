@@ -12,8 +12,25 @@
 #include <unistd.h>
 #include <string>
 #include <nlohmann/json.hpp>
+#include <cpr/cpr.h>
+#include <type_traits>
 
 using json = nlohmann::json;
+
+const std::string kstyleyo_channel_id{"UC1XoiwW6b0VIYPOaP1KgV7A"};
+const std::string gapi_url{"https://www.googleapis.com/youtube/v3/channels"};
+const std::string part_name{"part"};
+
+const std::string part_params{"snippet,contentDetails,statistics"};
+const std::string ACCEPT_HEADER{"Accept"};
+const std::string AUTH_HEADER{"Authorization"};
+const std::string type_json{"application/json"};
+
+template<typename T>
+void log(T s) {
+  std::cout << s << std::endl;
+}
+
 
 struct ProcessResult {
   std::string output;
@@ -184,6 +201,7 @@ struct AuthData {
   std::string scope;
   std::string token_type;
   std::string expiry_date;
+  std::string key;
 };
 
 std::string SanitizeJson(std::string s) {
@@ -220,6 +238,7 @@ public:
       m_auth.scope        = auth_json["scope"].dump();
       m_auth.token_type   = auth_json["token_type"].dump();
       m_auth.expiry_date  = auth_json["expiry_date"].dump();
+      m_auth.key = "";
     }
 
     return result.output;
@@ -227,6 +246,24 @@ public:
 
   AuthData GetAuth() {
     return m_auth;
+  }
+
+  std::string GetChannelInfo() {
+    if (m_auth.access_token.empty()) {
+      log("Token not set");
+      return "";
+    }
+
+    cpr::Response r = cpr::Get(
+      cpr::Url{gapi_url},
+      cpr::Header{{ACCEPT_HEADER, type_json}, {AUTH_HEADER, "Bearer " + m_auth.access_token}},
+      cpr::Parameters{{"part", part_params}, {"key", m_auth.key}, {"id", kstyleyo_channel_id}}
+    );
+    std::cout << r.status_code << std::endl;                   // 200
+    std::cout << r.header["content-type"] << std::endl;;       // application/json; charset=utf-8
+    std::cout << r.text << std::endl;                          // JSON text string
+
+    return r.text;
   }
 
 private:
