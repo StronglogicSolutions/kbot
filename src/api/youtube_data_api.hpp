@@ -2,14 +2,11 @@
 #define __YOUTUBE_DATA_API_HPP__
 
 #include "api/api.hpp"
+#include "util/process.hpp"
 
 #include <iostream>
 #include <string>
 #include <vector>
-#include <future>
-#include <sys/wait.h>
-#include <sys/poll.h>
-#include <unistd.h>
 #include <string>
 #include <nlohmann/json.hpp>
 #include <cpr/cpr.h>
@@ -17,184 +14,72 @@
 
 using json = nlohmann::json;
 
-const std::string kstyleyo_channel_id{"UC1XoiwW6b0VIYPOaP1KgV7A"};
-const std::string gapi_url{"https://www.googleapis.com/youtube/v3/channels"};
-const std::string part_name{"part"};
-
-const std::string part_params{"snippet,contentDetails,statistics"};
-const std::string ACCEPT_HEADER{"Accept"};
-const std::string AUTH_HEADER{"Authorization"};
-const std::string type_json{"application/json"};
-
 template<typename T>
 void log(T s) {
   std::cout << s << std::endl;
 }
 
+namespace constants {
+// URL Indexes
+const uint8_t SEARCH_URL_INDEX         = 0x00;
+const uint8_t VIDEOS_URL_INDEX         = 0x01;
+const uint8_t LIVE_CHAT_URL_INDEX      = 0x02;
+// Header Name Indexes
+const uint8_t ACCEPT_HEADER_INDEX      = 0x00;
+const uint8_t AUTH_HEADER_INDEX        = 0x01;
+// Header Value Indexes
+const uint8_t APP_JSON_INDEX           = 0x00;
+// Param Name Indexes
+const uint8_t PART_INDEX               = 0x00;
+const uint8_t CHAN_ID_INDEX            = 0x01;
+const uint8_t EVENT_T_INDEX            = 0x02;
+const uint8_t TYPE_INDEX               = 0x03;
+const uint8_t KEY_INDEX                = 0x04;
+const uint8_t ID_INDEX                 = 0x05;
+const uint8_t LIVE_CHAT_ID_INDEX       = 0x06;
+// Param Value Indexes
+const uint8_t SL_CHAN_KEY_INDEX        = 0x00;
+const uint8_t LIVE_EVENT_TYPE_INDEX    = 0x01;
+const uint8_t SNIPPET_INDEX            = 0x02;
+const uint8_t VIDEO_TYPE_INDEX         = 0x03;
+const uint8_t LIVESTREAM_DETAILS_INDEX = 0x04;
+const uint8_t KY_CHAN_KEY_INDEX        = 0x05;
 
-struct ProcessResult {
-  std::string output;
-  bool error = false;
+// Strings
+const std::vector<std::string> URL_VALUES{
+  "https://www.googleapis.com/youtube/v3/search",
+  "https://www.googleapis.com/youtube/v3/videos",
+  "https://www.googleapis.com/youtube/v3/liveChat/messages"
 };
 
-/**
- * Child process output buffer
- * 32k
- */
-const uint32_t buf_size{32768};
+const std::vector<std::string> HEADER_NAMES{
+  "Accept",
+  "Authorization"
+};
 
-/**
- * readFd
- *
- * Helper function to read output from a file descriptor
- *
- * @param   [in]
- * @returns [out]
- *
- */
-std::string readFd(int fd) {
-  char buffer[buf_size];
-  std::string s{};
-  do {
-    const ssize_t r = read(fd, buffer, buf_size);
-    if (r > 0) {
-      s.append(buffer, r);
-    }
-  } while (errno == EAGAIN || errno == EINTR);
-  return s;
-}
+const std::vector<std::string> HEADER_VALUES{
+  "application/json"
+};
 
-/**
- * qx
- *
- * Function to fork a child process, execute an application and return the stdout or stderr
- *
- * @param   [in]
- * @param   [in]
- * @returns [out]
- */
-ProcessResult qx(    std::vector<std::string> args,
-               const std::string&             working_directory = "") {
-  int stdout_fds[2];
-  int stderr_fds[2];
+const std::vector<std::string> PARAM_NAMES{
+  "part",
+  "channelId",
+  "eventType",
+  "type",
+  "key",
+  "id",
+  "liveChatId"
+};
 
-  pipe(stdout_fds);
-  pipe(stderr_fds);
-
-  const pid_t pid = fork();
-
-  if (!pid) {                                     // Child process
-
-    if (!working_directory.empty()) {
-      chdir(working_directory.c_str());
-    }
-
-    close(stdout_fds[0]);
-    dup2 (stdout_fds[1], 1);
-    close(stdout_fds[1]);
-    close(stderr_fds[0]);
-    dup2 (stderr_fds[1], 2);
-    close(stderr_fds[1]);
-
-    std::vector<char*> vc(args.size() + 1, 0);
-
-    for (size_t i = 0; i < args.size(); ++i) {
-      vc[i] = const_cast<char*>(args[i].c_str());
-    }
-
-    execvp(vc[0], &vc[0]); // Execute application
-    exit(0);               // Exit with no error
-  }
-                                                  // Parent process
-  close(stdout_fds[1]);
-  close(stderr_fds[1]);
-
-  ProcessResult result{};
-
-  std::clock_t start_time = std::clock();
-  int          ret{};
-  int          status{};
-
-  for (;;) {
-
-    ret = waitpid(pid, &status, (WNOHANG | WUNTRACED | WCONTINUED));
-
-    if (ret == 0) {
-      break;
-    }
-
-    if ((std::clock() - start_time) > 30) {
-
-      kill(pid, SIGKILL);
-      result.error  = true;
-      result.output = "Child process timed out";
-
-      return result;
-    }
-  }
-
-  pollfd poll_fds[2]{
-    pollfd{
-      .fd       =   stdout_fds[0] & 0xFF,
-      .events   =   POLL_OUT | POLL_ERR | POLL_IN,
-      .revents  =   short{0}
-    },
-    pollfd{
-      .fd       =   stderr_fds[0] & 0xFF,
-      .events   =   POLLHUP | POLLERR | POLLIN,
-      .revents  =   short{0}
-    }
-  };
-
-  for (;;) {
-    // TODO: Do something with result or remove
-    int poll_result = poll(poll_fds, 2, 30000);
-
-    if        (poll_fds[1].revents & POLLIN) {
-
-      result.output = readFd(poll_fds[1].fd);;
-      result.error  = true;
-      break;
-
-    } else if (poll_fds[0].revents & POLLIN) {
-
-      result.output = readFd(poll_fds[0].fd);
-      if (!result.output.empty()) {
-        break;
-      }
-      result.error = true;
-
-    } else if (poll_fds[0].revents & POLLHUP) {
-
-      close(stdout_fds[0]);
-      close(stderr_fds[0]);
-
-      result.error  = true;
-      result.output = "Lost connection to forked process";
-
-    } else {
-
-      kill(pid, SIGKILL);  // Make sure the process is dead
-      result.error  = true;
-      result.output = "Child process timed out";
-
-    }
-
-    if (result.error) {
-      break;
-    }
-  }
-
-  close(stdout_fds[0]);
-  close(stderr_fds[0]);
-  close(stderr_fds[1]);
-
-  if (result.output.empty()) {
-    result.output = "Process returned no output";
-  }
-
-  return result;
-}
+const std::vector<std::string> PARAM_VALUES{
+  "UCK0xH_L9OBM0CVwC438bMGA",
+  "live",
+  "snippet",
+  "video",
+  "liveStreamingDetails",
+  "S15j0LRydks",
+};
+} // namespace constants
 
 struct AuthData {
   std::string access_token;
@@ -204,16 +89,11 @@ struct AuthData {
   std::string key;
 };
 
-std::string SanitizeJson(std::string s) {
-  std::cout << "Input: \n" << s << std::endl;
-  std::string::size_type i = s.find("\n");
-  while (i != std::string::npos) {
-    s.replace(i, 1, "\\n");
-    i = s.find("\n");
-  }
-  std::cout << "Output: \n" << s << std::endl;
-  return s;
-}
+struct VideoDetails {
+  std::string id;
+  std::string chat_id;
+};
+
 
 class YouTubeDataAPI : public API {
 public:
@@ -221,10 +101,19 @@ public:
     return std::string{"YouTube Data API"};
   }
 
+  std::string GetBearerAuth() {
+    if (m_auth.access_token.empty()) return ""
+    return std::string{"Bearer " + m_auth.access_token};
+  }
+
+  /**
+   * GetToken
+   */
   std::string GetToken() {
     ProcessResult result = qx({"/data/www/kiggle/get_token.js"});
     if (result.error) {
       std::cout << "Error executing program to retrieve token" << std::endl;
+      return "";
     }
 
     json auth_json = json::parse(result.output);
@@ -248,27 +137,107 @@ public:
     return m_auth;
   }
 
-  std::string GetChannelInfo() {
-    if (m_auth.access_token.empty()) {
-      log("Token not set");
-      return "";
-    }
+  /**
+   * GetLiveVideoID
+   */
+  std::string GetLiveVideoID() {
+    using namespace constants;
+    if (m_auth.access_token.empty()) return "";
 
     cpr::Response r = cpr::Get(
-      cpr::Url{gapi_url},
-      cpr::Header{{ACCEPT_HEADER, type_json}, {AUTH_HEADER, "Bearer " + m_auth.access_token}},
-      cpr::Parameters{{"part", part_params}, {"key", m_auth.key}, {"id", kstyleyo_channel_id}}
+      cpr::Url{URL_VALUES.at(SEARCH_URL_INDEX)},
+      cpr::Header{
+        {HEADER_NAMES.at(ACCEPT_HEADER_INDEX), HEADER_VALUES.at(APP_JSON_INDEX)},
+        {HEADER_NAMES.at(AUTH_HEADER_INDEX),   GetBearerAuth()}
+      },
+      cpr::Parameters{
+        {PARAM_NAMES.at(PART_INDEX),    PARAM_VALUES.at(SNIPPET_INDEX)},
+        {PARAM_NAMES.at(KEY_INDEX),     m_auth.key},
+        {PARAM_NAMES.at(CHAN_ID_INDEX), PARAM_VALUES.at(SL_CHAN_KEY_INDEX)},
+        {PARAM_NAMES.at(EVENT_T_INDEX), PARAM_VALUES.at(LIVE_EVENT_TYPE_INDEX)},
+        {PARAM_NAMES.at(TYPE_INDEX),    PARAM_VALUES.at(VIDEO_TYPE_INDEX)}
+      }
     );
-    std::cout << r.status_code << std::endl;                   // 200
-    std::cout << r.header["content-type"] << std::endl;;       // application/json; charset=utf-8
-    std::cout << r.text << std::endl;                          // JSON text string
+
+    std::cout << r.status_code << std::endl;
+    std::cout << r.header["content-type"] << std::endl;;
+    std::cout << r.text << std::endl;
+
+    json video_info = json::parse(r.text);
+
+    if (!video_info.is_null() && video_info.is_object()) {
+      auto items = video_info["items"];
+      if (!items.is_null() && items.is_array() && items.size() > 0) {
+        m_video_details.id = items[0]["id"]["videoId"].dump();
+      }
+    }
+
+    return r.text;
+  }
+
+  /**
+   * GetLiveDetails
+   */
+  std::string GetLiveDetails() {
+    using namespace constants;
+    if (m_auth.access_token.empty() || m_video_details.id.empty()) return "";
+
+      cpr::Response r = cpr::Get(
+      cpr::Url{URL_VALUES.at(VIDEOS_URL_INDEX)},
+      cpr::Header{
+        {HEADER_NAMES.at(ACCEPT_HEADER_INDEX), HEADER_VALUES.at(APP_JSON_INDEX)},
+        {HEADER_NAMES.at(AUTH_HEADER_INDEX),   GetBearerAuth()}
+      },
+      cpr::Parameters{
+        {PARAM_NAMES.at(PART_INDEX),    PARAM_VALUES.at(LIVESTREAM_DETAILS_INDEX)},
+        {PARAM_NAMES.at(KEY_INDEX),     m_auth.key},
+        {PARAM_NAMES.at(ID_INDEX),      m_video_details.id},
+      }
+    );
+
+    std::cout << r.status_code << std::endl;
+    std::cout << r.header["content-type"] << std::endl;;
+    std::cout << r.text << std::endl;
+
+    json live_info = json::parse(r.text);
+
+    if (!live_info.is_null() && live_info.is_object()) {
+      m_video_details.chat_id = live_info["liveChatId"].dump();
+    }
+
+    return r.text;
+  }
+
+  /**
+   * GetChatMessages
+   */
+  std::string GetChatMessages() {
+  using namespace constants;
+    if (m_auth.access_token.empty() || m_video_details.chat_id.empty()) return "";
+
+    cpr::Response r = cpr::Get(
+      cpr::Url{URL_VALUES.at(VIDEOS_URL_INDEX)},
+      cpr::Header{
+        {HEADER_NAMES.at(ACCEPT_HEADER_INDEX), HEADER_VALUES.at(APP_JSON_INDEX)},
+        {HEADER_NAMES.at(AUTH_HEADER_INDEX),   GetBearerAuth()}
+      },
+      cpr::Parameters{
+        {PARAM_NAMES.at(PART_INDEX),           PARAM_VALUES.at(SNIPPET_INDEX)},
+        {PARAM_NAMES.at(KEY_INDEX),            m_auth.key},
+        {PARAM_NAMES.at(LIVE_CHAT_ID_INDEX),   m_video_details.chat_id},
+      }
+    );
+
+    std::cout << r.status_code << std::endl;
+    std::cout << r.header["content-type"] << std::endl;;
+    std::cout << r.text << std::endl;
 
     return r.text;
   }
 
 private:
-
-  AuthData m_auth;
+  AuthData     m_auth;
+  VideoDetails m_video_details;
 };
 
 #endif // __YOUTUBE_DATA_API_HPP__

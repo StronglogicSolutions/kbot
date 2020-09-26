@@ -36,18 +36,14 @@ TEST_F(YoutubeBotTestFixture, GetAPIReturnsDefaultApi) {
 }
 
 TEST(YoutubeBotTest, RequestAPIPerformsGet) {
-  YouTubeBot bot{};
-
+  YouTubeBot           bot{};
   std::unique_ptr<API> request_api = bot.GetAPI("Request API");
-
-  std::string result = static_cast<RequestAPI*>(request_api.get())->Get();
-
-  std::cout << "RequestAPI returned: " << result << std::endl;
+  std::string          result = static_cast<RequestAPI*>(request_api.get())->Get();
 
   EXPECT_FALSE(result.empty());
 }
 
-TEST_F(YoutubeBotTestFixture, YouTubeDataAPI) {
+TEST_F(YoutubeBotTestFixture, DISABLED_YouTubeDataAPI) {
   std::unique_ptr<API> youtube_api = bot.GetAPI("YouTube Data API");
 
   json     auth_json = json::parse(static_cast<YouTubeDataAPI*>(youtube_api.get())->GetToken());
@@ -58,8 +54,19 @@ TEST_F(YoutubeBotTestFixture, YouTubeDataAPI) {
   EXPECT_EQ(auth_json["token_type"].dump(),   auth_data.token_type);
   EXPECT_EQ(auth_json["expiry_date"].dump(),  auth_data.expiry_date);
 
-  std::string channel_info = static_cast<YouTubeDataAPI*>(youtube_api.get())->GetChannelInfo();
-  std::cout << channel_info << std::endl;
+  // std::string channel_info = static_cast<YouTubeDataAPI*>(youtube_api.get())->GetChannelInfo();
+  // std::cout << channel_info << std::endl;
 
-  EXPECT_EQ(channel_info.empty(), false);
+  // EXPECT_EQ(channel_info.empty(), false);
+}
+
+TEST_F(YoutubeBotTestFixture, LiveStreamFetchMessages) {
+  std::unique_ptr<API> youtube_api = bot.GetAPI("YouTube Data API");
+
+  std::string token_info = static_cast<YouTubeDataAPI*>(youtube_api.get())->GetToken();
+  std::string video_id   = static_cast<YouTubeDataAPI*>(youtube_api.get())->GetLiveVideoID();
+  std::string live_info  = static_cast<YouTubeDataAPI*>(youtube_api.get())->GetLiveDetails();
+  std::string messages   = static_cast<YouTubeDataAPI*>(youtube_api.get())->GetChatMessages();
+
+  EXPECT_FALSE(messages.empty());
 }
