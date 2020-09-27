@@ -5,6 +5,7 @@
 #include "util/process.hpp"
 
 #include <iostream>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <string>
@@ -94,6 +95,13 @@ struct VideoDetails {
   std::string chat_id;
 };
 
+void SanitizeJSON(std::string& s) {
+  s.erase(
+    std::remove(s.begin(), s.end(),'\"'),
+    s.end()
+  ); // Remove double quotes
+}
+
 
 class YouTubeDataAPI : public API {
 public:
@@ -102,7 +110,7 @@ public:
   }
 
   std::string GetBearerAuth() {
-    if (m_auth.access_token.empty()) return ""
+    if (m_auth.access_token.empty()) return "";
     return std::string{"Bearer " + m_auth.access_token};
   }
 
@@ -127,6 +135,7 @@ public:
       m_auth.scope        = auth_json["scope"].dump();
       m_auth.token_type   = auth_json["token_type"].dump();
       m_auth.expiry_date  = auth_json["expiry_date"].dump();
+      // TODO: Create solution to read key
       m_auth.key = "";
     }
 
@@ -169,6 +178,7 @@ public:
       auto items = video_info["items"];
       if (!items.is_null() && items.is_array() && items.size() > 0) {
         m_video_details.id = items[0]["id"]["videoId"].dump();
+        SanitizeJSON(m_video_details.id);
       }
     }
 
@@ -181,17 +191,17 @@ public:
   std::string GetLiveDetails() {
     using namespace constants;
     if (m_auth.access_token.empty() || m_video_details.id.empty()) return "";
-
       cpr::Response r = cpr::Get(
       cpr::Url{URL_VALUES.at(VIDEOS_URL_INDEX)},
       cpr::Header{
         {HEADER_NAMES.at(ACCEPT_HEADER_INDEX), HEADER_VALUES.at(APP_JSON_INDEX)},
         {HEADER_NAMES.at(AUTH_HEADER_INDEX),   GetBearerAuth()}
       },
+      // ,
       cpr::Parameters{
         {PARAM_NAMES.at(PART_INDEX),    PARAM_VALUES.at(LIVESTREAM_DETAILS_INDEX)},
         {PARAM_NAMES.at(KEY_INDEX),     m_auth.key},
-        {PARAM_NAMES.at(ID_INDEX),      m_video_details.id},
+        {PARAM_NAMES.at(ID_INDEX),      m_video_details.id}
       }
     );
 
@@ -202,7 +212,11 @@ public:
     json live_info = json::parse(r.text);
 
     if (!live_info.is_null() && live_info.is_object()) {
-      m_video_details.chat_id = live_info["liveChatId"].dump();
+      auto items = live_info["items"];
+      if (!items.is_null() && items.is_array() && items.size() > 0) {
+        m_video_details.chat_id = items[0]["liveStreamingDetails"]["activeLiveChatId"].dump();
+        SanitizeJSON(m_video_details.chat_id);
+      }
     }
 
     return r.text;
@@ -216,7 +230,7 @@ public:
     if (m_auth.access_token.empty() || m_video_details.chat_id.empty()) return "";
 
     cpr::Response r = cpr::Get(
-      cpr::Url{URL_VALUES.at(VIDEOS_URL_INDEX)},
+      cpr::Url{URL_VALUES.at(LIVE_CHAT_URL_INDEX)},
       cpr::Header{
         {HEADER_NAMES.at(ACCEPT_HEADER_INDEX), HEADER_VALUES.at(APP_JSON_INDEX)},
         {HEADER_NAMES.at(AUTH_HEADER_INDEX),   GetBearerAuth()}
