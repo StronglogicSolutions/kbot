@@ -6,12 +6,14 @@
 
 #include <iostream>
 #include <algorithm>
+#include <map>
 #include <string>
 #include <vector>
 #include <string>
 #include <nlohmann/json.hpp>
 #include <cpr/cpr.h>
 #include <type_traits>
+#include <INIReader.h>
 
 using json = nlohmann::json;
 
@@ -28,6 +30,7 @@ const uint8_t LIVE_CHAT_URL_INDEX      = 0x02;
 // Header Name Indexes
 const uint8_t ACCEPT_HEADER_INDEX      = 0x00;
 const uint8_t AUTH_HEADER_INDEX        = 0x01;
+const uint8_t CONTENT_TYPE_INDEX       = 0x02;
 // Header Value Indexes
 const uint8_t APP_JSON_INDEX           = 0x00;
 // Param Name Indexes
@@ -55,7 +58,8 @@ const std::vector<std::string> URL_VALUES{
 
 const std::vector<std::string> HEADER_NAMES{
   "Accept",
-  "Authorization"
+  "Authorization",
+  "Content-Type"
 };
 
 const std::vector<std::string> HEADER_VALUES{
@@ -73,13 +77,21 @@ const std::vector<std::string> PARAM_NAMES{
 };
 
 const std::vector<std::string> PARAM_VALUES{
-  "UCK0xH_L9OBM0CVwC438bMGA",
+  // "UCK0xH_L9OBM0CVwC438bMGA",  // StrongLogic Solutions
+  "UCm5J1Fu_dHgBcMTpXu-NXUw", // Pangburn
+
   "live",
   "snippet",
   "video",
   "liveStreamingDetails",
   "S15j0LRydks",
 };
+
+const std::string E_CHANNEL_ID{"UCFP7BAwQIzqml"};
+const std::string DEFAULT_CONFIG_PATH{"config/config.ini"};
+const std::string YOUTUBE_KEY{"key"};
+const std::string YOUTUBE_CONFIG_SECTION{"youtube"};
+const std::string YOUTUBE_TOKEN_APP{"token_app"};
 } // namespace constants
 
 struct AuthData {
@@ -88,12 +100,21 @@ struct AuthData {
   std::string token_type;
   std::string expiry_date;
   std::string key;
+  std::string token_app_path;
 };
 
 struct VideoDetails {
   std::string id;
   std::string chat_id;
 };
+
+struct ChatMessage {
+  uint32_t    timestamp;
+  std::string author;
+  std::string text;
+};
+
+using Chats = std::map<std::string, std::vector<ChatMessage>>;
 
 void SanitizeJSON(std::string& s) {
   s.erase(
@@ -105,6 +126,28 @@ void SanitizeJSON(std::string& s) {
 
 class YouTubeDataAPI : public API {
 public:
+  YouTubeDataAPI () {
+    INIReader reader{constants::DEFAULT_CONFIG_PATH};
+
+    if (reader.ParseError() < 0) {
+      log("Error loading config");
+    }
+
+    auto youtube_key = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_KEY, "");
+    if (!youtube_key.empty()) {
+      m_auth.key = youtube_key;
+    }
+
+    auto app_path = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_TOKEN_APP, "");
+    if (!app_path.empty()) {
+      m_auth.token_app_path = app_path;
+    }
+
+    if (m_auth.token_app_path.empty() || m_auth.key.empty()) {
+      throw std::invalid_argument{"Cannot run YouTube API without key and token app"};
+    }
+  }
+
   virtual std::string GetType() override {
     return std::string{"YouTube Data API"};
   }
@@ -118,7 +161,7 @@ public:
    * GetToken
    */
   std::string GetToken() {
-    ProcessResult result = qx({"/data/www/kiggle/get_token.js"});
+    ProcessResult result = qx({m_auth.token_app_path});
     if (result.error) {
       std::cout << "Error executing program to retrieve token" << std::endl;
       return "";
@@ -135,8 +178,6 @@ public:
       m_auth.scope        = auth_json["scope"].dump();
       m_auth.token_type   = auth_json["token_type"].dump();
       m_auth.expiry_date  = auth_json["expiry_date"].dump();
-      // TODO: Create solution to read key
-      m_auth.key = "";
     }
 
     return result.output;
@@ -216,6 +257,9 @@ public:
       if (!items.is_null() && items.is_array() && items.size() > 0) {
         m_video_details.chat_id = items[0]["liveStreamingDetails"]["activeLiveChatId"].dump();
         SanitizeJSON(m_video_details.chat_id);
+        if (!m_video_details.chat_id.empty()) {
+          m_chats.insert({m_video_details.chat_id, std::vector<ChatMessage>{}});
+        }
       }
     }
 
@@ -246,12 +290,81 @@ public:
     std::cout << r.header["content-type"] << std::endl;;
     std::cout << r.text << std::endl;
 
+    json chat_info = json::parse(r.text);
+
+    if (!chat_info.is_null() && chat_info.is_object()) {
+      auto items = chat_info["items"];
+      if (!items.is_null() && items.is_array()) {
+        for (const auto& item : items) {
+          std::string text = item["snippet"]["textMessageDetails"]["messageText"];
+          SanitizeJSON(text);
+          m_chats.at(m_video_details.chat_id).push_back(
+            ChatMessage{.timestamp = 0, .author = "Someone", .text = text}
+          );
+        }
+      }
+    }
+
     return r.text;
+  }
+
+  bool FindChat() {
+    if (m_auth.access_token.empty()) {
+      if (GetAuth().access_token.empty()) {
+        return false;
+      }
+    }
+    if (GetLiveVideoID().empty()) {
+        return false;
+      }
+      if (GetLiveDetails().empty()) {
+        return false;
+      }
+      GetChatMessages();
+      return true;
+  }
+
+  bool PostMessage(std::string message) {
+    using namespace constants;
+
+    if (m_video_details.chat_id.empty()) {
+      log("No chat to post to");
+      return false;
+    }
+
+    json payload{};
+    payload["snippet"]["liveChatId"]                        = m_video_details.chat_id;
+    payload["snippet"]["live_chat_id"]                      = m_video_details.chat_id;
+    payload["snippet"]["textMessageDetails"]["messageText"] = message;
+    payload["snippet"]["type"]                              = "textMessageEvent";
+
+    cpr::Response r = cpr::Post(
+      cpr::Url{URL_VALUES.at(LIVE_CHAT_URL_INDEX)},
+      cpr::Header{
+        {HEADER_NAMES.at(ACCEPT_HEADER_INDEX), HEADER_VALUES.at(APP_JSON_INDEX)},
+        {HEADER_NAMES.at(AUTH_HEADER_INDEX),   GetBearerAuth()},
+        {HEADER_NAMES.at(CONTENT_TYPE_INDEX),  HEADER_VALUES.at(APP_JSON_INDEX)}
+      },
+      cpr::Parameters{
+        {PARAM_NAMES.at(PART_INDEX),           PARAM_VALUES.at(SNIPPET_INDEX)},
+        {PARAM_NAMES.at(KEY_INDEX),            m_auth.key},
+        {PARAM_NAMES.at(LIVE_CHAT_ID_INDEX),   m_video_details.chat_id},
+      },
+      cpr::Body{payload.dump()}
+    );
+
+    std::cout << r.status_code << std::endl;
+    std::cout << r.header["content-type"] << std::endl;;
+    std::cout << r.text << std::endl;
+
+    return true;
   }
 
 private:
   AuthData     m_auth;
   VideoDetails m_video_details;
+  Chats        m_chats;
+  std::string  m_active_chat;
 };
 
 #endif // __YOUTUBE_DATA_API_HPP__

@@ -1,21 +1,30 @@
-# config("cpr_import") {
-#   include_dirs = ["//third_party/cpr/include", "//third_party/cpr/build/lib/"]
-#   lib_dirs = [ "//third_party/cpr/build/lib/libcpr.so.1"]
-#   libs = ["libcpr.so.1", "libcurl.so"]
-#   visibility = [ ":cpr" ]
-# }
+config("inih") {
+  include_dirs = [
+    "//third_party/inih/cpp",
+  ]
+}
 
-# group("cpr") {
-#   public_configs = [
-#     ":cpr_import"
-#   ]
-# }
+source_set("ini_reader") {
+  sources = [
+    "//third_party/inih/ini.c",
+    "//third_party/inih/cpp/INIReader.cpp",
+  ]
+}
 
 source_set("youtube_bot_sources") {
+
+  public_configs = [
+    ":inih"
+  ]
+
+  deps = [
+    ":ini_reader"
+  ]
 
   include_dirs = [
     "//src",
     "//third_party/json/include",
+    "//third_party/",
   ]
 
   libs = [
@@ -24,6 +33,5 @@ source_set("youtube_bot_sources") {
     "cpr",
     "curl"
   ]
-
 }
 
