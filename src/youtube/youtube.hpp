@@ -13,6 +13,7 @@ const std::string DEFAULT_API_NAME{"YouTube Data API"};
  * YouTubeBot
  *
  * @interface {Bot}
+ * @interface {Worker}
  *
  * Specializes in using the Google YouTube Data API
  *
@@ -84,13 +85,24 @@ class YouTubeBot : public Bot, public Worker {
     return nullptr;
   }
 
-ChatMessages GetChats() {
+/**
+ * GetChats
+ *
+ * @returns [out] {LiveChatMap}  A map of Live Chats indexed by chat id
+ */
+LiveChatMap GetChats() {
   if (m_api != nullptr) {
     return static_cast<YouTubeDataAPI*>(m_api.get())->GetChats();
   }
-  return ChatMessages{};
+  return LiveChatMap{};
 }
 
+/**
+ * PostMessage
+ *
+ * @param   [in]  {std::string}
+ * @returns [out] {bool}
+ */
 bool PostMessage(std::string message) {
   return static_cast<YouTubeDataAPI*>(m_api.get())->PostMessage(message);
 }

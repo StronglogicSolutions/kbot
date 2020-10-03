@@ -85,7 +85,7 @@ TEST_F(YouTubeBotTestFixture, PostMessage) {
   LiveMessages  messages{};
 
   if (bot.init()) {
-    ChatMessages chats = bot.GetChats();
+    LiveChatMap chats = bot.GetChats();
     count = chats.size();
     for (const auto& c : chats) {
       chat_id = c.first;
