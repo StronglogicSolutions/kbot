@@ -58,6 +58,8 @@ class YouTubeBot : public Bot, public Worker {
 
       for (const auto& message : messages) {
         std::cout << message.timestamp << " - " << message.author << ": " << message.text << std::endl;
+        std::string tokenized = TokenizeText(message.text);
+        std::cout << "Tokenized: \n" << tokenized << std::endl;
       }
 
       std::this_thread::sleep_for(std::chrono::milliseconds(300));

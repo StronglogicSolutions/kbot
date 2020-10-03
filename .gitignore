@@ -2,3 +2,4 @@ third_party
 out
 .vscode
 config/*
+tokenized_message.txt

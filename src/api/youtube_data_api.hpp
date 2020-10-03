@@ -8,6 +8,7 @@
 
 #include "api/api.hpp"
 #include "util/util.hpp"
+#include "util/nlp.hpp"
 #include "youtube/types.hpp"
 #include "util/process.hpp"
 
