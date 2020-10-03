@@ -9,7 +9,7 @@
 #include "youtube/youtube.hpp"
 
 
-class YoutubeBotTestFixture: public ::testing::Test {
+class YouTubeBotTestFixture: public ::testing::Test {
  protected:
   YouTubeBot bot;
 
@@ -22,7 +22,7 @@ class YoutubeBotTestFixture: public ::testing::Test {
   }
 
  public:
-  YoutubeBotTestFixture()
+  YouTubeBotTestFixture()
   : bot(YouTubeBot{}) {}
 };
 

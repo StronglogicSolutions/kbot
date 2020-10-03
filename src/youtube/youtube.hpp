@@ -7,6 +7,8 @@
 #include <api/youtube_data_api.hpp>
 #include <chrono>
 
+const std::string DEFAULT_API_NAME{"YouTube Data API"};
+
 /**
  * YouTubeBot
  *
@@ -23,15 +25,40 @@ class YouTubeBot : public Bot, public Worker {
   YouTubeBot()
   : Bot("YouTubeBot") {}
 
+  bool init() {
+    m_api               = GetAPI(DEFAULT_API_NAME);
+    YouTubeDataAPI* api = static_cast<YouTubeDataAPI*>(m_api.get());
+
+    if (
+      !api->FetchToken()      .empty() &&
+      !api->FetchLiveVideoID().empty() &&
+       api->FetchLiveDetails()
+    ) {
+      api->FetchChatMessages();
+      return true;
+    }
+    return false;
+  }
+
   /**
    * loop
    *
    * The loop method runs on its own thread
    */
   virtual void loop() override {
+    YouTubeDataAPI* api = static_cast<YouTubeDataAPI*>(m_api.get());
+
     while (m_is_running) {
-      m_loops++;
-      std::cout << "YouTube bot loop" << std::endl;
+      LiveMessages messages = api->FindMentions();
+
+      if (messages.empty()) {
+        messages = api->GetChats().at(api->GetLiveDetails().chat_id);
+      }
+
+      for (const auto& message : messages) {
+        std::cout << message.timestamp << " - " << message.author << ": " << message.text << std::endl;
+      }
+
       std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
   }
@@ -56,6 +83,20 @@ class YouTubeBot : public Bot, public Worker {
     }
     return nullptr;
   }
+
+ChatMessages GetChats() {
+  if (m_api != nullptr) {
+    return static_cast<YouTubeDataAPI*>(m_api.get())->GetChats();
+  }
+  return ChatMessages{};
+}
+
+bool PostMessage(std::string message) {
+  return static_cast<YouTubeDataAPI*>(m_api.get())->PostMessage(message);
+}
+
+private:
+std::unique_ptr<API> m_api;
 
 };
 

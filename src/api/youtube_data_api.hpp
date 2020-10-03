@@ -78,7 +78,8 @@ const std::vector<std::string> PARAM_NAMES{
 
 const std::vector<std::string> PARAM_VALUES{
   // "UCK0xH_L9OBM0CVwC438bMGA",  // StrongLogic Solutions
-  "UCm5J1Fu_dHgBcMTpXu-NXUw", // Pangburn
+  // "UCm5J1Fu_dHgBcMTpXu-NXUw",  // Pangburn
+  "UCLwNTXWEjVd2qIHLcXxQWxA",     // Timecast IRL
 
   "live",
   "snippet",
@@ -92,6 +93,7 @@ const std::string DEFAULT_CONFIG_PATH{"config/config.ini"};
 const std::string YOUTUBE_KEY{"key"};
 const std::string YOUTUBE_CONFIG_SECTION{"youtube"};
 const std::string YOUTUBE_TOKEN_APP{"token_app"};
+const std::string YOUTUBE_USERNAME{"chat_name"};
 } // namespace constants
 
 struct AuthData {
@@ -108,19 +110,21 @@ struct VideoDetails {
   std::string chat_id;
 };
 
-struct ChatMessage {
-  uint32_t    timestamp;
+struct LiveMessage {
+  std::string timestamp;
   std::string author;
   std::string text;
 };
 
-using Chats = std::map<std::string, std::vector<ChatMessage>>;
+using LiveMessages = std::vector<LiveMessage>;
+using Chat         = std::pair<std::string, LiveMessages>;
+using ChatMessages = std::map<std::string, LiveMessages>;
 
 void SanitizeJSON(std::string& s) {
   s.erase(
     std::remove(s.begin(), s.end(),'\"'),
     s.end()
-  ); // Remove double quotes
+  );
 }
 
 
@@ -143,6 +147,11 @@ public:
       m_auth.token_app_path = app_path;
     }
 
+    auto username = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_USERNAME, "");
+    if (!username.empty()) {
+      m_username = username;
+    }
+
     if (m_auth.token_app_path.empty() || m_auth.key.empty()) {
       throw std::invalid_argument{"Cannot run YouTube API without key and token app"};
     }
@@ -158,29 +167,33 @@ public:
   }
 
   /**
-   * GetToken
+   * FetchToken
    */
-  std::string GetToken() {
-    ProcessResult result = qx({m_auth.token_app_path});
-    if (result.error) {
-      std::cout << "Error executing program to retrieve token" << std::endl;
-      return "";
+  std::string FetchToken() {
+    if (m_auth.access_token.empty()) {
+
+      ProcessResult result = qx({m_auth.token_app_path});
+
+      if (result.error) {
+        std::cout << "Error executing program to retrieve token" << std::endl;
+        return "";
+      }
+
+      json auth_json = json::parse(result.output);
+
+      if (auth_json.empty()) {
+        return "";
+      }
+
+      if (!auth_json.is_null() && auth_json.is_object()) {
+        m_auth.access_token = auth_json["access_token"].dump();
+        m_auth.scope        = auth_json["scope"].dump();
+        m_auth.token_type   = auth_json["token_type"].dump();
+        m_auth.expiry_date  = auth_json["expiry_date"].dump();
+      }
     }
 
-    json auth_json = json::parse(result.output);
-
-    if (auth_json.empty()) {
-      return "";
-    }
-
-    if (!auth_json.is_null() && auth_json.is_object()) {
-      m_auth.access_token = auth_json["access_token"].dump();
-      m_auth.scope        = auth_json["scope"].dump();
-      m_auth.token_type   = auth_json["token_type"].dump();
-      m_auth.expiry_date  = auth_json["expiry_date"].dump();
-    }
-
-    return result.output;
+    return m_auth.access_token;
   }
 
   AuthData GetAuth() {
@@ -188,11 +201,12 @@ public:
   }
 
   /**
-   * GetLiveVideoID
+   * FetchLiveVideoID
    */
-  std::string GetLiveVideoID() {
+  std::string FetchLiveVideoID() {
     using namespace constants;
-    if (m_auth.access_token.empty()) return "";
+    if (m_auth.access_token.empty())
+      throw std::invalid_argument("Cannot use YouTube API without access token");
 
     cpr::Response r = cpr::Get(
       cpr::Url{URL_VALUES.at(SEARCH_URL_INDEX)},
@@ -223,16 +237,28 @@ public:
       }
     }
 
-    return r.text;
+    return m_video_details.id;
   }
 
   /**
    * GetLiveDetails
    */
-  std::string GetLiveDetails() {
+  VideoDetails GetLiveDetails() {
+    return m_video_details;
+  }
+
+  /**
+   * FetchLiveDetails
+   */
+  bool FetchLiveDetails() {
     using namespace constants;
-    if (m_auth.access_token.empty() || m_video_details.id.empty()) return "";
-      cpr::Response r = cpr::Get(
+    if (m_auth.access_token.empty())
+      throw std::invalid_argument{"Unable to use YouTubeDataAPI without token"};
+
+    if (m_video_details.id.empty())
+      throw std::invalid_argument{"Unable to Fetch live details: no video ID"};
+
+    cpr::Response r = cpr::Get(
       cpr::Url{URL_VALUES.at(VIDEOS_URL_INDEX)},
       cpr::Header{
         {HEADER_NAMES.at(ACCEPT_HEADER_INDEX), HEADER_VALUES.at(APP_JSON_INDEX)},
@@ -258,18 +284,18 @@ public:
         m_video_details.chat_id = items[0]["liveStreamingDetails"]["activeLiveChatId"].dump();
         SanitizeJSON(m_video_details.chat_id);
         if (!m_video_details.chat_id.empty()) {
-          m_chats.insert({m_video_details.chat_id, std::vector<ChatMessage>{}});
+          m_chats.insert({m_video_details.chat_id, std::vector<LiveMessage>{}});
+          return true;
         }
       }
     }
-
-    return r.text;
+    return false;
   }
 
   /**
    * GetChatMessages
    */
-  std::string GetChatMessages() {
+  std::string FetchChatMessages() {
   using namespace constants;
     if (m_auth.access_token.empty() || m_video_details.chat_id.empty()) return "";
 
@@ -294,12 +320,22 @@ public:
 
     if (!chat_info.is_null() && chat_info.is_object()) {
       auto items = chat_info["items"];
+
       if (!items.is_null() && items.is_array()) {
         for (const auto& item : items) {
-          std::string text = item["snippet"]["textMessageDetails"]["messageText"];
+          std::string text   = item["snippet"]["textMessageDetails"]["messageText"];
+          std::string author = item["snippet"]["authorChannelId"];
+          std::string time   = item["snippet"]["publishedAt"];
           SanitizeJSON(text);
+          SanitizeJSON(author);
+          SanitizeJSON(time);
+
           m_chats.at(m_video_details.chat_id).push_back(
-            ChatMessage{.timestamp = 0, .author = "Someone", .text = text}
+            LiveMessage{
+              .timestamp = time,
+              .author    = author,
+              .text      = text
+            }
           );
         }
       }
@@ -308,20 +344,47 @@ public:
     return r.text;
   }
 
+  ChatMessages GetChats() {
+    return m_chats;
+  }
+
+  LiveMessages FindMentions() {
+    using ChatPair = std::map<std::string, LiveMessages>;
+    const std::string bot_name{""};
+
+    LiveMessages matches{};
+
+    for (const Chat& m : GetChats()) {
+      auto chat_name        = m.first;
+      LiveMessages messages = m.second;
+
+      for (const LiveMessage& message : messages) {
+        if (message.text.find(bot_name) != std::string::npos) {
+          matches.push_back(message);
+        }
+      }
+    }
+    return matches;
+  }
+
   bool FindChat() {
     if (m_auth.access_token.empty()) {
       if (GetAuth().access_token.empty()) {
         return false;
       }
     }
-    if (GetLiveVideoID().empty()) {
-        return false;
-      }
-      if (GetLiveDetails().empty()) {
-        return false;
-      }
-      GetChatMessages();
-      return true;
+
+    if (FetchLiveVideoID().empty()) {
+      return false;
+    }
+
+    if (!FetchLiveDetails()) {
+      return false;
+    }
+
+    FetchChatMessages();
+
+    return true;
   }
 
   bool PostMessage(std::string message) {
@@ -363,8 +426,9 @@ public:
 private:
   AuthData     m_auth;
   VideoDetails m_video_details;
-  Chats        m_chats;
+  ChatMessages m_chats;
   std::string  m_active_chat;
+  std::string  m_username;
 };
 
 #endif // __YOUTUBE_DATA_API_HPP__
