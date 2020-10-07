@@ -260,6 +260,42 @@ public:
     return r.text;
   }
 
+  static std::vector<Token> SplitTokens(std::string s) {
+    std::vector<Token> tokens{};
+    auto               delim_index = s.find_first_of('[');
+
+    while (delim_index != std::string::npos) {
+      auto token_start     = s.substr(delim_index);
+      auto delim_end_index = (token_start.find_first_of(']') - 1);
+      auto token_value     = token_start.substr(1, delim_end_index);
+
+      (void)(token_value); // Find out token type
+
+      tokens.push_back(Token{
+        .type  = TokenType::location,
+        .value = token_value
+      });
+      s           = token_start.substr(delim_end_index);
+      delim_index = token_start.find_first_of('[');
+    }
+
+    return tokens;
+  }
+
+  bool ParseTokens() {
+    if (HasChats()) {
+      for (auto&& chat : m_chats.at(m_video_details.chat_id)) {
+        std::string tokenized_text = TokenizeText(chat.text);
+        (void)(tokenized_text); // Parse tokens
+        if (!tokenized_text.empty()) {
+          chat.tokens = YouTubeDataAPI::SplitTokens(tokenized_text);
+        }
+      }
+    return (!GetCurrentChat().at(0).tokens.empty());
+  }
+  return false;
+}
+
   /**
    * GetChats
    *
@@ -269,6 +305,14 @@ public:
     return m_chats;
   }
 
+  LiveMessages GetCurrentChat() {
+    return m_chats.at(m_video_details.chat_id);
+  }
+
+  bool HasChats() {
+    return !m_chats.empty();
+  }
+
   /**
    * FindMentions
    *
@@ -276,7 +320,7 @@ public:
    */
   LiveMessages FindMentions() {
     using ChatPair = std::map<std::string, LiveMessages>;
-    const std::string bot_name{""};
+    const std::string bot_name{"@Emmanuel Buckshi"};
 
     LiveMessages matches{};
 

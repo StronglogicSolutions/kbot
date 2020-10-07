@@ -95,13 +95,18 @@ TEST_F(YouTubeBotTestFixture, PostMessage) {
         std::cout << message.timestamp << " - " << message.author << ": " << message.text << std::endl;
       }
     }
-    bot.PostMessage("Test");
+    bot.PostMessage("Thankful for the discussion");
   }
 
   EXPECT_EQ(count > 0, true);
   EXPECT_EQ(chat_id.empty(), false);
   EXPECT_EQ(messages.size() > 0, true);
+
   bot.start();
-  while (true)
-    ;
+
+  for (uint8_t i = 0; i < 5; i++) {
+    std::this_thread::sleep_for(std::chrono::seconds(30));
+  }
+
+  bot.stop();
 }

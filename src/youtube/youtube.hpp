@@ -52,14 +52,25 @@ class YouTubeBot : public Bot, public Worker {
     while (m_is_running) {
       LiveMessages messages = api->FindMentions();
 
-      if (messages.empty()) {
-        messages = api->GetChats().at(api->GetLiveDetails().chat_id);
+      if (messages.empty() && api->HasChats()) {
+        messages = api->GetCurrentChat();
       }
 
       for (const auto& message : messages) {
         std::cout << message.timestamp << " - " << message.author << ": " << message.text << std::endl;
-        std::string tokenized = TokenizeText(message.text);
-        std::cout << "Tokenized: \n" << tokenized << std::endl;
+      }
+
+      api->ParseTokens();
+
+      if (api->HasChats()) {
+        messages = api->GetCurrentChat();
+        for (const auto& message : messages) {
+          for (const auto& token : message.tokens) {
+            std::cout << "Got token of type " << +token.type
+                      << "\n with value: "    << token.value
+                      << std::endl;
+          }
+        }
       }
 
       std::this_thread::sleep_for(std::chrono::milliseconds(300));

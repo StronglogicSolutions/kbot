@@ -23,10 +23,20 @@ struct VideoDetails {
   std::string chat_id;
 };
 
+enum TokenType {
+  location = 0x00,
+};
+
+struct Token {
+  TokenType   type;
+  std::string value;
+};
+
 struct LiveMessage {
-  std::string timestamp;
-  std::string author;
-  std::string text;
+  std::string        timestamp;
+  std::string        author;
+  std::string        text;
+  std::vector<Token> tokens;
 };
 
 using LiveMessages = std::vector<LiveMessage>;
