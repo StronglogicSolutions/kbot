@@ -25,6 +25,8 @@ struct VideoDetails {
 
 enum TokenType {
   location = 0x00,
+  person   = 0x01,
+  unknown  = 0xFF
 };
 
 struct Token {

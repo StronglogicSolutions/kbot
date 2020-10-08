@@ -260,6 +260,49 @@ public:
     return r.text;
   }
 
+  /**
+   * GetType
+   *
+   * @static
+   * @param
+   * @returns
+   *
+   */
+  static TokenType GetType(std::string type) {
+    if (type.compare("LOCATION") == 0) {
+      return TokenType::location;
+    }
+    else
+    if (type.compare("PERSON") == 0) {
+      return TokenType::person;
+    }
+    return TokenType::unknown;
+  }
+
+  /**
+   * ParseToken
+   *
+   * @static
+   * @param
+   * @returns
+   *
+   */
+  static Token ParseToken(std::string s) {
+    auto delim = s.find(' ');
+    return Token{
+      .type  = GetType(s.substr(0, delim)),
+      .value = s.substr(delim + 1)
+    };
+  }
+
+  /**
+   * SplitTokens
+   *
+   * @static
+   * @param
+   * @returns
+   *
+   */
   static std::vector<Token> SplitTokens(std::string s) {
     std::vector<Token> tokens{};
     auto               delim_index = s.find_first_of('[');
@@ -269,19 +312,25 @@ public:
       auto delim_end_index = (token_start.find_first_of(']') - 1);
       auto token_value     = token_start.substr(1, delim_end_index);
 
-      (void)(token_value); // Find out token type
+      tokens.push_back(ParseToken(token_value));
 
-      tokens.push_back(Token{
-        .type  = TokenType::location,
-        .value = token_value
-      });
-      s           = token_start.substr(delim_end_index);
-      delim_index = token_start.find_first_of('[');
+      if (token_start.size() >= (token_value.size() + 3)) {
+        s           = token_start.substr(token_value.size() + 3);
+        delim_index = s.find_first_of('[');
+      } else {
+        break;
+      }
     }
 
     return tokens;
   }
 
+  /**
+   * Parsetokens
+   *
+   * @returns
+   *
+   */
   bool ParseTokens() {
     if (HasChats()) {
       for (auto&& chat : m_chats.at(m_video_details.chat_id)) {

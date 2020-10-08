@@ -56,22 +56,19 @@ class YouTubeBot : public Bot, public Worker {
         messages = api->GetCurrentChat();
       }
 
-      for (const auto& message : messages) {
-        std::cout << message.timestamp << " - " << message.author << ": " << message.text << std::endl;
-      }
-
       api->ParseTokens();
 
       if (api->HasChats()) {
         messages = api->GetCurrentChat();
         for (const auto& message : messages) {
-          for (const auto& token : message.tokens) {
-            std::cout << "Got token of type " << +token.type
-                      << "\n with value: "    << token.value
-                      << std::endl;
-          }
+          auto author = message.author;
+          auto text   = message.text;
+          auto time   = message.timestamp;
+          auto tokens = message.tokens;
         }
       }
+
+      api->FetchChatMessages();
 
       std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
