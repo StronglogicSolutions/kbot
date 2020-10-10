@@ -81,6 +81,25 @@ const std::string YOUTUBE_KEY{"key"};
 const std::string YOUTUBE_CONFIG_SECTION{"youtube"};
 const std::string YOUTUBE_TOKEN_APP{"token_app"};
 const std::string YOUTUBE_USERNAME{"chat_name"};
+
+namespace invitations {
+std::string Greet(std::string name) {
+  return std::string{
+    "Hello, " + name + ". How are you?"
+  };
+}
+
+const std::string OFFER_TO_INQUIRE{
+  "Ask me a question: '@' me, and say \"!q <your question>\"\n\
+   If I can't respond immediately, someone will get back to you!"
+};
+
+namespace promotion {
+const std::string support {"Please click like and subscribe!"};
+}
+} // namespace invitations
+
+// const std::vector<std::string
 } // namespace constants
 
 #endif // __YOUTUBE_CONSTANTS_HPP__

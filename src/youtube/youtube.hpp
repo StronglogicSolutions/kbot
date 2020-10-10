@@ -41,6 +41,15 @@ class YouTubeBot : public Bot, public Worker {
     return false;
   }
 
+  std::vector<std::string> CreateReplyMessages(LiveMessages messages, bool bot_was_mentioned = false) {
+    std::vector<std::string> reply_messages{};
+    if (bot_was_mentioned) {
+      reply_messages.reserve(messages.size());
+    }
+
+    return reply_messages;
+  }
+
   /**
    * loop
    *
@@ -50,26 +59,27 @@ class YouTubeBot : public Bot, public Worker {
     YouTubeDataAPI* api = static_cast<YouTubeDataAPI*>(m_api.get());
 
     while (m_is_running) {
-      LiveMessages messages = api->FindMentions();
-
-      if (messages.empty() && api->HasChats()) {
-        messages = api->GetCurrentChat();
-      }
-
       api->ParseTokens();
 
       if (api->HasChats()) {
-        messages = api->GetCurrentChat();
-        for (const auto& message : messages) {
-          auto author = message.author;
-          auto text   = message.text;
-          auto time   = message.timestamp;
-          auto tokens = message.tokens;
+        bool bot_was_mentioned = false;
+        LiveMessages messages = api->FindMentions();
+
+        if (!messages.empty()) {
+          bot_was_mentioned = true;
+        } else {
+          messages = api->GetCurrentChat();
+        }
+
+        std::vector<std::string> reply_messages = CreateReplyMessages(messages, bot_was_mentioned);
+
+        for (const auto& reply : reply_messages) {
+          api->PostMessage(reply);
         }
       }
 
       api->FetchChatMessages();
-
+      // TODO: Switch wait to condition variable
       std::this_thread::sleep_for(std::chrono::milliseconds(300));
     }
   }

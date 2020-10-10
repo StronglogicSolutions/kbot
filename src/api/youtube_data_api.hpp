@@ -169,8 +169,10 @@ public:
     if (m_auth.access_token.empty())
       throw std::invalid_argument{"Unable to use YouTubeDataAPI without token"};
 
-    if (m_video_details.id.empty())
-      throw std::invalid_argument{"Unable to Fetch live details: no video ID"};
+    if (m_video_details.id.empty()) {
+      log("Unable to Fetch live details: no video ID");
+      return false;
+    }
 
     cpr::Response r = cpr::Get(
       cpr::Url{URL_VALUES.at(VIDEOS_URL_INDEX)},
