@@ -24,7 +24,8 @@ class YouTubeBot : public Bot, public Worker {
   * @constructor
   */
   YouTubeBot()
-  : Bot("YouTubeBot") {}
+  : Bot("YouTubeBot"),
+    m_has_promoted(false) {}
 
   bool init() {
     m_api               = GetAPI(DEFAULT_API_NAME);
@@ -49,7 +50,26 @@ class YouTubeBot : public Bot, public Worker {
   std::vector<std::string> CreateReplyMessages(LiveMessages messages, bool bot_was_mentioned = false) {
     std::vector<std::string> reply_messages{};
     if (bot_was_mentioned) {
-      reply_messages.reserve(messages.size());
+      reply_messages.reserve(messages.size()); // Create responses to all who mentioned bot specifically
+
+      for (const auto& message : messages) {
+        if (!message.tokens.empty()) {
+          for (const auto& token : message.tokens) {
+            if (token.type == TokenType::location) {
+              reply_messages.push_back(CreateLocationResponse(token.value));
+            }
+            else
+            if (token.type == TokenType::person) {
+              reply_messages.push_back(CreatePersonResponse(token.value));
+            }
+          }
+        }
+      }
+    }
+
+    if (!m_has_promoted) {
+      reply_messages.push_back(std::string{CreatePromoteResponse()});
+      m_has_promoted = true;
     }
 
     return reply_messages;
@@ -134,6 +154,7 @@ bool PostMessage(std::string message) {
 
 private:
   std::unique_ptr<API> m_api;
+  bool                 m_has_promoted;
 };
 
 #endif // __YOUTUBE_HPP__

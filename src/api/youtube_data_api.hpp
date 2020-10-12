@@ -15,6 +15,22 @@
 
 using json = nlohmann::json;
 
+const std::string CreateLocationResponse(std::string location) {
+  return std::string{
+    "Cool to see someone from " + location + ". How is life treating you there?"
+  };
+}
+
+const std::string CreatePersonResponse(std::string name) {
+  return std::string{
+    "Hello, " + name + ". How are you?"
+  };
+}
+
+constexpr std::string_view CreatePromoteResponse() {
+  return constants::promotion::support;
+}
+
 class YouTubeDataAPI : public API {
 public:
   /**
@@ -362,8 +378,6 @@ public:
   bool ParseTokens() {
     if (HasChats()) {
       for (auto&& chat : m_chats.at(m_video_details.chat_id)) {
-        if (chat.tokens.empty()) continue;
-
         std::string tokenized_text = TokenizeText(chat.text);
 
         if (!tokenized_text.empty()) {
