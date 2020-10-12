@@ -4,11 +4,15 @@
 int main(int argc, char** argv) {
   YouTubeBot bot{};
 
-  std::cout << bot.GetName() << std::endl;
+  if (bot.init()) {
+    bot.start();
+  }
 
-  std::unique_ptr<API> api = bot.GetAPI("YouTube Data API");
+  for (uint8_t i = 0; i < 5; i++) {
+    std::this_thread::sleep_for(std::chrono::seconds(30));
+  }
 
-  static_cast<YouTubeDataAPI*>(api.get())->GetType();
+  bot.stop();
 
   return 0;
 }

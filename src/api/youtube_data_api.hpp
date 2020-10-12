@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <ctime>
 
 #include <INIReader.h>
 
@@ -21,7 +22,8 @@ public:
    *
    * Reads configuration
    */
-  YouTubeDataAPI () {
+  YouTubeDataAPI ()
+  : m_greet_on_entry(false) {
     INIReader reader{constants::DEFAULT_CONFIG_PATH};
 
     if (reader.ParseError() < 0) {
@@ -41,6 +43,11 @@ public:
     auto username = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_USERNAME, "");
     if (!username.empty()) {
       m_username = username;
+    }
+
+    auto greet_on_entry = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_GREET, "");
+    if (!greet_on_entry.empty()) {
+      m_greet_on_entry = greet_on_entry.compare("true") == 0;
     }
 
     if (m_auth.token_app_path.empty() || m_auth.key.empty()) {
@@ -237,13 +244,19 @@ public:
     json chat_info = json::parse(r.text);
 
     if (!chat_info.is_null() && chat_info.is_object()) {
-      auto items = chat_info["items"];
+      auto      items = chat_info["items"];
 
-      if (!items.is_null() && items.is_array()) {
+
+      if (!items.is_null() && items.is_array() && !items.empty()) {
         for (const auto& item : items) {
           std::string text   = item["snippet"]["textMessageDetails"]["messageText"];
           std::string author = item["snippet"]["authorChannelId"];
           std::string time   = item["snippet"]["publishedAt"];
+
+          if (!IsNewer(time.c_str())) { // Ignore duplicates
+            continue;
+          }
+
           SanitizeJSON(text);
           SanitizeJSON(author);
           SanitizeJSON(time);
@@ -256,10 +269,23 @@ public:
             }
           );
         }
+
+        if (!m_chats.at(m_video_details.chat_id).empty()) {
+          struct tm t{};
+          strptime(m_chats.at(m_video_details.chat_id).back().timestamp.c_str(),
+          "%Y-%m-%d %H:%M:%S", &t);
+          m_last_fetch_timestamp = mktime(&t);
+        }
       }
     }
 
     return r.text;
+  }
+
+  bool IsNewer(const char* timestamp) {
+    struct tm t{};
+    strptime(timestamp, "%Y-%m-%d %H:%M:%S", &t);
+    return std::difftime(mktime(&t), m_last_fetch_timestamp) > 0;
   }
 
   /**
@@ -336,8 +362,10 @@ public:
   bool ParseTokens() {
     if (HasChats()) {
       for (auto&& chat : m_chats.at(m_video_details.chat_id)) {
+        if (chat.tokens.empty()) continue;
+
         std::string tokenized_text = TokenizeText(chat.text);
-        (void)(tokenized_text); // Parse tokens
+
         if (!tokenized_text.empty()) {
           chat.tokens = YouTubeDataAPI::SplitTokens(tokenized_text);
         }
@@ -361,7 +389,7 @@ public:
   }
 
   bool HasChats() {
-    return !m_chats.empty();
+    return !m_chats.empty() && !GetCurrentChat().empty();
   }
 
   /**
@@ -452,12 +480,18 @@ public:
     return true;
   }
 
+bool GreetOnEntry() {
+  return m_greet_on_entry;
+}
+
 private:
   AuthData     m_auth;
   VideoDetails m_video_details;
   LiveChatMap  m_chats;
   std::string  m_active_chat;
   std::string  m_username;
+  std::time_t  m_last_fetch_timestamp;
+  bool         m_greet_on_entry;
 };
 
 #endif // __YOUTUBE_DATA_API_HPP__

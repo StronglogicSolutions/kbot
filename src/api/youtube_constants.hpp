@@ -81,6 +81,7 @@ const std::string YOUTUBE_KEY{"key"};
 const std::string YOUTUBE_CONFIG_SECTION{"youtube"};
 const std::string YOUTUBE_TOKEN_APP{"token_app"};
 const std::string YOUTUBE_USERNAME{"chat_name"};
+const std::string YOUTUBE_GREET{"greet"};
 
 namespace invitations {
 std::string Greet(std::string name) {

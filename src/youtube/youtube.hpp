@@ -36,6 +36,11 @@ class YouTubeBot : public Bot, public Worker {
        api->FetchLiveDetails()
     ) {
       api->FetchChatMessages();
+
+      if (api->GreetOnEntry()) {
+        api->PostMessage("Hello");
+      }
+
       return true;
     }
     return false;
@@ -128,8 +133,7 @@ bool PostMessage(std::string message) {
 }
 
 private:
-std::unique_ptr<API> m_api;
-
+  std::unique_ptr<API> m_api;
 };
 
 #endif // __YOUTUBE_HPP__
