@@ -25,7 +25,9 @@ class YouTubeBot : public Bot, public Worker {
   */
   YouTubeBot()
   : Bot("YouTubeBot"),
-    m_has_promoted(false) {}
+    m_has_promoted(false),
+    m_is_own_livestream(false)
+  {}
 
   bool init() {
     m_api               = GetAPI(DEFAULT_API_NAME);
@@ -50,11 +52,16 @@ class YouTubeBot : public Bot, public Worker {
   std::vector<std::string> CreateReplyMessages(LiveMessages messages, bool bot_was_mentioned = false) {
     std::vector<std::string> reply_messages{};
     if (bot_was_mentioned) {
-      reply_messages.reserve(messages.size()); // Create responses to all who mentioned bot specifically
+      auto reply_number = (!m_has_promoted) ? messages.size() + 1 : messages.size();
+      reply_messages.reserve(reply_number); // Create responses to all who mentioned bot specifically
 
       for (const auto& message : messages) {
         if (!message.tokens.empty()) {
           for (const auto& token : message.tokens) {
+            // TODO: Track if we have already responded to the author:
+            // 1. For their location
+            // 2. To greet them
+            // 3. For a particular mention
             if (token.type == TokenType::location) {
               reply_messages.push_back(CreateLocationResponse(token.value));
             }
@@ -65,10 +72,14 @@ class YouTubeBot : public Bot, public Worker {
           }
         }
       }
+    } else {
+      reply_messages.reserve((!m_has_promoted) ? 2 : 1);
+      reply_messages.push_back("Hello from the KBot!");
     }
 
     if (!m_has_promoted) {
-      reply_messages.push_back(std::string{CreatePromoteResponse()});
+      std::string_view promote_string = CreatePromoteResponse();
+      reply_messages.push_back(std::string{promote_string.begin(), promote_string.end()});
       m_has_promoted = true;
     }
 
@@ -154,6 +165,7 @@ bool PostMessage(std::string message) {
 
 private:
   std::unique_ptr<API> m_api;
+  bool                 m_is_own_livestream;
   bool                 m_has_promoted;
 };
 

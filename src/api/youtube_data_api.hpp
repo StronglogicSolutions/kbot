@@ -27,7 +27,7 @@ const std::string CreatePersonResponse(std::string name) {
   };
 }
 
-constexpr std::string_view CreatePromoteResponse() {
+const std::string CreatePromoteResponse() {
   return constants::promotion::support;
 }
 

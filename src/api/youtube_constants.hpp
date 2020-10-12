@@ -92,7 +92,7 @@ const std::string OFFER_TO_INQUIRE{
 } // namespace invitations
 
 namespace promotion {
-constexpr std::string_view support{"Please click like and subscribe!"};
+const std::string support{"Please click like and subscribe!"};
 } // namespace promotion
 
 // const std::vector<std::string
