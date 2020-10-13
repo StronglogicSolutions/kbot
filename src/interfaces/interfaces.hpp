@@ -8,6 +8,9 @@
 class API {
  public:
   virtual std::string GetType() = 0;
+  virtual bool        TestMode() {
+    return true;
+  }
 };
 
 class Bot {
