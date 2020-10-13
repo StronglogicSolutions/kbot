@@ -68,6 +68,7 @@ const std::vector<std::string> PARAM_VALUES{
   // "UCm5J1Fu_dHgBcMTpXu-NXUw", // Pangburn
   // "UCLwNTXWEjVd2qIHLcXxQWxA", // Timecast IRL
   // "UC1XoiwW6b0VIYPOaP1KgV7A", // KStyleYo
+  // "UCfpnY5NnBl-8L7SvICuYkYQ"  // Scott Adams
 
   "live",
   "snippet",
@@ -83,6 +84,7 @@ const std::string YOUTUBE_CONFIG_SECTION{"youtube"};
 const std::string YOUTUBE_TOKEN_APP{"token_app"};
 const std::string YOUTUBE_USERNAME{"chat_name"};
 const std::string YOUTUBE_GREET{"greet"};
+const std::string YOUTUBE_TEST_MODE{"test_mode"};
 
 namespace invitations {
 const std::string OFFER_TO_INQUIRE{
@@ -93,6 +95,7 @@ const std::string OFFER_TO_INQUIRE{
 
 namespace promotion {
 const std::string support{"Please click like and subscribe!"};
+const std::string test_support{"I hope you are all having a good day."};
 } // namespace promotion
 
 // const std::vector<std::string
