@@ -58,16 +58,26 @@ class YouTubeBot : public Bot, public Worker {
       for (const auto& message : messages) {
         if (!message.tokens.empty()) {
           for (const auto& token : message.tokens) {
-            // TODO: Track if we have already responded to the author:
-            // 1. For their location
-            // 2. To greet them
-            // 3. For a particular mention
+            /**
+            ┌───────────────────────────────────────────────────────────┐
+            │░░░░░░░░░░░░░░░░░░░░░░TRACKING REPLIES░░░░░░░░░░░░░░░░░░░░░░│
+            │░░░░░░░░Track if we have already responded to the author:░░░░░│
+            │░░░░░░░░1. For their location                            ░░░░░│
+            │░░░░░░░░2. To greet them                                 ░░░░░│
+            │░░░░░░░░3. For a particular mention                      ░░░░░│
+            └───────────────────────────────────────────────────────────┘
+            */
+
             if (token.type == TokenType::location) {
               reply_messages.push_back(CreateLocationResponse(token.value));
             }
             else
             if (token.type == TokenType::person) {
               reply_messages.push_back(CreatePersonResponse(token.value));
+            }
+            else
+            if (token.type == TokenType::organization) {
+              reply_messages.push_back(CreateOrganizationResponse(token.value));
             }
           }
         }
@@ -78,8 +88,7 @@ class YouTubeBot : public Bot, public Worker {
     }
 
     if (!m_has_promoted) {
-      std::string_view promote_string = CreatePromoteResponse();
-      reply_messages.push_back(std::string{promote_string.begin(), promote_string.end()});
+      reply_messages.push_back(CreatePromoteResponse());
       m_has_promoted = true;
     }
 
@@ -110,6 +119,7 @@ class YouTubeBot : public Bot, public Worker {
         std::vector<std::string> reply_messages = CreateReplyMessages(messages, bot_was_mentioned);
 
         for (const auto& reply : reply_messages) {
+          log("Reply message:\n" + reply);
           api->PostMessage(reply);
         }
       }
