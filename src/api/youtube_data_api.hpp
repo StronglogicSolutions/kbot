@@ -27,8 +27,18 @@ const std::string CreatePersonResponse(std::string name) {
   };
 }
 
-const std::string CreatePromoteResponse() {
-  return constants::promotion::support;
+const std::string CreateOrganizationResponse(std::string name) {
+  return std::string{
+    "I will need to familiarize myself better with " + name
+  };
+}
+
+const std::string CreatePromoteResponse(bool test_mode = false) {
+  if (test_mode) {
+    return constants::promotion::support;
+  }
+
+  return constants::promotion::test_support;
 }
 
 class YouTubeDataAPI : public API {
@@ -39,7 +49,8 @@ public:
    * Reads configuration
    */
   YouTubeDataAPI ()
-  : m_greet_on_entry(false) {
+  : m_greet_on_entry(false),
+    m_test_mode(false) {
     INIReader reader{constants::DEFAULT_CONFIG_PATH};
 
     if (reader.ParseError() < 0) {
@@ -64,6 +75,11 @@ public:
     auto greet_on_entry = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_GREET, "");
     if (!greet_on_entry.empty()) {
       m_greet_on_entry = greet_on_entry.compare("true") == 0;
+    }
+
+    auto test_mode = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_TEST_MODE, "");
+    if (!test_mode.empty()) {
+      m_test_mode = test_mode.compare("true") == 0;
     }
 
     if (m_auth.token_app_path.empty() || m_auth.key.empty()) {
@@ -320,6 +336,10 @@ public:
     if (type.compare("PERSON") == 0) {
       return TokenType::person;
     }
+    else
+    if (type.compare("ORGANIZATION") == 0) {
+      return TokenType::organization;
+    }
     return TokenType::unknown;
   }
 
@@ -498,6 +518,10 @@ bool GreetOnEntry() {
   return m_greet_on_entry;
 }
 
+virtual bool TestMode() override {
+  return m_test_mode;
+}
+
 private:
   AuthData     m_auth;
   VideoDetails m_video_details;
@@ -506,6 +530,7 @@ private:
   std::string  m_username;
   std::time_t  m_last_fetch_timestamp;
   bool         m_greet_on_entry;
+  bool         m_test_mode;
 };
 
 #endif // __YOUTUBE_DATA_API_HPP__
