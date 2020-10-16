@@ -6,6 +6,9 @@
 #include <api/api.hpp>
 #include <api/youtube_data_api.hpp>
 #include <chrono>
+#include <ctime>
+#include <condition_variable>
+#include <mutex>
 
 const std::string DEFAULT_API_NAME{"YouTube Data API"};
 
@@ -26,7 +29,8 @@ class YouTubeBot : public Bot, public Worker {
   YouTubeBot()
   : Bot("YouTubeBot"),
     m_has_promoted(false),
-    m_is_own_livestream(false)
+    m_is_own_livestream(false),
+    m_time_value(clock())
   {}
 
   bool init() {
@@ -104,29 +108,34 @@ class YouTubeBot : public Bot, public Worker {
     YouTubeDataAPI* api = static_cast<YouTubeDataAPI*>(m_api.get());
 
     while (m_is_running) {
-      api->ParseTokens();
 
-      if (api->HasChats()) {
-        bool bot_was_mentioned = false;
-        LiveMessages messages = api->FindMentions();
+      if ((clock() - m_time_value) > 30000000) {
+        api->ParseTokens();
 
-        if (!messages.empty()) {
-          bot_was_mentioned = true;
-        } else {
-          messages = api->GetCurrentChat();
+        if (api->HasChats()) {
+          bool bot_was_mentioned = false;
+          LiveMessages messages = api->FindMentions();
+
+          if (!messages.empty()) {
+            bot_was_mentioned = true;
+          } else {
+            messages = api->GetCurrentChat();
+          }
+
+          std::vector<std::string> reply_messages = CreateReplyMessages(messages, bot_was_mentioned);
+
+          for (const auto& reply : reply_messages) {
+            log("Reply message:\n" + reply);
+            // api->PostMessage(reply);
+          }
         }
 
-        std::vector<std::string> reply_messages = CreateReplyMessages(messages, bot_was_mentioned);
+        api->FetchChatMessages();
 
-        for (const auto& reply : reply_messages) {
-          log("Reply message:\n" + reply);
-          api->PostMessage(reply);
-        }
+        m_time_value = clock();
       }
 
-      api->FetchChatMessages();
-      // TODO: Switch wait to condition variable
-      std::this_thread::sleep_for(std::chrono::milliseconds(300));
+      std::this_thread::sleep_for(std::chrono::milliseconds(10000));
     }
   }
 
@@ -174,9 +183,12 @@ bool PostMessage(std::string message) {
 }
 
 private:
-  std::unique_ptr<API> m_api;
-  bool                 m_is_own_livestream;
-  bool                 m_has_promoted;
+  std::unique_ptr<API>    m_api;
+  bool                    m_is_own_livestream;
+  bool                    m_has_promoted;
+  std::condition_variable m_work_thread_condition;
+  std::mutex              m_mutex;
+  clock_t                 m_time_value;
 };
 
 #endif // __YOUTUBE_HPP__

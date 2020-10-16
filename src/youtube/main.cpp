@@ -8,9 +8,12 @@ int main(int argc, char** argv) {
     bot.start();
   }
 
-  for (uint8_t i = 0; i < 5; i++) {
-    std::this_thread::sleep_for(std::chrono::seconds(30));
-  }
+  // for (uint8_t i = 0; i < 5; i++) {
+  //   std::this_thread::sleep_for(std::chrono::seconds(30));
+  // }
+
+  for (;;)
+    ;
 
   bot.stop();
 
