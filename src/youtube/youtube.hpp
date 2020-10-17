@@ -55,7 +55,7 @@ class YouTubeBot : public Bot, public Worker {
 
   std::vector<std::string> CreateReplyMessages(LiveMessages messages, bool bot_was_mentioned = false) {
     std::vector<std::string> reply_messages{};
-    if (bot_was_mentioned) {
+    // if (bot_was_mentioned) {
       auto reply_number = (!m_has_promoted) ? messages.size() + 1 : messages.size();
       reply_messages.reserve(reply_number); // Create responses to all who mentioned bot specifically
 
@@ -86,15 +86,15 @@ class YouTubeBot : public Bot, public Worker {
           }
         }
       }
-    } else {
-      reply_messages.reserve((!m_has_promoted) ? 2 : 1);
-      reply_messages.push_back("Hello from the KBot!");
-    }
+    // } else {
+    //   reply_messages.reserve((!m_has_promoted) ? 2 : 1);
+    //   reply_messages.push_back("Hello from the KBot!");
+    // }
 
-    if (!m_has_promoted) {
-      reply_messages.push_back(CreatePromoteResponse());
-      m_has_promoted = true;
-    }
+    // if (!m_has_promoted) {
+    //   reply_messages.push_back(CreatePromoteResponse());
+    //   m_has_promoted = true;
+    // }
 
     return reply_messages;
   }
@@ -109,7 +109,7 @@ class YouTubeBot : public Bot, public Worker {
 
     while (m_is_running) {
 
-      if ((clock() - m_time_value) > 30000000) {
+      // if ((clock() - m_time_value) > 30000000) {
         api->ParseTokens();
 
         if (api->HasChats()) {
@@ -120,20 +120,35 @@ class YouTubeBot : public Bot, public Worker {
             bot_was_mentioned = true;
           } else {
             messages = api->GetCurrentChat();
+            api->ClearChat();
           }
 
           std::vector<std::string> reply_messages = CreateReplyMessages(messages, bot_was_mentioned);
 
+          // int max                                              = 3;
+          std::vector<std::string>::reverse_iterator reply_ptr = reply_messages.rbegin();
+
+          log ("Reverse");
+
+          for (; reply_ptr != reply_messages.rend(); ) {
+            ++reply_ptr;
+            log("Reply message:\n" + *reply_ptr);
+            api->PostMessage(*reply_ptr);
+
+            // if (--max == 0) break;
+          }
+
+          log("Forward");
+
           for (const auto& reply : reply_messages) {
-            log("Reply message:\n" + reply);
-            // api->PostMessage(reply);
+            log(reply);
           }
         }
 
         api->FetchChatMessages();
 
-        m_time_value = clock();
-      }
+        // m_time_value = clock();
+      // }
 
       std::this_thread::sleep_for(std::chrono::milliseconds(10000));
     }

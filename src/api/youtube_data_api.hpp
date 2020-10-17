@@ -172,10 +172,6 @@ public:
       }
     );
 
-    std::cout << r.status_code << std::endl;
-    std::cout << r.header["content-type"] << std::endl;;
-    std::cout << r.text << std::endl;
-
     json video_info = json::parse(r.text);
 
     if (!video_info.is_null() && video_info.is_object()) {
@@ -227,10 +223,6 @@ public:
       }
     );
 
-    std::cout << r.status_code << std::endl;
-    std::cout << r.header["content-type"] << std::endl;;
-    std::cout << r.text << std::endl;
-
     json live_info = json::parse(r.text);
 
     if (!live_info.is_null() && live_info.is_object()) {
@@ -269,10 +261,6 @@ public:
       }
     );
 
-    std::cout << r.status_code << std::endl;
-    std::cout << r.header["content-type"] << std::endl;;
-    std::cout << r.text << std::endl;
-
     json chat_info = json::parse(r.text);
 
     if (!chat_info.is_null() && chat_info.is_object()) {
@@ -281,25 +269,32 @@ public:
 
       if (!items.is_null() && items.is_array() && !items.empty()) {
         for (const auto& item : items) {
-          std::string text   = item["snippet"]["textMessageDetails"]["messageText"];
-          std::string author = item["snippet"]["authorChannelId"];
-          std::string time   = item["snippet"]["publishedAt"];
 
-          if (!IsNewer(time.c_str())) { // Ignore duplicates
-            continue;
-          }
+          try {
+            std::string text   = item["snippet"]["textMessageDetails"]["messageText"];
+            std::string author = item["snippet"]["authorChannelId"];
+            std::string time   = item["snippet"]["publishedAt"];
 
-          SanitizeJSON(text);
-          SanitizeJSON(author);
-          SanitizeJSON(time);
-
-          m_chats.at(m_video_details.chat_id).push_back(
-            LiveMessage{
-              .timestamp = time,
-              .author    = author,
-              .text      = text
+            if (!IsNewer(time.c_str())) { // Ignore duplicates
+              continue;
             }
-          );
+
+            SanitizeJSON(text);
+            SanitizeJSON(author);
+            SanitizeJSON(time);
+
+            m_chats.at(m_video_details.chat_id).push_back(
+              LiveMessage{
+                .timestamp = time,
+                .author    = author,
+                .text      = text
+              }
+            );
+          } catch (const std::exception& e) {
+            std::string error_message{"Exception was caught: "};
+            error_message += e.what();
+            log(error_message);
+          }
         }
 
         if (!m_chats.at(m_video_details.chat_id).empty()) {
@@ -418,32 +413,81 @@ public:
     return m_chats;
   }
 
-  LiveMessages GetCurrentChat() {
+  /**
+   * GetCurrentChat
+   *
+   * @param   [in]  {bool}
+   * @returns [out] {LiveMessages}
+   */
+  LiveMessages GetCurrentChat(bool keep_messages = false) {
     return m_chats.at(m_video_details.chat_id);
   }
 
+  /**
+   * HasChats
+   *
+   * @returns [out] {bool}
+   */
   bool HasChats() {
     return !m_chats.empty() && !GetCurrentChat().empty();
   }
 
   /**
+   * InsertMessages
+   *
+   * @param   [in]  {std::string}
+   * @param   [in]  {LiveMessages}
+   * @returns [out] {bool}
+   */
+  bool InsertMessages(std::string id, LiveMessages&& messages) {
+    if (m_chats.find(id) != m_chats.end()) {
+      for (auto&& message : messages) m_chats.at(id).emplace_back(message);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * ClearChat
+   *
+   * @param   [in]  {std::string}
+   * @returns [out] {bool}
+   */
+  bool ClearChat(std::string id = "") {
+    id = (id.empty()) ? m_video_details.chat_id : id;
+
+    if (m_chats.find(id) != m_chats.end()) {
+      m_chats.at(id).clear();
+      return true;
+    }
+
+    return false;
+  }
+  /**
    * FindMentions
    *
    * @returns [out] {LiveMessages}
    */
-  LiveMessages FindMentions() {
+  LiveMessages FindMentions(bool keep_messages = false) {
     using ChatPair = std::map<std::string, LiveMessages>;
     const std::string bot_name{"@Emmanuel Buckshi"};
 
     LiveMessages matches{};
 
     for (const Chat& m : GetChats()) {
-      auto chat_name        = m.first;
-      LiveMessages messages = m.second;
+      std::string            chat_name = m.first;
+      LiveMessages           messages  = m.second;
+      LiveMessages::iterator it        = messages.begin();
 
-      for (const LiveMessage& message : messages) {
+      for (; it != messages.end(); ) {
+        LiveMessage message = *it;
+
         if (message.text.find(bot_name) != std::string::npos) {
           matches.push_back(message);
+
+          (keep_messages) ?
+            it++ :
+            it = messages.erase(it);
         }
       }
     }
@@ -477,6 +521,9 @@ public:
 
   /**
    * PostMessage
+   *
+   * @param
+   * @returns
    */
   bool PostMessage(std::string message) {
     using namespace constants;
@@ -514,18 +561,56 @@ public:
     return true;
   }
 
+/**
+ * GreetOnEntry
+ *
+ * @returns
+ */
 bool GreetOnEntry() {
   return m_greet_on_entry;
 }
 
+/**
+ * TestMode
+ *
+ * @returns [out] {bool}
+ */
 virtual bool TestMode() override {
   return m_test_mode;
+}
+
+/**
+ * RecordInteraction
+ *
+ * @param
+ * @param
+ */
+void RecordInteraction(std::string id, Interaction interaction) {
+  if (m_interactions.find(id) == m_interactions.end()) {
+    m_interactions.insert({id, UserInteraction{}});
+  }
+
+  UserInteraction& user_interaction = m_interactions.at(id);
+
+  if (interaction == Interaction::greeting) {
+    user_interaction.greeted = true;
+  }
+  else
+  if (interaction == Interaction::promotion) {
+    user_interaction.promoted = true;
+  }
+  else
+  if (interaction == Interaction::probing) {
+    user_interaction.probed = true;
+  }
+
 }
 
 private:
   AuthData     m_auth;
   VideoDetails m_video_details;
   LiveChatMap  m_chats;
+  ActivityMap  m_interactions;
   std::string  m_active_chat;
   std::string  m_username;
   std::time_t  m_last_fetch_timestamp;

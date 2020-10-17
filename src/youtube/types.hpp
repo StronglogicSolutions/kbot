@@ -42,8 +42,22 @@ struct LiveMessage {
   std::vector<Token> tokens;
 };
 
+struct UserInteraction {
+  std::string id;
+  bool        greeted;
+  bool        promoted;
+  bool        probed;
+};
+
+enum Interaction {
+  greeting  = 0x00,
+  promotion = 0x01,
+  probing   = 0x02
+};
+
 using LiveMessages = std::vector<LiveMessage>;
 using Chat         = std::pair<std::string, LiveMessages>;
 using LiveChatMap  = std::map<std::string, LiveMessages>;
+using ActivityMap  = std::map<std::string, UserInteraction>;
 
 #endif // __TYPES_HPP__
