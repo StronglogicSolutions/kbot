@@ -55,11 +55,13 @@ class YouTubeBot : public Bot, public Worker {
 
   std::vector<std::string> CreateReplyMessages(LiveMessages messages, bool bot_was_mentioned = false) {
     std::vector<std::string> reply_messages{};
+    YouTubeDataAPI* api = static_cast<YouTubeDataAPI*>(m_api.get());
     // if (bot_was_mentioned) {
       auto reply_number = (!m_has_promoted) ? messages.size() + 1 : messages.size();
       reply_messages.reserve(reply_number); // Create responses to all who mentioned bot specifically
 
       for (const auto& message : messages) {
+        auto user_id = message.author;
         if (!message.tokens.empty()) {
           for (const auto& token : message.tokens) {
             /**
@@ -72,16 +74,19 @@ class YouTubeBot : public Bot, public Worker {
             └───────────────────────────────────────────────────────────┘
             */
 
-            if (token.type == TokenType::location) {
+            if (token.type == TokenType::location && !api->HasInteracted(user_id, Interaction::location_ask)) {
               reply_messages.push_back(CreateLocationResponse(token.value));
+              api->RecordInteraction(message.author, Interaction::location_ask);
             }
             else
-            if (token.type == TokenType::person) {
+            if (token.type == TokenType::person && !api->HasInteracted(user_id, Interaction::greeting)) {
               reply_messages.push_back(CreatePersonResponse(token.value));
+              api->RecordInteraction(message.author, Interaction::greeting);
             }
             else
-            if (token.type == TokenType::organization) {
+            if (token.type == TokenType::organization && !api->HasInteracted(user_id, Interaction::probing)) {
               reply_messages.push_back(CreateOrganizationResponse(token.value));
+              api->RecordInteraction(message.author, Interaction::probing);
             }
           }
         }
@@ -108,47 +113,28 @@ class YouTubeBot : public Bot, public Worker {
     YouTubeDataAPI* api = static_cast<YouTubeDataAPI*>(m_api.get());
 
     while (m_is_running) {
+      api->ParseTokens();
 
-      // if ((clock() - m_time_value) > 30000000) {
-        api->ParseTokens();
+      if (api->HasChats()) {
+        bool bot_was_mentioned = false;
+        LiveMessages //messages = api->FindMentions();
 
-        if (api->HasChats()) {
-          bool bot_was_mentioned = false;
-          LiveMessages messages = api->FindMentions();
+        // if (!messages.empty()) {
+        //   bot_was_mentioned = true;
+        // } else {
+          messages = api->GetCurrentChat();
+          api->ClearChat();
+        // }
 
-          if (!messages.empty()) {
-            bot_was_mentioned = true;
-          } else {
-            messages = api->GetCurrentChat();
-            api->ClearChat();
-          }
+        std::vector<std::string> reply_messages = CreateReplyMessages(messages, bot_was_mentioned);
 
-          std::vector<std::string> reply_messages = CreateReplyMessages(messages, bot_was_mentioned);
-
-          // int max                                              = 3;
-          std::vector<std::string>::reverse_iterator reply_ptr = reply_messages.rbegin();
-
-          log ("Reverse");
-
-          for (; reply_ptr != reply_messages.rend(); ) {
-            ++reply_ptr;
-            log("Reply message:\n" + *reply_ptr);
-            api->PostMessage(*reply_ptr);
-
-            // if (--max == 0) break;
-          }
-
-          log("Forward");
-
-          for (const auto& reply : reply_messages) {
-            log(reply);
-          }
+        for (const auto& reply : reply_messages) {
+          log("Reply message:\n" + reply);
+          api->PostMessage(reply);
         }
+      }
 
-        api->FetchChatMessages();
-
-        // m_time_value = clock();
-      // }
+      api->FetchChatMessages();
 
       std::this_thread::sleep_for(std::chrono::milliseconds(10000));
     }

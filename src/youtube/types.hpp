@@ -47,12 +47,14 @@ struct UserInteraction {
   bool        greeted;
   bool        promoted;
   bool        probed;
+  bool        location;
 };
 
 enum Interaction {
-  greeting  = 0x00,
-  promotion = 0x01,
-  probing   = 0x02
+  greeting      = 0x00,
+  promotion     = 0x01,
+  probing       = 0x02,
+  location_ask  = 0x03
 };
 
 using LiveMessages = std::vector<LiveMessage>;

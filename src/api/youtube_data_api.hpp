@@ -4,6 +4,8 @@
 #include <iostream>
 #include <algorithm>
 #include <ctime>
+#include <iomanip>
+#include <sstream>
 
 #include <INIReader.h>
 
@@ -14,6 +16,15 @@
 #include "util/process.hpp"
 
 using json = nlohmann::json;
+
+const std::time_t to_unixtime(const char* datetime) {
+  std::tm            t{};
+  std::istringstream ss{datetime};
+
+  ss >> std::get_time(&t, "%Y-%m-%dT%H:%M:%S");
+
+  return mktime(&t);
+}
 
 const std::string CreateLocationResponse(std::string location) {
   return std::string{
@@ -275,6 +286,8 @@ public:
             std::string author = item["snippet"]["authorChannelId"];
             std::string time   = item["snippet"]["publishedAt"];
 
+            log("Found time of " + time);
+
             if (!IsNewer(time.c_str())) { // Ignore duplicates
               continue;
             }
@@ -298,10 +311,7 @@ public:
         }
 
         if (!m_chats.at(m_video_details.chat_id).empty()) {
-          struct tm t{};
-          strptime(m_chats.at(m_video_details.chat_id).back().timestamp.c_str(),
-          "%Y-%m-%d %H:%M:%S", &t);
-          m_last_fetch_timestamp = mktime(&t);
+          m_last_fetch_timestamp = to_unixtime(m_chats.at(m_video_details.chat_id).back().timestamp.c_str());
         }
       }
     }
@@ -309,10 +319,8 @@ public:
     return r.text;
   }
 
-  bool IsNewer(const char* timestamp) {
-    struct tm t{};
-    strptime(timestamp, "%Y-%m-%d %H:%M:%S", &t);
-    return std::difftime(mktime(&t), m_last_fetch_timestamp) > 0;
+  bool IsNewer(const char* datetime) {
+    return std::difftime(to_unixtime(datetime), m_last_fetch_timestamp) > 0;
   }
 
   /**
@@ -488,6 +496,8 @@ public:
           (keep_messages) ?
             it++ :
             it = messages.erase(it);
+        } else {
+          it++;
         }
       }
     }
@@ -587,7 +597,7 @@ virtual bool TestMode() override {
  */
 void RecordInteraction(std::string id, Interaction interaction) {
   if (m_interactions.find(id) == m_interactions.end()) {
-    m_interactions.insert({id, UserInteraction{}});
+    m_interactions.insert({id, UserInteraction{.id = id}});
   }
 
   UserInteraction& user_interaction = m_interactions.at(id);
@@ -603,7 +613,38 @@ void RecordInteraction(std::string id, Interaction interaction) {
   if (interaction == Interaction::probing) {
     user_interaction.probed = true;
   }
+  else
+  if (interaction == Interaction::location_ask) {
+    user_interaction.location = true;
+  }
+}
 
+bool HasInteracted(std::string id, Interaction interaction) {
+  if (m_interactions.find(id) == m_interactions.end()) {
+    return false;
+  }
+
+  UserInteraction& user_interaction = m_interactions.at(id);
+
+  bool has_interacted{false};
+
+  if (interaction == Interaction::greeting) {
+    has_interacted = user_interaction.greeted;
+  }
+  else
+  if (interaction == Interaction::promotion) {
+    has_interacted = user_interaction.promoted;
+  }
+  else
+  if (interaction == Interaction::probing) {
+    has_interacted = user_interaction.probed;
+  }
+  else
+  if (interaction == Interaction::location_ask) {
+    has_interacted = user_interaction.location;
+  }
+
+  return has_interacted;
 }
 
 private:
