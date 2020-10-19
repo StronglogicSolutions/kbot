@@ -4,7 +4,7 @@ all_tests = [
 
 executable("youtube_bot") {
   public_deps = [
-    "//src/youtube:youtube_bot_sources"
+    "//src/bot/youtube:youtube_bot_sources"
   ]
   include_dirs = [
     "//src",
@@ -19,7 +19,7 @@ executable("youtube_bot") {
   ]
 
   sources = [
-    "//src/youtube/main.cpp",
+    "//src/main.cpp",
   ]
 }
 

@@ -6,7 +6,7 @@
 
 #include "gtest/gtest.h"
 
-#include "youtube/youtube.hpp"
+#include "bot/youtube/youtube.hpp"
 
 
 class YouTubeBotTestFixture: public ::testing::Test {

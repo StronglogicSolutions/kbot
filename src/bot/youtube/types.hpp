@@ -7,7 +7,7 @@
 #include <nlohmann/json.hpp>
 #include <type_traits>
 
-#include "api/youtube_constants.hpp"
+#include "api/youtube/constants.hpp"
 
 struct AuthData {
   std::string access_token;
@@ -61,5 +61,8 @@ using LiveMessages = std::vector<LiveMessage>;
 using Chat         = std::pair<std::string, LiveMessages>;
 using LiveChatMap  = std::map<std::string, LiveMessages>;
 using ActivityMap  = std::map<std::string, UserInteraction>;
+using LocationMap  = std::map<std::string, bool>;
+using PersonMap    = LocationMap;
+using OrgMap       = LocationMap;
 
 #endif // __TYPES_HPP__

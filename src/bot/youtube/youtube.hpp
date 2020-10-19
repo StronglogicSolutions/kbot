@@ -4,7 +4,7 @@
 #include <iostream>
 #include <interfaces/interfaces.hpp>
 #include <api/api.hpp>
-#include <api/youtube_data_api.hpp>
+#include <api/youtube/api.hpp>
 #include <chrono>
 #include <ctime>
 #include <condition_variable>
@@ -76,17 +76,17 @@ class YouTubeBot : public Bot, public Worker {
 
             if (token.type == TokenType::location && !api->HasInteracted(user_id, Interaction::location_ask)) {
               reply_messages.push_back(CreateLocationResponse(token.value));
-              api->RecordInteraction(message.author, Interaction::location_ask);
+              api->RecordInteraction(message.author, Interaction::location_ask, token.value);
             }
             else
             if (token.type == TokenType::person && !api->HasInteracted(user_id, Interaction::greeting)) {
               reply_messages.push_back(CreatePersonResponse(token.value));
-              api->RecordInteraction(message.author, Interaction::greeting);
+              api->RecordInteraction(message.author, Interaction::greeting, token.value);
             }
             else
             if (token.type == TokenType::organization && !api->HasInteracted(user_id, Interaction::probing)) {
               reply_messages.push_back(CreateOrganizationResponse(token.value));
-              api->RecordInteraction(message.author, Interaction::probing);
+              api->RecordInteraction(message.author, Interaction::probing, token.value);
             }
           }
         }
@@ -112,6 +112,8 @@ class YouTubeBot : public Bot, public Worker {
   virtual void loop() override {
     YouTubeDataAPI* api = static_cast<YouTubeDataAPI*>(m_api.get());
 
+    uint8_t no_hits{0};
+
     while (m_is_running) {
       api->ParseTokens();
 
@@ -132,11 +134,19 @@ class YouTubeBot : public Bot, public Worker {
           log("Reply message:\n" + reply);
           api->PostMessage(reply);
         }
+      } else {
+        no_hits++;
       }
 
       api->FetchChatMessages();
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+      if (no_hits < 10) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+      } else {
+        // Not having much luck. Take a break.
+        no_hits = 0;
+        std::this_thread::sleep_for(std::chrono::seconds(360));
+      }
     }
   }
 

@@ -12,7 +12,7 @@
 #include "api/api.hpp"
 #include "util/util.hpp"
 #include "util/nlp.hpp"
-#include "youtube/types.hpp"
+#include "bot/youtube/types.hpp"
 #include "util/process.hpp"
 
 using json = nlohmann::json;
@@ -285,8 +285,6 @@ public:
             std::string text   = item["snippet"]["textMessageDetails"]["messageText"];
             std::string author = item["snippet"]["authorChannelId"];
             std::string time   = item["snippet"]["publishedAt"];
-
-            log("Found time of " + time);
 
             if (!IsNewer(time.c_str())) { // Ignore duplicates
               continue;
@@ -595,9 +593,21 @@ virtual bool TestMode() override {
  * @param
  * @param
  */
-void RecordInteraction(std::string id, Interaction interaction) {
+void RecordInteraction(std::string id, Interaction interaction, std::string value) {
   if (m_interactions.find(id) == m_interactions.end()) {
+    std::pair<std::string, bool> interaction_pair{value, true};
     m_interactions.insert({id, UserInteraction{.id = id}});
+    if (interaction == Interaction::greeting) {
+      m_persons.insert(interaction_pair);
+    }
+    else
+    if (interaction == Interaction::location_ask) {
+      m_locations.insert(interaction_pair);
+    }
+    else
+    if (interaction == Interaction::probing) {
+      m_orgs.insert(interaction_pair);
+    }
   }
 
   UserInteraction& user_interaction = m_interactions.at(id);
@@ -647,11 +657,34 @@ bool HasInteracted(std::string id, Interaction interaction) {
   return has_interacted;
 }
 
+bool HasDiscussed(std::string value, Interaction type) {
+  std::map<std::string, bool>::iterator it{};
+  if (type == Interaction::greeting) {
+    it = m_persons.find(value);
+  }
+  else
+  if (type == Interaction::promotion) {
+    // TODO: ?
+  }
+  else
+  if (type == Interaction::probing) {
+    it = m_orgs.find(value);
+  }
+  else
+  if (type == Interaction::location_ask) {
+    it = m_locations.find(value);
+  }
+  return (it->second == true);
+}
+
 private:
   AuthData     m_auth;
   VideoDetails m_video_details;
   LiveChatMap  m_chats;
   ActivityMap  m_interactions;
+  LocationMap  m_locations;
+  PersonMap    m_persons;
+  OrgMap       m_orgs;
   std::string  m_active_chat;
   std::string  m_username;
   std::time_t  m_last_fetch_timestamp;
