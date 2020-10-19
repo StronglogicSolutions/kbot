@@ -5,6 +5,7 @@
 #include <interfaces/interfaces.hpp>
 #include <api/api.hpp>
 #include <api/youtube/api.hpp>
+#include <api/korean/korean.hpp>
 #include <chrono>
 #include <ctime>
 #include <condition_variable>
@@ -119,20 +120,30 @@ class YouTubeBot : public Bot, public Worker {
 
       if (api->HasChats()) {
         bool bot_was_mentioned = false;
-        LiveMessages //messages = api->FindMentions();
+        LiveMessages messages = api->FindMentions();
 
-        // if (!messages.empty()) {
-        //   bot_was_mentioned = true;
-        // } else {
-          messages = api->GetCurrentChat();
-          api->ClearChat();
+        if (!messages.empty()) {
+          bot_was_mentioned = true;
+          log("Bot was mentioned");
+        }
+        // else { // We are doing this for now
+        messages = api->GetCurrentChat();
+        api->ClearChat();
         // }
+        auto k_api = GetAPI("Korean API");
+        KoreanAPI* korean_api = static_cast<KoreanAPI*>(k_api.get());
+        for (const auto& message : messages) {
+          if (korean_api->MentionsKorean(message.text)) {
+            log("Message from " + message.author + " mentions Korean:\n" + message.text);
+          }
+        }
 
         std::vector<std::string> reply_messages = CreateReplyMessages(messages, bot_was_mentioned);
-
+        int max = 5;
         for (const auto& reply : reply_messages) {
           log("Reply message:\n" + reply);
           api->PostMessage(reply);
+          if (--max == 0) break;
         }
       } else {
         no_hits++;
@@ -167,6 +178,10 @@ class YouTubeBot : public Bot, public Worker {
     else
     if (name.compare("YouTube Data API") == 0) {
       return std::make_unique<YouTubeDataAPI>();
+    }
+    else
+    if (name.compare("Korean API") == 0) {
+      return std::make_unique<KoreanAPI>();
     }
     return nullptr;
   }

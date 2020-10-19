@@ -282,7 +282,11 @@ public:
         for (const auto& item : items) {
 
           try {
-            std::string text   = item["snippet"]["textMessageDetails"]["messageText"];
+            auto details       = item.at("snippet").at("textMessageDetails");
+            std::string text   = (details.contains("messageText")) ?
+                                   details["messageText"] :
+                                   "";
+
             std::string author = item["snippet"]["authorChannelId"];
             std::string time   = item["snippet"]["publishedAt"];
 
@@ -562,11 +566,7 @@ public:
       cpr::Body{payload.dump()}
     );
 
-    std::cout << r.status_code << std::endl;
-    std::cout << r.header["content-type"] << std::endl;;
-    std::cout << r.text << std::endl;
-
-    return true;
+    return r.status_code < 400;
   }
 
 /**

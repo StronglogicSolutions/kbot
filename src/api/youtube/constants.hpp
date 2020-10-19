@@ -64,7 +64,7 @@ const std::vector<std::string> PARAM_NAMES = {
 };
 
 const std::vector<std::string> PARAM_VALUES{
-  "UCK0xH_L9OBM0CVwC438bMGA",  // StrongLogic Solutions
+  // "UCK0xH_L9OBM0CVwC438bMGA",  // StrongLogic Solutions
   // "UCm5J1Fu_dHgBcMTpXu-NXUw", // Pangburn
   // "UCLwNTXWEjVd2qIHLcXxQWxA", // Timecast IRL
   // "UC1XoiwW6b0VIYPOaP1KgV7A", // KStyleYo
@@ -72,6 +72,7 @@ const std::vector<std::string> PARAM_VALUES{
   // "UCQ7ZcQSfCiY0EJL8ZdbZ3Hw", // Samara games
   // "UCPfC_6VjklQDGuxgRt43m1w", // Fazmash
   // "UCPGuorlvarThSlwJpyTHOmQ", // Capcom fighting
+  "UCd534c_ehOvrLVL2v7Nl61w", // Muselk
 
   "live",
   "snippet",
