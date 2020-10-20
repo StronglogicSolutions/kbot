@@ -208,6 +208,10 @@ bool PostMessage(std::string message) {
   return static_cast<YouTubeDataAPI*>(m_api.get())->PostMessage(message);
 }
 
+std::string GetResults() {
+  return "Results";
+}
+
 private:
   std::unique_ptr<API>    m_api;
   bool                    m_is_own_livestream;
