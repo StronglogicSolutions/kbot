@@ -141,7 +141,6 @@ class YouTubeBot : public Bot, public Worker {
         std::vector<std::string> reply_messages = CreateReplyMessages(messages, bot_was_mentioned);
         int max = 5;
         for (const auto& reply : reply_messages) {
-          log("Reply message:\n" + reply);
           api->PostMessage(reply);
           if (--max == 0) break;
         }
@@ -151,7 +150,7 @@ class YouTubeBot : public Bot, public Worker {
 
       api->FetchChatMessages();
 
-      if (no_hits < 10) {
+      if (no_hits < 1000) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10000));
       } else {
         // Not having much luck. Take a break.
