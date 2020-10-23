@@ -27,7 +27,7 @@ std::string const ProcessMessage(std::string message) {
 }
 
 bool SendMessage(zmq::socket_t* socket, std::string message) {
-  log("Sending IPC message: " + message);
+  log("Sending IPC message: " + message + "\n");
   zmq::message_t ipc_msg{message.size()};
   memcpy(ipc_msg.data(), message.data(), message.size());
   zmq::send_result_t result = socket->send(std::move(ipc_msg), zmq::send_flags::none);
