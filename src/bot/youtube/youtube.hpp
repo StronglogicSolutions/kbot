@@ -38,7 +38,7 @@ public:
 
   bool init() {
     m_api               = GetAPI(DEFAULT_API_NAME);
-    YouTubeDataAPI *api = static_cast<YouTubeDataAPI *>(m_api.get());
+    YouTubeDataAPI* api = static_cast<YouTubeDataAPI*>(m_api.get());
 
     if (
       !api->FetchToken()      .empty() &&
@@ -63,10 +63,10 @@ public:
     auto reply_number = (!m_has_promoted) ? messages.size() + 1 : messages.size();
     reply_messages.reserve(reply_number); // Create responses to all who mentioned bot specifically
 
-    for (const auto &message : messages) {
+    for (const auto& message : messages) {
       auto user_id = message.author;
       if (!message.tokens.empty()) {
-        for (const auto &token : message.tokens) {
+        for (const auto& token : message.tokens) {
           /**
             ┌───────────────────────────────────────────────────────────┐
             │░░░░░░░░░░░░░░░░░░░░░░TRACKING REPLIES░░░░░░░░░░░░░░░░░░░░░░│
@@ -145,7 +145,7 @@ public:
         api->ClearChat();
         // }
         auto k_api = GetAPI("Korean API");
-        KoreanAPI *korean_api = static_cast<KoreanAPI *>(k_api.get());
+        KoreanAPI* korean_api = static_cast<KoreanAPI*>(k_api.get());
         for (const auto& message : messages) {
           if (korean_api->MentionsKorean(message.text)) {
             log("Message from " + message.author + " mentions Korean:\n" + message.text);

@@ -49,22 +49,13 @@ struct Message {
   Message*    next;
 };
 
-class MyPair : public std::pair<Context, Message*> {
-  typedef std::pair<Context, Message*> parent_type;
-  public:
-  using parent_type::parent_type;
-
-  MyPair() : parent_type{Context{"", "" }, nullptr} {}
-};
-
-
 using Map            = std::map<Context, Message*>;
 using MessageObjects = std::vector<Message>;
 
 class S {
 
 public:
-S() : m_m{{Context("Initial", "place"), nullptr}} {}
+S() {}
 void Insert(Message&& node, std::string name, std::string subject) {
   const Map::const_iterator it = m_m.find(Context{name, subject});
   // Insert new head
