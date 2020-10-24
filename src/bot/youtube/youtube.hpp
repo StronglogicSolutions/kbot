@@ -44,14 +44,13 @@ public:
     YouTubeDataAPI *api = static_cast<YouTubeDataAPI *>(m_api.get());
 
     if (
-        !api->FetchToken().empty() &&
-        !api->FetchLiveVideoID().empty() &&
-        api->FetchLiveDetails())
-    {
+      !api->FetchToken()      .empty() &&
+      !api->FetchLiveVideoID().empty() &&
+       api->FetchLiveDetails()
+    ) {
       api->FetchChatMessages();
 
-      if (api->GreetOnEntry())
-      {
+      if (api->GreetOnEntry()) {
         api->PostMessage("Hello");
       }
 
@@ -60,21 +59,17 @@ public:
     return false;
   }
 
-  std::vector<std::string> CreateReplyMessages(LiveMessages messages, bool bot_was_mentioned = false)
-  {
+  std::vector<std::string> CreateReplyMessages(LiveMessages messages, bool bot_was_mentioned = false) {
     std::vector<std::string> reply_messages{};
-    YouTubeDataAPI *api = static_cast<YouTubeDataAPI *>(m_api.get());
+    YouTubeDataAPI* api = static_cast<YouTubeDataAPI*>(m_api.get());
     // if (bot_was_mentioned) {
     auto reply_number = (!m_has_promoted) ? messages.size() + 1 : messages.size();
     reply_messages.reserve(reply_number); // Create responses to all who mentioned bot specifically
 
-    for (const auto &message : messages)
-    {
+    for (const auto &message : messages) {
       auto user_id = message.author;
-      if (!message.tokens.empty())
-      {
-        for (const auto &token : message.tokens)
-        {
+      if (!message.tokens.empty()) {
+        for (const auto &token : message.tokens) {
           /**
             ┌───────────────────────────────────────────────────────────┐
             │░░░░░░░░░░░░░░░░░░░░░░TRACKING REPLIES░░░░░░░░░░░░░░░░░░░░░░│
@@ -87,22 +82,21 @@ public:
 
           if (token.type == TokenType::location //&&
               //!api->HasInteracted(user_id, Interaction::location_ask)
-          )
-          {
+          ) {
             reply_messages.push_back(CreateLocationResponse(token.value));
             api->RecordInteraction(message.author, Interaction::location_ask, token.value);
           }
-          else if (token.type == TokenType::person //&&
+          else
+          if (token.type == TokenType::person //&&
                    //!api->HasInteracted(user_id, Interaction::greeting)
-          )
-          {
+          ) {
             reply_messages.push_back(CreatePersonResponse(token.value));
             api->RecordInteraction(message.author, Interaction::greeting, token.value);
           }
-          else if (token.type == TokenType::organization //&&
+          else
+          if (token.type == TokenType::organization //&&
                    //!api->HasInteracted(user_id, Interaction::probing)
-          )
-          {
+          ) {
             reply_messages.push_back(CreateOrganizationResponse(token.value));
             api->RecordInteraction(message.author, Interaction::probing, token.value);
           }
@@ -120,8 +114,7 @@ public:
     //   reply_messages.push_back("Hello from the KBot!");
     // }
 
-    if (!m_has_promoted)
-    {
+    if (!m_has_promoted) {
       reply_messages.push_back(CreatePromoteResponse());
       m_has_promoted = true;
     }
@@ -134,23 +127,19 @@ public:
    *
    * The loop method runs on its own thread
    */
-  virtual void loop() override
-  {
+  virtual void loop() override {
     YouTubeDataAPI *api = static_cast<YouTubeDataAPI *>(m_api.get());
 
     uint8_t no_hits{0};
 
-    while (m_is_running)
-    {
+    while (m_is_running) {
       api->ParseTokens();
 
-      if (api->HasChats())
-      {
+      if (api->HasChats()) {
         bool bot_was_mentioned = false;
         LiveMessages messages = api->FindMentions();
 
-        if (!messages.empty())
-        {
+        if (!messages.empty()) {
           bot_was_mentioned = true;
           log("Bot was mentioned");
         }
@@ -160,37 +149,31 @@ public:
         // }
         auto k_api = GetAPI("Korean API");
         KoreanAPI *korean_api = static_cast<KoreanAPI *>(k_api.get());
-        for (const auto &message : messages)
-        {
-          if (korean_api->MentionsKorean(message.text))
-          {
+        for (const auto &message : messages) {
+          if (korean_api->MentionsKorean(message.text)) {
             log("Message from " + message.author + " mentions Korean:\n" + message.text);
           }
         }
 
         std::vector<std::string> reply_messages = CreateReplyMessages(messages, bot_was_mentioned);
         int max = 5;
-        for (const auto &reply : reply_messages)
-        {
+        for (const auto &reply : reply_messages) {
           m_posted_messages.push_back(reply);
           api->PostMessage(reply);
           if (--max == 0)
             break;
         }
       }
-      else
-      {
+      else {
         no_hits++;
       }
 
       api->FetchChatMessages();
 
-      if (no_hits < 1000)
-      {
+      if (no_hits < 1000) {
         std::this_thread::sleep_for(std::chrono::milliseconds(30000));
       }
-      else
-      {
+      else {
         // Not having much luck. Take a break.
         no_hits = 0;
         std::this_thread::sleep_for(std::chrono::seconds(360));
@@ -204,60 +187,52 @@ public:
    * @param
    * @returns
    */
-  virtual std::unique_ptr<API> GetAPI(std::string name = "")
-  {
-    if (name.empty())
-    {
+  virtual std::unique_ptr<API> GetAPI(std::string name = "") {
+    if (name.empty()) {
       return std::make_unique<DefaultAPI>();
     }
-    else if (name.compare("Request API") == 0)
-    {
+    else
+    if (name.compare("Request API") == 0) {
       return std::make_unique<RequestAPI>();
     }
-    else if (name.compare("YouTube Data API") == 0)
-    {
+    else
+    if (name.compare("YouTube Data API") == 0) {
       return std::make_unique<YouTubeDataAPI>();
     }
-    else if (name.compare("Korean API") == 0)
-    {
+    else
+    if (name.compare("Korean API") == 0) {
       return std::make_unique<KoreanAPI>();
     }
     return nullptr;
   }
 
-  /**
+/**
  * GetChats
  *
  * @returns [out] {LiveChatMap}  A map of Live Chats indexed by chat id
  */
-  LiveChatMap GetChats()
-  {
-    if (m_api != nullptr)
-    {
+  LiveChatMap GetChats() {
+    if (m_api != nullptr) {
       return static_cast<YouTubeDataAPI *>(m_api.get())->GetChats();
     }
     return LiveChatMap{};
   }
 
-  /**
+/**
  * PostMessage
  *
  * @param   [in]  {std::string}
  * @returns [out] {bool}
  */
-  bool PostMessage(std::string message)
-  {
+  bool PostMessage(std::string message) {
     m_posted_messages.push_back(message);
     return static_cast<YouTubeDataAPI *>(m_api.get())->PostMessage(message);
   }
 
-  std::string GetResults()
-  {
-
+  std::string GetResults() {
     std::string result{};
 
-    for (const auto m : m_conversations.GetConversations())
-    {
+    for (const auto m : m_conversations.GetConversations()) {
       auto interlocutor = m.first.user;
       auto subject      = m.first.subject;
       auto message      = m.second->text;
