@@ -23,8 +23,7 @@ const std::string DEFAULT_API_NAME{"YouTube Data API"};
  * Specializes in using the Google YouTube Data API
  *
  */
-class YouTubeBot : public Bot, public Worker
-{
+class YouTubeBot : public Bot, public Worker {
 public:
   /**
   * @constructor
