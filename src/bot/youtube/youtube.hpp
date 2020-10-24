@@ -35,11 +35,9 @@ public:
         m_is_own_livestream(false),
         m_time_value(clock()),
         m_conversations(Conversation::S{})
-  {
-  }
+  {}
 
-  bool init()
-  {
+  bool init() {
     m_api = GetAPI(DEFAULT_API_NAME);
     YouTubeDataAPI *api = static_cast<YouTubeDataAPI *>(m_api.get());
 
@@ -128,7 +126,7 @@ public:
    * The loop method runs on its own thread
    */
   virtual void loop() override {
-    YouTubeDataAPI *api = static_cast<YouTubeDataAPI *>(m_api.get());
+    YouTubeDataAPI* api = static_cast<YouTubeDataAPI *>(m_api.get());
 
     uint8_t no_hits{0};
 
@@ -149,7 +147,7 @@ public:
         // }
         auto k_api = GetAPI("Korean API");
         KoreanAPI *korean_api = static_cast<KoreanAPI *>(k_api.get());
-        for (const auto &message : messages) {
+        for (const auto& message : messages) {
           if (korean_api->MentionsKorean(message.text)) {
             log("Message from " + message.author + " mentions Korean:\n" + message.text);
           }
@@ -157,7 +155,7 @@ public:
 
         std::vector<std::string> reply_messages = CreateReplyMessages(messages, bot_was_mentioned);
         int max = 5;
-        for (const auto &reply : reply_messages) {
+        for (const auto& reply : reply_messages) {
           m_posted_messages.push_back(reply);
           api->PostMessage(reply);
           if (--max == 0)
@@ -172,8 +170,7 @@ public:
 
       if (no_hits < 1000) {
         std::this_thread::sleep_for(std::chrono::milliseconds(30000));
-      }
-      else {
+      } else {
         // Not having much luck. Take a break.
         no_hits = 0;
         std::this_thread::sleep_for(std::chrono::seconds(360));
@@ -213,7 +210,7 @@ public:
  */
   LiveChatMap GetChats() {
     if (m_api != nullptr) {
-      return static_cast<YouTubeDataAPI *>(m_api.get())->GetChats();
+      return static_cast<YouTubeDataAPI*>(m_api.get())->GetChats();
     }
     return LiveChatMap{};
   }
@@ -226,7 +223,7 @@ public:
  */
   bool PostMessage(std::string message) {
     m_posted_messages.push_back(message);
-    return static_cast<YouTubeDataAPI *>(m_api.get())->PostMessage(message);
+    return static_cast<YouTubeDataAPI*>(m_api.get())->PostMessage(message);
   }
 
   std::string GetResults() {
@@ -246,14 +243,12 @@ public:
   }
 
 private:
-  std::unique_ptr<API> m_api;
-  bool m_is_own_livestream;
-  bool m_has_promoted;
-  std::condition_variable m_work_thread_condition;
-  std::mutex m_mutex;
-  clock_t m_time_value;
+  std::unique_ptr<API>     m_api;
+  bool                     m_is_own_livestream;
+  bool                     m_has_promoted;
+  clock_t                  m_time_value;
   std::vector<std::string> m_posted_messages;
-  Conversation::S m_conversations;
+  Conversation::S          m_conversations;
 };
 
 #endif // __YOUTUBE_HPP__
