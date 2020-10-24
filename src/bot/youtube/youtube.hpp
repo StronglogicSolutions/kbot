@@ -30,15 +30,15 @@ public:
   * @constructor
   */
   YouTubeBot()
-      : Bot("YouTubeBot"),
-        m_has_promoted(false),
-        m_is_own_livestream(false),
-        m_time_value(clock()),
-        m_conversations(Conversation::S{})
+  : Bot("YouTubeBot"),
+    m_has_promoted(false),
+    m_is_own_livestream(false),
+    m_time_value(clock()),
+    m_conversations(Conversation::S{})
   {}
 
   bool init() {
-    m_api = GetAPI(DEFAULT_API_NAME);
+    m_api               = GetAPI(DEFAULT_API_NAME);
     YouTubeDataAPI *api = static_cast<YouTubeDataAPI *>(m_api.get());
 
     if (
