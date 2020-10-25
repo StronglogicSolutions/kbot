@@ -61,7 +61,8 @@ public:
    */
   YouTubeDataAPI ()
   : m_greet_on_entry(false),
-    m_test_mode(false) {
+    m_test_mode(false),
+    m_retry_mode(false) {
     INIReader reader{constants::DEFAULT_CONFIG_PATH};
 
     if (reader.ParseError() < 0) {
@@ -91,6 +92,11 @@ public:
     auto test_mode = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_TEST_MODE, "");
     if (!test_mode.empty()) {
       m_test_mode = test_mode.compare("true") == 0;
+    }
+
+    auto retry_mode = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_RETRY_MODE, "");
+    if (!retry_mode.empty()) {
+      m_retry_mode = retry_mode.compare("true") == 0;
     }
 
     if (m_auth.token_app_path.empty() || m_auth.key.empty()) {
@@ -698,6 +704,7 @@ private:
   std::time_t  m_last_fetch_timestamp;
   bool         m_greet_on_entry;
   bool         m_test_mode;
+  bool         m_retry_mode;
 };
 
 #endif // __YOUTUBE_DATA_API_HPP__

@@ -99,8 +99,8 @@ public:
           }
 
           m_conversations.Insert(
-              Conversation::Message{
-                  .text = reply_messages.back(), .received = false},
+              std::move(Conversation::Message{
+                  .text = reply_messages.back(), .received = false}),
               message.author,
               token.value);
         }
@@ -157,6 +157,7 @@ public:
         for (const auto& reply : reply_messages) {
           m_posted_messages.push_back(reply);
           api->PostMessage(reply);
+          m_conversations.print();
           if (--max == 0)
             break;
         }
@@ -227,16 +228,19 @@ public:
 
   std::string GetResults() {
     std::string result{};
+    try {
+      for (const auto m : m_conversations.GetConversations()) {
+        auto interlocutor = m.first.user;
+        auto subject      = m.first.subject;
+        auto message      = m.second->text;
+        auto was_received = m.second->received;
 
-    for (const auto m : m_conversations.GetConversations()) {
-      auto interlocutor = m.first.user;
-      auto subject      = m.first.subject;
-      auto message      = m.second->text;
-      auto was_received = m.second->received;
-
-      result += "Interlocutor" + interlocutor +
-                "\nSubject " + subject +
-                "\nMessage: " + message + "\n";
+        result += "Interlocutor" + interlocutor +
+                  "\nSubject " + subject +
+                  "\nMessage: " + message + "\n";
+      }
+    } catch (const std::exception e) {
+      std::cout << "Exception caught: " << e.what() << std::endl;
     }
     return result;
   }

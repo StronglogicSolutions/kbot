@@ -4,7 +4,7 @@
 #include <string>
 #include <cstring>
 #include <sstream>
-#include <vector>
+#include <deque>
 #include <map>
 
 const std::string TOKENIZER_PATH{"third_party/MITIE/tools/ner_stream/ner_stream third_party/MITIE/MITIE-models/english/ner_model.dat > tokenized_message.txt > tokenized_message.txt"};
@@ -44,35 +44,38 @@ bool operator <(const Context &rhs) const {
 };
 
 struct Message {
-  std::string text;
-  bool        received;
-  Message*    next;
+  std::string       text;
+  bool              received;
+  const Message*    next;
 };
 
-using Map            = std::map<Context, Message*>;
-using MessageObjects = std::vector<Message>;
+using Map            = std::map<Context, const Message*>;
+using MessageObjects = std::deque<Message>;
 
 class S {
 
 public:
 S() {}
 void Insert(Message&& node, std::string name, std::string subject) {
+  m_v.emplace_back(std::move(node)); // Object lives in queue
+  Message* node_ref = &m_v.back();
   const Map::const_iterator it = m_m.find(Context{name, subject});
   // Insert new head
   if ( it == m_m.end()) {
-    m_m.insert({Context{name, subject}, &node});
+    node_ref->next = nullptr;
+    m_m.insert({Context{name, subject}, node_ref});
   } else {
-    Message* previous_head = it->second;
+    const Message* previous_head = &(*it->second);
+    node_ref->next               = previous_head;
 
-    node.next = previous_head;
-    m_m.at({name, subject}) = &node;
+    m_m.erase(it);
+    m_m.insert({{name, subject}, node_ref});
   }
-  m_v.emplace_back(std::move(node)); // Object lives in vector
 }
 
 void print() {
   for (const auto& c : m_m) {
-    Message* node = c.second;
+    const Message* node = c.second;
 
     std::cout << "Interlocutor: " << c.first.user << "\nSubject: " << c.first.subject << std::endl;
     while ( node != nullptr) {
@@ -87,13 +90,13 @@ Map GetConversations() {
   return m_m;
 }
 
-Message* GetConversation(std::string name, std::string subject) {
+const Message* GetConversation(std::string name, std::string subject) {
   return m_m.at(Context{name, subject});
 }
 
 private:
-  Map            m_m; // pointer map
-  MessageObjects m_v; // vector of objects
+  Map            m_m; // Pointer map
+  MessageObjects m_v; // Queue of objects
 };
 
 } // namespace Conversation
