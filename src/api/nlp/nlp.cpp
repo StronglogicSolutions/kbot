@@ -94,13 +94,16 @@ std::string TokenizeText(std::string s) {
  *
  */
 void NLP::Insert(Message&& node, std::string name, std::string subject) {
-  m_v.emplace_back(std::move(node)); // Object lives in queue
-  Message* node_ref = &m_v.back();
+  m_q.emplace_back(std::move(node)); // Object lives in queue
+  Message* node_ref = &m_q.back();
   const Map::const_iterator it = m_m.find(Context{name, subject});
   // Insert new head
   if ( it == m_m.end()) {
     node_ref->next = nullptr;
-    m_m.insert({Context{name, subject}, node_ref});
+    m_m.insert({
+      Context{name, subject},
+      node_ref
+    });
   } else {
     const Message* previous_head = &(*it->second);
     node_ref->next               = previous_head;
@@ -122,7 +125,7 @@ std::string NLP::toString() {
     node_string += "Interlocutor: " + c.first.user + "\nSubject: " + c.first.subject + "\n";
 
     while ( node != nullptr) {
-        node_string += node->text;
+        node_string += node->text + "\n";
         node = node->next;
     }
     node_string += "\n";

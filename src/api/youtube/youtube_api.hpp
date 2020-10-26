@@ -41,25 +41,22 @@ public:
   VideoDetails        GetLiveDetails();
   LiveChatMap         GetChats();
   LiveMessages        GetCurrentChat(bool keep_messages = false);
-
-  bool                InsertMessages(std::string id, LiveMessages&& messages);
-  bool                ClearChat(std::string id = "");
   LiveMessages        FindMentions(bool keep_messages = false);
+
   bool                FindChat();
-  bool                PostMessage(std::string message);
   bool                HasChats();
+  bool                ClearChat(std::string id = "");
+  bool                PostMessage(std::string message);
+  bool                ParseTokens();
+  bool                InsertMessages(std::string id, LiveMessages&& messages);
   bool                GreetOnEntry();
   bool                HasInteracted(std::string id, Interaction interaction);
   bool                HasDiscussed(std::string value, Interaction type);
-  bool                IsNewer(const char* datetime);
   void                RecordInteraction(std::string id, Interaction interaction, std::string value);
 
-  static TokenType    GetType(std::string type);
-  static Token        ParseToken(std::string s);
-  static std::vector<Token> SplitTokens(std::string s);
-  bool                ParseTokens();
-
 private:
+  bool                IsNewer(const char* datetime);
+
   AuthData     m_auth;
   VideoDetails m_video_details;
   LiveChatMap  m_chats;

@@ -29,7 +29,7 @@ class NLP {
 
  private:
   Map            m_m; // Pointer map
-  MessageObjects m_v; // Queue of objects
+  MessageObjects m_q; // Queue of objects
 };
 
 } // namespace Conversation
