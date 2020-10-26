@@ -4,6 +4,12 @@ config("inih") {
   ]
 }
 
+config("json") {
+  include_dirs = [
+    "//third_party/json/include",
+  ]
+}
+
 source_set("ini_reader") {
   sources = [
     "//third_party/inih/ini.c",
@@ -11,19 +17,42 @@ source_set("ini_reader") {
   ]
 }
 
-source_set("youtube_bot_sources") {
-
+source_set("youtube_api") {
   public_configs = [
-    ":inih"
-  ]
-
-  deps = [
-    ":ini_reader"
+    ":inih",
+    ":json"
   ]
 
   include_dirs = [
     "//src",
-    "//third_party/json/include",
+  ]
+
+  sources = [
+    "//src/api/youtube/youtube_api.cpp"
+  ]
+}
+
+source_set("nlp") {
+  sources = [
+    "//src/api/nlp/nlp.cpp"
+  ]
+}
+
+source_set("youtube_bot_sources") {
+
+  public_configs = [
+    ":inih",
+    ":json"
+  ]
+
+  deps = [
+    ":ini_reader",
+    ":youtube_api",
+    ":nlp"
+  ]
+
+  include_dirs = [
+    "//src",
     "//third_party/",
   ]
 
@@ -32,6 +61,10 @@ source_set("youtube_bot_sources") {
     "crypto",
     "cpr",
     "curl"
+  ]
+
+  sources = [
+    "youtube.cpp",
   ]
 }
 
