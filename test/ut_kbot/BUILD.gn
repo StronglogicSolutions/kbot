@@ -24,5 +24,6 @@ executable("ut_kbot") {
 
   sources = [
     "youtube_bot.test.cpp"
+    "youtube_chat.test.cpp"
   ]
 }

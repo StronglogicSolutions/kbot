@@ -53,6 +53,8 @@ public:
   bool                HasInteracted(std::string id, Interaction interaction);
   bool                HasDiscussed(std::string value, Interaction type);
   void                RecordInteraction(std::string id, Interaction interaction, std::string value);
+  void                SetChatMap(LiveChatMap chat_map) { m_chats = chat_map; }
+  void                SetVideoDetails(VideoDetails video_details) { m_video_details = video_details; }
 
 private:
   bool                IsNewer(const char* datetime);
