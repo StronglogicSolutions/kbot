@@ -24,12 +24,13 @@ class NLP {
   NLP() {}
   void           Insert(Message&& node, std::string name, std::string subject);
   Map            GetConversations() { return m_m; }
-  const Message* GetConversation(std::string name, std::string subject) { return m_m.at(Context{name, subject}); }
+  const Message* GetConversation(std::string name) { return m_m.at(name); }
   std::string    toString();
 
  private:
   Map            m_m; // Pointer map
   MessageObjects m_q; // Queue of objects
+  ContextObjects m_c; // Queue of objects
 };
 
 } // namespace Conversation

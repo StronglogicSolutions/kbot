@@ -3,35 +3,28 @@
 #include <cstdint>
 #include <stdio.h>
 
-std::string TEST_AUTHOR_1{"Jazilla"};
-std::string TEST_AUTHOR_2{"Jizzimiah"};
 
 /**
  * BotInstantiated
  */
 TEST_F(YouTubeChatTestFixture, CreateChatMap) {
-  youtube::VideoDetails video_details{
-    .id      = "Random ID",
-    .chat_id = TEST_AUTHOR_1
-  };
-
+  // Video details with Chat ID to associate messages
+  api.SetVideoDetails(TEST_VIDEO_DETAILS);
+  // Variables
   youtube::LiveMessages messages{};
-
+  youtube::LiveChatMap  chat_map{};
+  auto                  live_messages_1 = GetLiveMessageSet1();
+  // Capacity
   messages.reserve(15);
-
-  messages.emplace_back(
-    std::move(youtube::LiveMessage{
-      .timestamp = "2020-10-26T12:00:00",
-      .author = TEST_AUTHOR_1,
-      .text   = "Fantastic. Nice to meet you, @Emmanuel Buckshi!",
-      .tokens = std::vector<conversation::Token>{}
-    })
+  // Insert 5 messages
+  messages.insert(
+    messages.end(),
+    std::make_move_iterator(live_messages_1.begin()),
+    std::make_move_iterator(live_messages_1.end())
   );
-  youtube::LiveChatMap chat_map{};
+  // Add messages to map
+  chat_map.insert({TEST_CHAT_ID, messages});
 
-  chat_map.insert({TEST_AUTHOR_1, messages});
-
-  api.SetVideoDetails(video_details);
   api.SetChatMap(chat_map);
 
   api.ParseTokens();
@@ -49,12 +42,19 @@ TEST_F(YouTubeChatTestFixture, CreateChatMap) {
           std::cout << "Token being parsed: " << token.value << std::endl;
         }
       }
+      nlp.Insert(
+        conversation::Message{
+          .text = message.text,
+          .received = message.author == TEST_USERNAME,
+          .next = nullptr
+        },
+        message.author,
+        message.tokens.empty() ? "Unkown" : message.tokens.front().value
+      );
     }
   }
 
-  for (const auto& mention : mentions) {
-    std::cout << mention.author << " says: " << mention.text << std::endl;
-  }
+  std::cout << nlp.toString() << std::endl;
 
-  EXPECT_EQ(true, true);
+  EXPECT_FALSE(nlp.toString().empty());
 }

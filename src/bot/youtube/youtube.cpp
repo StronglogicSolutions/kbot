@@ -220,13 +220,13 @@ std::string YouTubeBot::GetResults() {
   std::string result{};
   try {
     for (const auto m : m_nlp.GetConversations()) {
-      auto interlocutor = m.first.user;
-      auto subject      = m.first.subject;
+      auto interlocutor = m.first;
+      auto subject      = m.second->context->toString();
       auto message      = m.second->text;
       auto was_received = m.second->received;
 
-      result += "Interlocutor" + interlocutor +
-                "\nSubject " + subject +
+      result += "Interlocutor: " + interlocutor +
+                "\nSubjects: " + subject +
                 "\nMessage: " + message + "\n";
     }
   } catch (const std::exception e) {

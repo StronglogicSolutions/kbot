@@ -96,20 +96,27 @@ std::string TokenizeText(std::string s) {
 void NLP::Insert(Message&& node, std::string name, std::string subject) {
   m_q.emplace_back(std::move(node)); // Object lives in queue
   Message* node_ref = &m_q.back();
-  const Map::const_iterator it = m_m.find(Context{name, subject});
+  const Map::const_iterator it = m_m.find(name);
   // Insert new head
   if ( it == m_m.end()) {
+    Context context{subject};
+    m_c.emplace_back(std::move(context));
+    Context* ctx_ref = &m_c.back();
+    node_ref->context = ctx_ref;
     node_ref->next = nullptr;
+
     m_m.insert({
-      Context{name, subject},
+      name,
       node_ref
     });
   } else {
     const Message* previous_head = &(*it->second);
     node_ref->next               = previous_head;
+    node_ref->context            = previous_head->context;
+    node_ref->context->Insert(subject);
 
     m_m.erase(it);
-    m_m.insert({{name, subject}, node_ref});
+    m_m.insert({name, node_ref});
   }
 }
 
@@ -122,7 +129,7 @@ std::string NLP::toString() {
   for (const auto& c : m_m) {
     const Message* node = c.second;
 
-    node_string += "Interlocutor: " + c.first.user + "\nSubject: " + c.first.subject + "\n";
+    node_string += "Interlocutor: " + c.first + "\nSubjects: " + c.second->context->toString() + "\n";
 
     while ( node != nullptr) {
         node_string += node->text + "\n";
