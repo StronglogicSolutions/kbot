@@ -56,12 +56,14 @@ public:
   void                SetChatMap(LiveChatMap chat_map) { m_chats = chat_map; }
   void                SetVideoDetails(VideoDetails video_details) { m_video_details = video_details; }
 
+protected:
+LiveChatMap  m_chats;
+
 private:
   bool                IsNewer(const char* datetime);
 
   AuthData     m_auth;
   VideoDetails m_video_details;
-  LiveChatMap  m_chats;
   ActivityMap  m_interactions;
   LocationMap  m_locations;
   PersonMap    m_persons;

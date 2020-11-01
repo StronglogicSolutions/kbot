@@ -44,8 +44,90 @@ bool operator <(const CompositeContext &rhs) const {
 }
 };
 
-struct Context {
-Context(std::string subject)
+enum QuestionType {
+  UNKNOWN = 0,
+  WHAT = 1,
+  WHERE = 2,
+  WHY = 3,
+  WHO = 4,
+  WHEN = 5,
+  HOW = 6,
+  CAN = 7,
+  COULD = 8,
+  IS = 9,
+  TRANSLATE = 10
+};
+
+namespace constants {
+const uint8_t QTYPE_Unknown_INDEX = 0;
+const uint8_t QTYPE_unknown_INDEX = 1;
+const uint8_t QTYPE_What_INDEX = 2;
+const uint8_t QTYPE_what_INDEX = 3;
+const uint8_t QTYPE_Where_INDEX = 4;
+const uint8_t QTYPE_where_INDEX = 5;
+const uint8_t QTYPE_Why_INDEX = 6;
+const uint8_t QTYPE_why_INDEX = 7;
+const uint8_t QTYPE_Who_INDEX = 8;
+const uint8_t QTYPE_who_INDEX = 9;
+const uint8_t QTYPE_When_INDEX = 10;
+const uint8_t QTYPE_when_INDEX = 11;
+const uint8_t QTYPE_How_INDEX = 12;
+const uint8_t QTYPE_how_INDEX = 13;
+const uint8_t QTYPE_Can_INDEX = 14;
+const uint8_t QTYPE_can_INDEX = 15;
+const uint8_t QTYPE_Could_INDEX = 16;
+const uint8_t QTYPE_could_INDEX = 17;
+const uint8_t QTYPE_Is_INDEX = 18;
+const uint8_t QTYPE_is_INDEX = 19;
+const uint8_t QTYPE_Translate_INDEX = 20;
+const uint8_t QTYPE_translate_INDEX = 21;
+
+const std::vector<const std::string> QTypeNames{
+  "Unknown",
+  "unknown",
+  "What",
+  "what",
+  "Where",
+  "where",
+  "Why",
+  "why",
+  "Who",
+  "who",
+  "When",
+  "when",
+  "How",
+  "how",
+  "Can",
+  "can",
+  "Could",
+  "could",
+  "Is",
+  "is",
+  "Translate",
+  "translate"
+};
+} // namespace constants
+
+struct ObjectiveContext {
+bool         is_continuing;
+bool         is_question;
+QuestionType question_type;
+
+std::string toString() {
+  if (is_question) {
+    auto q_index = (question_type == constants::QTYPE_Unknown_INDEX) ? 1 : (question_type * 2);
+    return "Is " + constants::QTypeNames.at(q_index) + " question";
+  }
+  if (is_continuing) {
+    return "Is a continuation";
+  }
+
+  return "Unknown";
+}
+};
+
+struct SubjectiveContext {
+SubjectiveContext(std::string subject)
 : idx{1} {
   subjects[0] = subject;
   subjects[1] = "";
@@ -55,7 +137,13 @@ Context(std::string subject)
 const std::string& operator[] (uint8_t i) const {
   if (i < 3)
     return subjects[i];
-  return "";
+  return subjects[0];
+}
+
+const std::string Current() const {
+  if (idx == 0)
+    return subjects[2];
+  return subjects[idx - 1];
 }
 
 void Insert(std::string s) {
@@ -83,15 +171,18 @@ uint8_t     idx;
 };
 
 struct Message {
-  const std::string text;
-  const bool        received;
-  const Message*    next;
-        Context*    context;
+  const std::string         text;
+  const bool                received;
+        Message*            next;
+        SubjectiveContext*  subjective;
+        ObjectiveContext*   objective;
 };
 
-using Map            = std::map<const std::string, const Message*>;
-using MessageObjects = std::deque<Message>;
-using ContextObjects = std::deque<Context>;
+using Map               = std::map<const std::string, Message*>;
+using MessageObjects    = std::deque<Message>;
+using SubjectContexts   = std::deque<SubjectiveContext>;
+using ObjectiveContexts = std::deque<ObjectiveContext>;
+using Tokens            = std::vector<Token>;
 
 } // namespace conversation
 

@@ -3,6 +3,51 @@
 #include <cstdint>
 #include <stdio.h>
 
+namespace request {
+void MakeRequest();
+} // namespace request
+
+namespace translation {
+std::string ExtractSubtext(std::string text) {
+ return "";
+}
+
+std::string TranslateText(std::string text) {
+  // TODO: Replace no-op
+  request::MakeRequest();
+  return text;
+}
+} // namespace translation
+
+std::string TranslateToKorean(std::string text) {
+  return translation::TranslateText(
+    translation::ExtractSubtext(
+      text
+    )
+  );
+}
+
+conversation::QuestionType DetectQuestionType(std::string) {
+
+}
+
+std::string CreateReply(std::string                      message,
+                        conversation::SubjectiveContext* sub_ctx,
+                        conversation::ObjectiveContext*  obj_ctx) {
+  std::string response_text{};
+  const auto  subject     = sub_ctx->Current();
+  bool        is_question = obj_ctx->is_question;
+  bool        is_continue = obj_ctx->is_continuing;
+
+  if (is_question) {
+    if (obj_ctx->question_type = conversation::QuestionType::TRANSLATE) {
+       response_text = TranslateToKorean(message);
+    }
+  }
+
+
+
+}
 
 /**
  * BotInstantiated
@@ -33,6 +78,8 @@ TEST_F(YouTubeChatTestFixture, CreateChatMap) {
 
   youtube::LiveChatMap parsed_chats = api.GetChats();
 
+  std::vector<std::string> reply_messages{};
+
   for (const auto& chat : parsed_chats) {
     auto messages = chat.second;
 
@@ -45,16 +92,69 @@ TEST_F(YouTubeChatTestFixture, CreateChatMap) {
       nlp.Insert(
         conversation::Message{
           .text = message.text,
-          .received = message.author == TEST_USERNAME,
+          .received = message.author != TEST_USERNAME,
           .next = nullptr
         },
         message.author,
-        message.tokens.empty() ? "Unkown" : message.tokens.front().value
+        message.tokens.empty() ? "Unknown" : message.tokens.front().value
       );
     }
   }
 
+  // Reply
+  for (const auto& conv : nlp.GetConversations()) {
+    std::string reply;
+    conversation::Message* node = conv.second;
+    do {
+      conversation::Message* node_next = node->next;
+      reply = CreateReply(node->text, node->subjective, node->objective);
+      if (node->received) {
+        nlp.Reply(node, reply, TEST_USERNAME);
+      }
+      node = node_next;
+    }
+    while (node != nullptr);
+  }
+
+
+
+
+
+
+
+
+
+  // std::cout << "Second set" << std::endl;
+
+  // youtube::LiveMessages second_message_sequence = GetLiveMessageSet2();
+
+  // api.InsertMessages(TEST_CHAT_ID, second_message_sequence);
+  // api.ParseTokens();
+
+  // mentions = api.FindMentions();
+
+  // parsed_chats = api.GetChats();
+
+  // for (const auto& chat : parsed_chats) {
+  //   auto messages = chat.second;
+
+  //   for (const auto& message : messages) {
+  //     if (!message.tokens.empty()) {
+  //       for (const auto& token : message.tokens) {
+  //         std::cout << "Token being parsed: " << token.value << std::endl;
+  //       }
+  //     }
+  //     nlp.Insert(
+  //       conversation::Message{
+  //         .text = message.text,
+  //         .received = message.author == TEST_USERNAME,
+  //         .next = nullptr
+  //       },
+  //       message.author,
+  //       message.tokens.empty() ? "Unknown" : message.tokens.front().value
+  //     );
+  //   }
+  // }
   std::cout << nlp.toString() << std::endl;
 
-  EXPECT_FALSE(nlp.toString().empty());
 }

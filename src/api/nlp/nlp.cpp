@@ -94,26 +94,26 @@ std::string TokenizeText(std::string s) {
  *
  */
 void NLP::Insert(Message&& node, std::string name, std::string subject) {
-  m_q.emplace_back(std::move(node)); // Object lives in queue
+  m_q.emplace_back(std::move(node));                         // Object lives in queue
   Message* node_ref = &m_q.back();
   const Map::const_iterator it = m_m.find(name);
-  // Insert new head
-  if ( it == m_m.end()) {
-    Context context{subject};
-    m_c.emplace_back(std::move(context));
-    Context* ctx_ref = &m_c.back();
-    node_ref->context = ctx_ref;
+
+  if ( it == m_m.end()) {                                    // New
+    m_s.emplace_back(std::move(SubjectiveContext{subject}));
+    SubjectiveContext* s_ctx_ref = &m_s.back();
+
+    node_ref->subjective = s_ctx_ref;
     node_ref->next = nullptr;
 
     m_m.insert({
       name,
       node_ref
     });
-  } else {
-    const Message* previous_head = &(*it->second);
+  } else {                                                    // Append
+    Message* previous_head       = &(*it->second);
     node_ref->next               = previous_head;
-    node_ref->context            = previous_head->context;
-    node_ref->context->Insert(subject);
+    node_ref->subjective         = previous_head->subjective;
+    node_ref->subjective->Insert(subject);
 
     m_m.erase(it);
     m_m.insert({name, node_ref});
@@ -121,7 +121,24 @@ void NLP::Insert(Message&& node, std::string name, std::string subject) {
 }
 
 /**
- *
+ * Reply
+ */
+void NLP::Reply(Message* node, std::string reply, std::string name) {
+  Message reply_node{
+    .text = reply,
+    .received = false,
+    .next = node->next,
+    .subjective = node->subjective
+  };
+
+  m_q.emplace_back(std::move(reply_node));
+  Message* reply_node_ref = &m_q.back();
+
+  node->next = reply_node_ref;
+}
+
+/**
+ * toString
  */
 std::string NLP::toString() {
   std::string node_string{};
@@ -129,13 +146,29 @@ std::string NLP::toString() {
   for (const auto& c : m_m) {
     const Message* node = c.second;
 
-    node_string += "Interlocutor: " + c.first + "\nSubjects: " + c.second->context->toString() + "\n";
+    node_string +=
+"┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐\n│                                                                                                                    │\n\
+│░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│\n\
+│░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░CONVERSATION░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│\n\
+│░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│\n│";
 
+    node_string += "\n│Interlocutor: " + c.first +
+                   "\n│Subjective: " + c.second->subjective->toString() +
+                   "\n│Objective: "  + c.second->objective->toString() +
+                   "\n│Nodes:\n";
+
+    uint8_t n_idx{1};
     while ( node != nullptr) {
+        node_string += "│ " + std::to_string(n_idx) + ": ";
+        for (int i = 0; i <= n_idx; i++)
+          node_string += "  ";
+        node_string += (n_idx > 1) ? "↳" : "";
         node_string += node->text + "\n";
         node = node->next;
+        n_idx++;
     }
-    node_string += "\n";
+    node_string +=
+"│                                                                                                                    │\n│                                                                                                                    │\n└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘\n\n";
   }
   return node_string;
 }

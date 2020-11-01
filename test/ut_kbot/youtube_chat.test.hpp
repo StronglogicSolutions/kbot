@@ -1,4 +1,4 @@
-#ifndef __YOUTUBE_CHAT_TEST_HPP__
+ #ifndef __YOUTUBE_CHAT_TEST_HPP__
 #define __YOUTUBE_CHAT_TEST_HPP__
 
 #include <string>
@@ -19,10 +19,20 @@ const youtube::VideoDetails TEST_VIDEO_DETAILS{
   .chat_id = TEST_CHAT_ID
 };
 
+class MockYouTubeDataAPI : public youtube::YouTubeDataAPI {
+public:
+
+void InsertMessages(std::string key, youtube::LiveMessages messages) {
+  for (const auto& message : messages) {
+    m_chats.at(key).push_back(message);
+  }
+}
+};
+
 
 class YouTubeChatTestFixture: public ::testing::Test {
  protected:
-  youtube::YouTubeDataAPI api;
+  MockYouTubeDataAPI      api;
   conversation::NLP       nlp;
 
   void SetUp() override {
@@ -33,7 +43,7 @@ class YouTubeChatTestFixture: public ::testing::Test {
 
   }
 
-  std::vector<youtube::LiveMessage> GetLiveMessageSet1() {
+  std::vector<youtube::LiveMessage> GetLiveMessageSet1() { // 7
     return std::vector<youtube::LiveMessage>{
       youtube::LiveMessage{
         .timestamp = "2020-10-26T12:00:00",
@@ -76,49 +86,48 @@ class YouTubeChatTestFixture: public ::testing::Test {
         .author = TEST_AUTHOR_1,
         .text   = "I wish I could live in India",
         .tokens = std::vector<conversation::Token>{}
+      }    };
+  }
+
+  std::vector<youtube::LiveMessage> GetLiveMessageSet2() { // 5
+    return std::vector<youtube::LiveMessage>{
+      youtube::LiveMessage{
+        .timestamp = "2020-10-26T12:01:00",
+        .author = TEST_AUTHOR_1,
+        .text   = "@Emmanuel Buckshi: really?",
+        .tokens = std::vector<conversation::Token>{}
+      },
+      youtube::LiveMessage{
+        .timestamp = "2020-10-26T12:01:01",
+        .author = TEST_AUTHOR_1,
+        .text   = "@Emmanuel Buckshi: does Stronglogic have representation in India?",
+        .tokens = std::vector<conversation::Token>{}
+      },
+      youtube::LiveMessage{
+        .timestamp = "2020-10-26T12:01:02",
+        .author = TEST_AUTHOR_2,
+        .text   = "@Emmanuel Buckshi: people only ever know about Transylvania",
+        .tokens = std::vector<conversation::Token>{}
+      },
+      youtube::LiveMessage{
+        .timestamp = "2020-10-26T12:01:03",
+        .author = TEST_AUTHOR_2,
+        .text   = "@Emmanuel Buckshi: have you ever been to Europe?",
+        .tokens = std::vector<conversation::Token>{}
+      },
+      youtube::LiveMessage{
+        .timestamp = "2020-10-26T12:01:04",
+        .author = TEST_AUTHOR_3,
+        .text   = "@Emmanuel Buckshi: What's wrong with the World Health Organization?",
+        .tokens = std::vector<conversation::Token>{}
       }
     };
   }
 
-  // std::vector<youtube::LiveMessage> GetLiveMessageSet2() {
-  //   return std::vector<youtube::LiveMessage>{
-  //     youtube::LiveMessage{
-  //       .timestamp = "2020-10-26T12:00:00",
-  //       .author = TEST_AUTHOR_1,
-  //       .text   = "Fantastic. Nice to meet you, @Emmanuel Buckshi!",
-  //       .tokens = std::vector<conversation::Token>{}
-  //     },
-  //     youtube::LiveMessage{
-  //       .timestamp = "2020-10-26T12:00:00",
-  //       .author = TEST_AUTHOR_1,
-  //       .text   = "Fantastic. Nice to meet you, @Emmanuel Buckshi!",
-  //       .tokens = std::vector<conversation::Token>{}
-  //     },
-  //     youtube::LiveMessage{
-  //       .timestamp = "2020-10-26T12:00:00",
-  //       .author = TEST_AUTHOR_1,
-  //       .text   = "Fantastic. Nice to meet you, @Emmanuel Buckshi!",
-  //       .tokens = std::vector<conversation::Token>{}
-  //     },
-  //     youtube::LiveMessage{
-  //       .timestamp = "2020-10-26T12:00:00",
-  //       .author = TEST_AUTHOR_1,
-  //       .text   = "Fantastic. Nice to meet you, @Emmanuel Buckshi!",
-  //       .tokens = std::vector<conversation::Token>{}
-  //     },
-  //     youtube::LiveMessage{
-  //       .timestamp = "2020-10-26T12:00:00",
-  //       .author = TEST_AUTHOR_1,
-  //       .text   = "Fantastic. Nice to meet you, @Emmanuel Buckshi!",
-  //       .tokens = std::vector<conversation::Token>{}
-  //     }
-  //   };
-  // }
-
 
  public:
   YouTubeChatTestFixture()
-  : api(youtube::YouTubeDataAPI{}) {}
+  : api(MockYouTubeDataAPI{}) {}
 };
 
 #endif // __YOUTUBE_CHAT_TEST_HPP__
