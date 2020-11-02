@@ -56,7 +56,7 @@ TEST_F(YouTubeBotTestFixture, DISABLED_YouTubeDataAPI) {
   EXPECT_EQ(auth_json["expiry_date"].dump(),  auth_data.expiry_date);
 }
 
-TEST_F(YouTubeBotTestFixture, LiveStreamFetchMessages) {
+TEST_F(YouTubeBotTestFixture, DISABLED_LiveStreamFetchMessages) {
   using namespace youtube;
 
   std::unique_ptr<API> youtube_api = bot.GetAPI("YouTube Data API");
@@ -72,7 +72,7 @@ TEST_F(YouTubeBotTestFixture, LiveStreamFetchMessages) {
 /**
  * PostMessage
  */
-TEST_F(YouTubeBotTestFixture, PostMessage) {
+TEST_F(YouTubeBotTestFixture, DISABLED_PostMessage) {
   using namespace youtube;
   std::unique_ptr<API> api    = bot.GetAPI("YouTube Data API");
   YouTubeDataAPI* youtube_api = static_cast<YouTubeDataAPI*>(api.get());
@@ -89,7 +89,7 @@ TEST_F(YouTubeBotTestFixture, PostMessage) {
 /**
  * Loop
  */
-TEST_F(YouTubeBotTestFixture, Loop) {
+TEST_F(YouTubeBotTestFixture, DISABLED_Loop) {
   using namespace youtube;
   size_t        count{};
   std::string   chat_id{};

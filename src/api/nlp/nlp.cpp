@@ -103,6 +103,25 @@ QuestionType DetectQuestionType(std::string s) {
   return conversation::QuestionType::UNKNOWN;
 }
 
+/**
+ * IsQuestion
+ */
+bool IsQuestion(std::string s) {
+  std::size_t it = s.find("?");
+
+  return it != std::string::npos && it != 0;
+}
+
+bool IsContinuing(Message* node) {
+  while (node->next != nullptr) {
+    if (node->next->received == false) {
+      return true;
+    }
+    node = node->next;
+  }
+  return false;
+}
+
 
 /**
  *
@@ -188,5 +207,22 @@ std::string NLP::toString() {
 "│                                                                                                                    │\n│                                                                                                                    │\n└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘\n\n";
   }
   return node_string;
+}
+
+bool NLP::SetContext(Message* node) {
+  ObjectiveContext o_ctx{};
+  try {
+    o_ctx.is_question   = IsQuestion(node->text);
+    o_ctx.is_continuing = IsContinuing(node);
+    if (o_ctx.is_question) {
+      o_ctx.question_type = DetectQuestionType(node->text);
+    }
+    m_o.emplace_back(std::move(o_ctx));
+    node->objective = &m_o.back();
+  } catch (const std::exception& e) {
+    std::cout << "Exception caught: " << e.what() << std::endl;
+    return false;
+  }
+  return true;
 }
 } // namespace conversation

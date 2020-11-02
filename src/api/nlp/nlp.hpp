@@ -19,12 +19,14 @@ const  std::string        get_executable_cwd();
        Token              ParseToken(std::string s);
        TokenType          GetType(std::string type);
        QuestionType       DetectQuestionType(std::string s);
+       bool               IsQuestion(std::string s);
 
 class NLP {
  public:
   NLP() {}
   void           Insert(Message&& node, std::string name, std::string subject);
   void           Reply(Message* node, std::string reply, std::string name);
+  bool           SetContext(Message* node);
   Map            GetConversations() { return m_m; }
   const Message* GetConversation(std::string name) { return m_m.at(name); }
 
