@@ -221,7 +221,7 @@ std::string YouTubeBot::GetResults() {
   try {
     for (const auto m : m_nlp.GetConversations()) {
       auto interlocutor = m.first;
-      auto subject      = m.second->context->toString();
+      auto subject      = m.second->subjective->toString();
       auto message      = m.second->text;
       auto was_received = m.second->received;
 

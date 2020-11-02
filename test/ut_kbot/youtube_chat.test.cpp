@@ -4,7 +4,7 @@
 #include <stdio.h>
 
 namespace request {
-void MakeRequest();
+void MakeRequest() {}
 } // namespace request
 
 namespace translation {
@@ -27,8 +27,14 @@ std::string TranslateToKorean(std::string text) {
   );
 }
 
-conversation::QuestionType DetectQuestionType(std::string) {
-
+conversation::QuestionType DetectQuestionType(std::string s) {
+  uint8_t num = conversation::QTypeNames.size();
+  for (uint8_t i = 2; i < num; i++) {
+    if (s.find(conversation::QTypeNames.at(i)) != std::string::npos) {
+      return static_cast<conversation::QuestionType>((i / 2));
+    }
+  }
+  return conversation::QuestionType::UNKNOWN;
 }
 
 std::string CreateReply(std::string                      message,
@@ -44,10 +50,37 @@ std::string CreateReply(std::string                      message,
        response_text = TranslateToKorean(message);
     }
   }
-
-
-
+  return response_text;
 }
+
+TEST(YouTubeTranslateTest, DetectQuestionType) {
+  std::string question_text{"Hey where are you?"};
+
+  auto question_type = DetectQuestionType(question_text);
+
+  EXPECT_EQ(question_type, conversation::QuestionType::WHERE);
+}
+
+// TEST_F(YouTubeChatTestFixture, TranslateTest) {
+//   json payload{};
+//     payload["text"] = "I wish I could speak Korean";
+//     payload["source"] = "en";
+//     payload["target"] = "ko";
+
+//     cpr::Response r = cpr::Post(
+//       cpr::Url{"https://openapi.naver.com/v1/papago/n2mt"},
+//       cpr::Header{
+//         {"X-Naver-Client-Id", ""},
+//         {"X-Naver-Client-Secret",   ""},
+//         {"Content-Type", "application/x-www-form-urlencoded; charset=UTF-8"}
+//       },
+//       cpr::Body{payload.dump()}
+//     );
+//     auto status_code = r.status_code;
+//     auto response_text = r.text;
+
+//     EXPECT_TRUE(r.status_code < 400);
+// }
 
 /**
  * BotInstantiated

@@ -33,7 +33,7 @@ class NLP {
   Map                m_m; // Pointer map
   MessageObjects     m_q; // Queue of objects
   ObjectiveContexts  m_o; // Queue of objects
-  SubjectiveContexts m_s; // Queue of objects
+  SubjectContexts    m_s; // Queue of objects
 };
 
 } // namespace Conversation

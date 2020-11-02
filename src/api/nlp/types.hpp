@@ -58,7 +58,7 @@ enum QuestionType {
   TRANSLATE = 10
 };
 
-namespace constants {
+// namespace constants {
 const uint8_t QTYPE_Unknown_INDEX = 0;
 const uint8_t QTYPE_unknown_INDEX = 1;
 const uint8_t QTYPE_What_INDEX = 2;
@@ -82,7 +82,7 @@ const uint8_t QTYPE_is_INDEX = 19;
 const uint8_t QTYPE_Translate_INDEX = 20;
 const uint8_t QTYPE_translate_INDEX = 21;
 
-const std::vector<const std::string> QTypeNames{
+const std::vector<std::string> QTypeNames{
   "Unknown",
   "unknown",
   "What",
@@ -106,7 +106,7 @@ const std::vector<const std::string> QTypeNames{
   "Translate",
   "translate"
 };
-} // namespace constants
+// } // namespace constants
 
 struct ObjectiveContext {
 bool         is_continuing;
@@ -115,8 +115,8 @@ QuestionType question_type;
 
 std::string toString() {
   if (is_question) {
-    auto q_index = (question_type == constants::QTYPE_Unknown_INDEX) ? 1 : (question_type * 2);
-    return "Is " + constants::QTypeNames.at(q_index) + " question";
+    auto q_index = (question_type == QTYPE_Unknown_INDEX) ? 1 : (question_type * 2);
+    return "Is " + QTypeNames.at(q_index) + " question";
   }
   if (is_continuing) {
     return "Is a continuation";
