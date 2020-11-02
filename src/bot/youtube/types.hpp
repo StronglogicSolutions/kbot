@@ -6,9 +6,11 @@
 #include <string>
 #include <nlohmann/json.hpp>
 #include <type_traits>
-
+#include "api/nlp/types.hpp"
 #include "api/youtube/constants.hpp"
 
+namespace youtube {
+using namespace conversation;
 struct AuthData {
   std::string access_token;
   std::string scope;
@@ -21,18 +23,6 @@ struct AuthData {
 struct VideoDetails {
   std::string id;
   std::string chat_id;
-};
-
-enum TokenType {
-  location       = 0x00,
-  person         = 0x01,
-  organization   = 0x02,
-  unknown        = 0xFF
-};
-
-struct Token {
-  TokenType   type;
-  std::string value;
 };
 
 struct LiveMessage {
@@ -64,5 +54,6 @@ using ActivityMap  = std::map<std::string, UserInteraction>;
 using LocationMap  = std::map<std::string, bool>;
 using PersonMap    = LocationMap;
 using OrgMap       = LocationMap;
+}
 
 #endif // __TYPES_HPP__

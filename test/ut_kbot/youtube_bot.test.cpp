@@ -7,7 +7,7 @@
  * BotInstantiated
  */
 TEST_F(YouTubeBotTestFixture, BotInstantiated) {
-  ASSERT_NO_THROW(YouTubeBot{});
+  ASSERT_NO_THROW(youtube::YouTubeBot{});
 }
 
 /**
@@ -36,7 +36,7 @@ TEST_F(YouTubeBotTestFixture, GetAPIReturnsDefaultApi) {
 }
 
 TEST(YouTubeBotTest, RequestAPIPerformsGet) {
-  YouTubeBot           bot{};
+  youtube::YouTubeBot  bot{};
   std::unique_ptr<API> request_api = bot.GetAPI("Request API");
   std::string          result = static_cast<RequestAPI*>(request_api.get())->Get();
 
@@ -44,6 +44,7 @@ TEST(YouTubeBotTest, RequestAPIPerformsGet) {
 }
 
 TEST_F(YouTubeBotTestFixture, DISABLED_YouTubeDataAPI) {
+  using namespace youtube;
   std::unique_ptr<API> youtube_api = bot.GetAPI("YouTube Data API");
 
   json     auth_json = json::parse(static_cast<YouTubeDataAPI*>(youtube_api.get())->FetchToken());
@@ -56,6 +57,8 @@ TEST_F(YouTubeBotTestFixture, DISABLED_YouTubeDataAPI) {
 }
 
 TEST_F(YouTubeBotTestFixture, LiveStreamFetchMessages) {
+  using namespace youtube;
+
   std::unique_ptr<API> youtube_api = bot.GetAPI("YouTube Data API");
 
   std::string token_info = static_cast<YouTubeDataAPI*>(youtube_api.get())->FetchToken();
@@ -70,6 +73,7 @@ TEST_F(YouTubeBotTestFixture, LiveStreamFetchMessages) {
  * PostMessage
  */
 TEST_F(YouTubeBotTestFixture, PostMessage) {
+  using namespace youtube;
   std::unique_ptr<API> api    = bot.GetAPI("YouTube Data API");
   YouTubeDataAPI* youtube_api = static_cast<YouTubeDataAPI*>(api.get());
 
@@ -86,6 +90,7 @@ TEST_F(YouTubeBotTestFixture, PostMessage) {
  * Loop
  */
 TEST_F(YouTubeBotTestFixture, Loop) {
+  using namespace youtube;
   size_t        count{};
   std::string   chat_id{};
   LiveMessages  messages{};
@@ -121,12 +126,13 @@ TEST_F(YouTubeBotTestFixture, Loop) {
  * ParsingStringFindsTokens
  */
 TEST(YouTubeAPITest, ParsingStringFindsTokens) {
+  using namespace youtube;
   std::string     s{"This is a string with tokens in it, created by [PERSON Emmanuel] while living in [LOCATION Canada]"};
   YouTubeBot      bot{};
   auto            api         = bot.GetAPI("YouTubeDataAPI");
   YouTubeDataAPI* youtube_api = static_cast<YouTubeDataAPI*>(api.get());
 
-  std::vector<Token> tokens = youtube_api->SplitTokens(s);
+  std::vector<Token> tokens = SplitTokens(s);
 
   for (const auto& token : tokens) {
     std::cout << "Token type: "    << token.type

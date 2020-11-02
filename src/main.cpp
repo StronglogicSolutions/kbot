@@ -39,6 +39,8 @@ bool IsDataRequest(std::string s) {
   return s.compare(DATA_REQUEST) == 0;
 }
 
+using namespace youtube;
+
 int main(int argc, char** argv) {
   zmq::context_t context   {1};
   zmq::socket_t  socket    {context, ZMQ_REP};
