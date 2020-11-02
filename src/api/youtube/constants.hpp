@@ -90,6 +90,7 @@ const std::string YOUTUBE_TOKEN_APP{"token_app"};
 const std::string YOUTUBE_USERNAME{"chat_name"};
 const std::string YOUTUBE_GREET{"greet"};
 const std::string YOUTUBE_TEST_MODE{"test_mode"};
+const std::string YOUTUBE_RETRY_MODE{"retry"};
 
 namespace invitations {
 const std::string OFFER_TO_INQUIRE{

@@ -1,31 +1,7 @@
-#ifndef __YOUTUBE_DATA_API_HPP__
-#define __YOUTUBE_DATA_API_HPP__
+#include "youtube_api.hpp"
 
-#include <iostream>
-#include <algorithm>
-#include <ctime>
-#include <iomanip>
-#include <sstream>
 
-#include <INIReader.h>
-
-#include "api/api.hpp"
-#include "util/util.hpp"
-#include "util/nlp.hpp"
-#include "bot/youtube/types.hpp"
-#include "util/process.hpp"
-
-using json = nlohmann::json;
-
-const std::time_t to_unixtime(const char* datetime) {
-  std::tm            t{};
-  std::istringstream ss{datetime};
-
-  ss >> std::get_time(&t, "%Y-%m-%dT%H:%M:%S");
-
-  return mktime(&t);
-}
-
+namespace youtube {
 const std::string CreateLocationResponse(std::string location) {
   return std::string{
     "Cool to see someone from " + location + ". How is life treating you there?"
@@ -44,7 +20,7 @@ const std::string CreateOrganizationResponse(std::string name) {
   };
 }
 
-const std::string CreatePromoteResponse(bool test_mode = false) {
+const std::string CreatePromoteResponse(bool test_mode) {
   if (test_mode) {
     return constants::promotion::support;
   }
@@ -52,58 +28,58 @@ const std::string CreatePromoteResponse(bool test_mode = false) {
   return constants::promotion::test_support;
 }
 
-class YouTubeDataAPI : public API {
-public:
-  /**
-   * constructor
-   *
-   * Reads configuration
-   */
-  YouTubeDataAPI ()
-  : m_greet_on_entry(false),
-    m_test_mode(false) {
-    INIReader reader{constants::DEFAULT_CONFIG_PATH};
 
-    if (reader.ParseError() < 0) {
-      log("Error loading config");
-    }
+YouTubeDataAPI::YouTubeDataAPI ()
+: m_greet_on_entry(false),
+  m_test_mode(false),
+  m_retry_mode(false) {
+  INIReader reader{constants::DEFAULT_CONFIG_PATH};
 
-    auto youtube_key = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_KEY, "");
-    if (!youtube_key.empty()) {
-      m_auth.key = youtube_key;
-    }
-
-    auto app_path = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_TOKEN_APP, "");
-    if (!app_path.empty()) {
-      m_auth.token_app_path = app_path;
-    }
-
-    auto username = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_USERNAME, "");
-    if (!username.empty()) {
-      m_username = username;
-    }
-
-    auto greet_on_entry = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_GREET, "");
-    if (!greet_on_entry.empty()) {
-      m_greet_on_entry = greet_on_entry.compare("true") == 0;
-    }
-
-    auto test_mode = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_TEST_MODE, "");
-    if (!test_mode.empty()) {
-      m_test_mode = test_mode.compare("true") == 0;
-    }
-
-    if (m_auth.token_app_path.empty() || m_auth.key.empty()) {
-      throw std::invalid_argument{"Cannot run YouTube API without key and token app"};
-    }
+  if (reader.ParseError() < 0) {
+    log("Error loading config");
   }
+
+  auto youtube_key = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_KEY, "");
+  if (!youtube_key.empty()) {
+    m_auth.key = youtube_key;
+  }
+
+  auto app_path = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_TOKEN_APP, "");
+  if (!app_path.empty()) {
+    m_auth.token_app_path = app_path;
+  }
+
+  auto username = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_USERNAME, "");
+  if (!username.empty()) {
+    m_username = username;
+  }
+
+  auto greet_on_entry = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_GREET, "");
+  if (!greet_on_entry.empty()) {
+    m_greet_on_entry = greet_on_entry.compare("true") == 0;
+  }
+
+  auto test_mode = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_TEST_MODE, "");
+  if (!test_mode.empty()) {
+    m_test_mode = test_mode.compare("true") == 0;
+  }
+
+  auto retry_mode = reader.GetString(constants::YOUTUBE_CONFIG_SECTION, constants::YOUTUBE_RETRY_MODE, "");
+  if (!retry_mode.empty()) {
+    m_retry_mode = retry_mode.compare("true") == 0;
+  }
+
+  if (m_auth.token_app_path.empty() || m_auth.key.empty()) {
+    throw std::invalid_argument{"Cannot run YouTube API without key and token app"};
+  }
+}
 
   /**
    * GetType
    *
    * Returns the name of this API
    */
-  virtual std::string GetType() override {
+  std::string YouTubeDataAPI::GetType() {
     return std::string{"YouTube Data API"};
   }
 
@@ -112,7 +88,7 @@ public:
    *
    * @returns [out] {std::string}
    */
-  std::string GetBearerAuth() {
+  std::string YouTubeDataAPI::GetBearerAuth() {
     if (m_auth.access_token.empty()) return "";
     return std::string{"Bearer " + m_auth.access_token};
   }
@@ -122,7 +98,7 @@ public:
    *
    * @returns [out] {std::string}
    */
-  std::string FetchToken() {
+  std::string YouTubeDataAPI::FetchToken() {
     if (m_auth.access_token.empty()) {
 
       ProcessResult result = qx({m_auth.token_app_path});
@@ -156,7 +132,7 @@ public:
    *
    * @returns [out] {AuthData}
    */
-  AuthData GetAuth() {
+  AuthData YouTubeDataAPI::GetAuth() {
     return m_auth;
   }
 
@@ -165,7 +141,7 @@ public:
    *
    * @returns [out] {std::string}
    */
-  std::string FetchLiveVideoID() {
+  std::string YouTubeDataAPI::FetchLiveVideoID() {
     using namespace constants;
     if (m_auth.access_token.empty())
       throw std::invalid_argument("Cannot use YouTube API without access token");
@@ -204,7 +180,7 @@ public:
    *
    * @returns [out] {VideoDetails}
    */
-  VideoDetails GetLiveDetails() {
+  VideoDetails YouTubeDataAPI::GetLiveDetails() {
     return m_video_details;
   }
 
@@ -213,7 +189,7 @@ public:
    *
    * @returns [out] {bool}
    */
-  bool FetchLiveDetails() {
+  bool YouTubeDataAPI::FetchLiveDetails() {
     using namespace constants;
     if (m_auth.access_token.empty())
       throw std::invalid_argument{"Unable to use YouTubeDataAPI without token"};
@@ -259,7 +235,7 @@ public:
    *
    * @returns [out] {std::string}
    */
-  std::string FetchChatMessages() {
+  std::string YouTubeDataAPI::FetchChatMessages() {
   using namespace constants;
     if (m_auth.access_token.empty() || m_video_details.chat_id.empty()) return "";
 
@@ -327,77 +303,8 @@ public:
     return r.text;
   }
 
-  bool IsNewer(const char* datetime) {
+  bool YouTubeDataAPI::IsNewer(const char* datetime) {
     return std::difftime(to_unixtime(datetime), m_last_fetch_timestamp) > 0;
-  }
-
-  /**
-   * GetType
-   *
-   * @static
-   * @param
-   * @returns
-   *
-   */
-  static TokenType GetType(std::string type) {
-    if (type.compare("LOCATION") == 0) {
-      return TokenType::location;
-    }
-    else
-    if (type.compare("PERSON") == 0) {
-      return TokenType::person;
-    }
-    else
-    if (type.compare("ORGANIZATION") == 0) {
-      return TokenType::organization;
-    }
-    return TokenType::unknown;
-  }
-
-  /**
-   * ParseToken
-   *
-   * @static
-   * @param
-   * @returns
-   *
-   */
-  static Token ParseToken(std::string s) {
-    auto delim = s.find(' ');
-    return Token{
-      .type  = GetType(s.substr(0, delim)),
-      .value = s.substr(delim + 1)
-    };
-  }
-
-  /**
-   * SplitTokens
-   *
-   * @static
-   * @param
-   * @returns
-   *
-   */
-  static std::vector<Token> SplitTokens(std::string s) {
-    std::vector<Token> tokens{};
-    auto               delim_index = s.find_first_of('[');
-
-    while (delim_index != std::string::npos) {
-      auto token_start     = s.substr(delim_index);
-      auto delim_end_index = (token_start.find_first_of(']') - 1);
-      auto token_value     = token_start.substr(1, delim_end_index);
-
-      tokens.push_back(ParseToken(token_value));
-
-      if (token_start.size() >= (token_value.size() + 3)) {
-        s           = token_start.substr(token_value.size() + 3);
-        delim_index = s.find_first_of('[');
-      } else {
-        break;
-      }
-    }
-
-    return tokens;
   }
 
   /**
@@ -406,13 +313,13 @@ public:
    * @returns
    *
    */
-  bool ParseTokens() {
+  bool YouTubeDataAPI::ParseTokens() {
     if (HasChats()) {
       for (auto&& chat : m_chats.at(m_video_details.chat_id)) {
-        std::string tokenized_text = TokenizeText(chat.text);
+        std::string tokenized_text = conversation::TokenizeText(chat.text);
 
         if (!tokenized_text.empty()) {
-          chat.tokens = YouTubeDataAPI::SplitTokens(tokenized_text);
+          chat.tokens = conversation::SplitTokens(tokenized_text);
         }
       }
     return (!GetCurrentChat().at(0).tokens.empty());
@@ -425,7 +332,7 @@ public:
    *
    * @returns [out] {LiveChatMap}
    */
-  LiveChatMap GetChats() {
+  LiveChatMap YouTubeDataAPI::GetChats() {
     return m_chats;
   }
 
@@ -435,7 +342,7 @@ public:
    * @param   [in]  {bool}
    * @returns [out] {LiveMessages}
    */
-  LiveMessages GetCurrentChat(bool keep_messages = false) {
+  LiveMessages YouTubeDataAPI::GetCurrentChat(bool keep_messages) {
     return m_chats.at(m_video_details.chat_id);
   }
 
@@ -444,7 +351,7 @@ public:
    *
    * @returns [out] {bool}
    */
-  bool HasChats() {
+  bool YouTubeDataAPI::HasChats() {
     return !m_chats.empty() && !GetCurrentChat().empty();
   }
 
@@ -455,7 +362,7 @@ public:
    * @param   [in]  {LiveMessages}
    * @returns [out] {bool}
    */
-  bool InsertMessages(std::string id, LiveMessages&& messages) {
+  bool YouTubeDataAPI::InsertMessages(std::string id, LiveMessages&& messages) {
     if (m_chats.find(id) != m_chats.end()) {
       for (auto&& message : messages) m_chats.at(id).emplace_back(message);
       return true;
@@ -469,7 +376,7 @@ public:
    * @param   [in]  {std::string}
    * @returns [out] {bool}
    */
-  bool ClearChat(std::string id = "") {
+  bool YouTubeDataAPI::ClearChat(std::string id) {
     id = (id.empty()) ? m_video_details.chat_id : id;
 
     if (m_chats.find(id) != m_chats.end()) {
@@ -484,7 +391,7 @@ public:
    *
    * @returns [out] {LiveMessages}
    */
-  LiveMessages FindMentions(bool keep_messages = false) {
+  LiveMessages YouTubeDataAPI::FindMentions(bool keep_messages) {
     using ChatPair = std::map<std::string, LiveMessages>;
     const std::string bot_name{"@Emmanuel Buckshi"};
 
@@ -517,7 +424,7 @@ public:
    *
    * @returns [out] {bool}
    */
-  bool FindChat() {
+  bool YouTubeDataAPI::FindChat() {
     if (m_auth.access_token.empty()) {
       if (GetAuth().access_token.empty()) {
         return false;
@@ -543,7 +450,7 @@ public:
    * @param
    * @returns
    */
-  bool PostMessage(std::string message) {
+  bool YouTubeDataAPI::PostMessage(std::string message) {
     using namespace constants;
 
     if (m_video_details.chat_id.empty()) {
@@ -582,7 +489,7 @@ public:
  *
  * @returns
  */
-bool GreetOnEntry() {
+bool YouTubeDataAPI::GreetOnEntry() {
   return m_greet_on_entry;
 }
 
@@ -591,7 +498,7 @@ bool GreetOnEntry() {
  *
  * @returns [out] {bool}
  */
-virtual bool TestMode() override {
+bool YouTubeDataAPI::TestMode() {
   return m_test_mode;
 }
 
@@ -601,7 +508,7 @@ virtual bool TestMode() override {
  * @param
  * @param
  */
-void RecordInteraction(std::string id, Interaction interaction, std::string value) {
+void YouTubeDataAPI::RecordInteraction(std::string id, Interaction interaction, std::string value) {
   if (m_interactions.find(id) == m_interactions.end()) {
     std::pair<std::string, bool> interaction_pair{value, true};
     m_interactions.insert({id, UserInteraction{.id = id}});
@@ -637,7 +544,10 @@ void RecordInteraction(std::string id, Interaction interaction, std::string valu
   }
 }
 
-bool HasInteracted(std::string id, Interaction interaction) {
+/**
+ * HasInteracted
+ */
+bool YouTubeDataAPI::HasInteracted(std::string id, Interaction interaction) {
   if (m_interactions.find(id) == m_interactions.end()) {
     return false;
   }
@@ -665,7 +575,10 @@ bool HasInteracted(std::string id, Interaction interaction) {
   return has_interacted;
 }
 
-bool HasDiscussed(std::string value, Interaction type) {
+/**
+ *
+ */
+bool YouTubeDataAPI::HasDiscussed(std::string value, Interaction type) {
   std::map<std::string, bool>::iterator it{};
   if (type == Interaction::greeting) {
     it = m_persons.find(value);
@@ -685,19 +598,4 @@ bool HasDiscussed(std::string value, Interaction type) {
   return (it->second == true);
 }
 
-private:
-  AuthData     m_auth;
-  VideoDetails m_video_details;
-  LiveChatMap  m_chats;
-  ActivityMap  m_interactions;
-  LocationMap  m_locations;
-  PersonMap    m_persons;
-  OrgMap       m_orgs;
-  std::string  m_active_chat;
-  std::string  m_username;
-  std::time_t  m_last_fetch_timestamp;
-  bool         m_greet_on_entry;
-  bool         m_test_mode;
-};
-
-#endif // __YOUTUBE_DATA_API_HPP__
+} // namespace youtube
