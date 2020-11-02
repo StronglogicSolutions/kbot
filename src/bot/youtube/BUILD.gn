@@ -38,6 +38,24 @@ source_set("nlp") {
   ]
 }
 
+source_set("korean") {
+
+  public_configs = [
+    ":inih",
+    ":json"
+  ]
+
+  include_dirs = [
+    "//src",
+    "//third_party/",
+  ]
+
+  sources = [
+    "//src/api/korean/korean.cpp"
+  ]
+
+}
+
 source_set("youtube_bot_sources") {
 
   public_configs = [
@@ -48,7 +66,8 @@ source_set("youtube_bot_sources") {
   deps = [
     ":ini_reader",
     ":youtube_api",
-    ":nlp"
+    ":nlp",
+    ":korean"
   ]
 
   include_dirs = [

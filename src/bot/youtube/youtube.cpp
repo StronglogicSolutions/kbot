@@ -45,6 +45,8 @@ bool YouTubeBot::init() {
  * The loop method runs on its own thread
  */
 void YouTubeBot::loop() {
+  using namespace korean;
+
   YouTubeDataAPI* api = static_cast<YouTubeDataAPI *>(m_api.get());
 
   uint8_t no_hits{0};
@@ -184,7 +186,7 @@ std::unique_ptr<API> YouTubeBot::GetAPI(std::string name) {
   }
   else
   if (name.compare("Korean API") == 0) {
-    return std::make_unique<KoreanAPI>();
+    return std::make_unique<korean::KoreanAPI>();
   }
   return nullptr;
 }

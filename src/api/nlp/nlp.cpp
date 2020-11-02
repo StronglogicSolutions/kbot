@@ -23,71 +23,85 @@ std::string TokenizeText(std::string s) {
 }
 
 /**
-   * GetType
-   *
-   * @param
-   * @returns
-   *
-   */
-  TokenType GetType(std::string type) {
-    if (type.compare("LOCATION") == 0) {
-      return TokenType::location;
-    }
-    else
-    if (type.compare("PERSON") == 0) {
-      return TokenType::person;
-    }
-    else
-    if (type.compare("ORGANIZATION") == 0) {
-      return TokenType::organization;
-    }
-    return TokenType::unknown;
+ * GetType
+ *
+ * @param
+ * @returns
+ *
+ */
+TokenType GetType(std::string type) {
+  if (type.compare("LOCATION") == 0) {
+    return TokenType::location;
   }
-
-  /**
-   * ParseToken
-   *
-   * @param
-   * @returns
-   *
-   */
-  Token ParseToken(std::string s) {
-    auto delim = s.find(' ');
-    return Token{
-      .type  = GetType(s.substr(0, delim)),
-      .value = s.substr(delim + 1)
-    };
+  else
+  if (type.compare("PERSON") == 0) {
+    return TokenType::person;
   }
+  else
+  if (type.compare("ORGANIZATION") == 0) {
+    return TokenType::organization;
+  }
+  return TokenType::unknown;
+}
 
-  /**
-   * SplitTokens
-   *
-   * @param
-   * @returns
-   *
-   */
-  std::vector<Token> SplitTokens(std::string s) {
-    std::vector<Token> tokens{};
-    auto               delim_index = s.find_first_of('[');
+/**
+ * ParseToken
+ *
+ * @param
+ * @returns
+ *
+ */
+Token ParseToken(std::string s) {
+  auto delim = s.find(' ');
+  return Token{
+    .type  = GetType(s.substr(0, delim)),
+    .value = s.substr(delim + 1)
+  };
+}
 
-    while (delim_index != std::string::npos) {
-      auto token_start     = s.substr(delim_index);
-      auto delim_end_index = (token_start.find_first_of(']') - 1);
-      auto token_value     = token_start.substr(1, delim_end_index);
+/**
+ * SplitTokens
+ *
+ * @param
+ * @returns
+ *
+ */
+std::vector<Token> SplitTokens(std::string s) {
+  std::vector<Token> tokens{};
+  auto               delim_index = s.find_first_of('[');
 
-      tokens.push_back(ParseToken(token_value));
+  while (delim_index != std::string::npos) {
+    auto token_start     = s.substr(delim_index);
+    auto delim_end_index = (token_start.find_first_of(']') - 1);
+    auto token_value     = token_start.substr(1, delim_end_index);
 
-      if (token_start.size() >= (token_value.size() + 3)) {
-        s           = token_start.substr(token_value.size() + 3);
-        delim_index = s.find_first_of('[');
-      } else {
-        break;
-      }
+    tokens.push_back(ParseToken(token_value));
+
+    if (token_start.size() >= (token_value.size() + 3)) {
+      s           = token_start.substr(token_value.size() + 3);
+      delim_index = s.find_first_of('[');
+    } else {
+      break;
     }
-
-    return tokens;
   }
+  return tokens;
+}
 
+/**
+ * DetectQuestionType
+ *
+ * @param
+ * @returns
+ */
+QuestionType DetectQuestionType(std::string s) {
+  uint8_t num = conversation::QTypeNames.size();
+  for (uint8_t i = 2; i < num; i++) {
+    if (s.find(conversation::QTypeNames.at(i)) != std::string::npos) {
+      return static_cast<conversation::QuestionType>((i / 2));
+    }
+  }
+  return conversation::QuestionType::UNKNOWN;
+}
 
 
 /**
@@ -99,11 +113,13 @@ void NLP::Insert(Message&& node, std::string name, std::string subject) {
   const Map::const_iterator it = m_m.find(name);
 
   if ( it == m_m.end()) {                                    // New
+    m_o.emplace_back(std::move(ObjectiveContext{}));
     m_s.emplace_back(std::move(SubjectiveContext{subject}));
+    ObjectiveContext*  o_ctx_ref = &m_o.back();
     SubjectiveContext* s_ctx_ref = &m_s.back();
-
-    node_ref->subjective = s_ctx_ref;
-    node_ref->next = nullptr;
+    node_ref->objective          = o_ctx_ref;
+    node_ref->subjective         = s_ctx_ref;
+    node_ref->next               = nullptr;
 
     m_m.insert({
       name,
@@ -112,6 +128,7 @@ void NLP::Insert(Message&& node, std::string name, std::string subject) {
   } else {                                                    // Append
     Message* previous_head       = &(*it->second);
     node_ref->next               = previous_head;
+    node_ref->objective          = previous_head->objective;
     node_ref->subjective         = previous_head->subjective;
     node_ref->subjective->Insert(subject);
 

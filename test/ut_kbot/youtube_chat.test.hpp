@@ -1,4 +1,4 @@
- #ifndef __YOUTUBE_CHAT_TEST_HPP__
+#ifndef __YOUTUBE_CHAT_TEST_HPP__
 #define __YOUTUBE_CHAT_TEST_HPP__
 
 #include <string>

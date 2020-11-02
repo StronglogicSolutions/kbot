@@ -18,6 +18,7 @@ const  std::string        get_executable_cwd();
        std::vector<Token> SplitTokens(std::string s);
        Token              ParseToken(std::string s);
        TokenType          GetType(std::string type);
+       QuestionType       DetectQuestionType(std::string s);
 
 class NLP {
  public:
