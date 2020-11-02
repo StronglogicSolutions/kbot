@@ -6,6 +6,7 @@
 #include <api/api.hpp>
 #include <api/youtube/api.hpp>
 #include <api/korean/korean.hpp>
+#include <iterator>
 #include <chrono>
 #include <ctime>
 #include <condition_variable>
@@ -75,17 +76,23 @@ class YouTubeBot : public Bot, public Worker {
             └───────────────────────────────────────────────────────────┘
             */
 
-            if (token.type == TokenType::location && !api->HasInteracted(user_id, Interaction::location_ask)) {
+            if (token.type == TokenType::location //&&
+            //!api->HasInteracted(user_id, Interaction::location_ask)
+            ) {
               reply_messages.push_back(CreateLocationResponse(token.value));
               api->RecordInteraction(message.author, Interaction::location_ask, token.value);
             }
             else
-            if (token.type == TokenType::person && !api->HasInteracted(user_id, Interaction::greeting)) {
+            if (token.type == TokenType::person //&&
+            //!api->HasInteracted(user_id, Interaction::greeting)
+            ) {
               reply_messages.push_back(CreatePersonResponse(token.value));
               api->RecordInteraction(message.author, Interaction::greeting, token.value);
             }
             else
-            if (token.type == TokenType::organization && !api->HasInteracted(user_id, Interaction::probing)) {
+            if (token.type == TokenType::organization //&&
+            //!api->HasInteracted(user_id, Interaction::probing)
+            ) {
               reply_messages.push_back(CreateOrganizationResponse(token.value));
               api->RecordInteraction(message.author, Interaction::probing, token.value);
             }
@@ -97,10 +104,10 @@ class YouTubeBot : public Bot, public Worker {
     //   reply_messages.push_back("Hello from the KBot!");
     // }
 
-    // if (!m_has_promoted) {
-    //   reply_messages.push_back(CreatePromoteResponse());
-    //   m_has_promoted = true;
-    // }
+    if (!m_has_promoted) {
+      reply_messages.push_back(CreatePromoteResponse());
+      m_has_promoted = true;
+    }
 
     return reply_messages;
   }
@@ -141,7 +148,7 @@ class YouTubeBot : public Bot, public Worker {
         std::vector<std::string> reply_messages = CreateReplyMessages(messages, bot_was_mentioned);
         int max = 5;
         for (const auto& reply : reply_messages) {
-          log("Reply message:\n" + reply);
+          m_posted_messages.push_back(reply);
           api->PostMessage(reply);
           if (--max == 0) break;
         }
@@ -151,8 +158,8 @@ class YouTubeBot : public Bot, public Worker {
 
       api->FetchChatMessages();
 
-      if (no_hits < 10) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+      if (no_hits < 1000) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(30000));
       } else {
         // Not having much luck. Take a break.
         no_hits = 0;
@@ -205,20 +212,32 @@ LiveChatMap GetChats() {
  * @returns [out] {bool}
  */
 bool PostMessage(std::string message) {
+  m_posted_messages.push_back(message);
   return static_cast<YouTubeDataAPI*>(m_api.get())->PostMessage(message);
 }
 
 std::string GetResults() {
-  return "Results";
+
+  std::string result{};
+
+  auto it     = std::make_move_iterator(m_posted_messages.begin());
+  auto end_it = std::make_move_iterator(m_posted_messages.end());
+
+  for (; it != end_it; it++) {
+    result += std::move(*it);
+  }
+
+  return result;
 }
 
 private:
-  std::unique_ptr<API>    m_api;
-  bool                    m_is_own_livestream;
-  bool                    m_has_promoted;
-  std::condition_variable m_work_thread_condition;
-  std::mutex              m_mutex;
-  clock_t                 m_time_value;
+  std::unique_ptr<API>     m_api;
+  bool                     m_is_own_livestream;
+  bool                     m_has_promoted;
+  std::condition_variable  m_work_thread_condition;
+  std::mutex               m_mutex;
+  clock_t                  m_time_value;
+  std::vector<std::string> m_posted_messages;
 };
 
 #endif // __YOUTUBE_HPP__

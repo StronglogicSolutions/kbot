@@ -27,6 +27,7 @@ std::string const ProcessMessage(std::string message) {
 }
 
 bool SendMessage(zmq::socket_t* socket, std::string message) {
+  log("Sending IPC message: " + message + "\n");
   zmq::message_t ipc_msg{message.size()};
   memcpy(ipc_msg.data(), message.data(), message.size());
   zmq::send_result_t result = socket->send(std::move(ipc_msg), zmq::send_flags::none);
@@ -40,7 +41,7 @@ bool IsDataRequest(std::string s) {
 
 int main(int argc, char** argv) {
   zmq::context_t context   {1};
-  zmq::socket_t  socket    {context, ZMQ_REQ};
+  zmq::socket_t  socket    {context, ZMQ_REP};
   uint8_t        socket_num{1};
   uint8_t        timeout   {0};
 
@@ -62,9 +63,11 @@ int main(int argc, char** argv) {
 
       zmq::poll(&items[0], socket_num, timeout);
 
-      if (items[0].revents & ZMQ_POLLIN &&
-          IsDataRequest(ProcessMessage(ReceiveMessage(&socket)))) {
-        log ("Received message");
+      if (
+        items[0].revents & ZMQ_POLLIN &&                       // Message
+        IsDataRequest(ProcessMessage(ReceiveMessage(&socket))) // Request confirmed
+      ) {
+        log ("Received IPC message");
 
         if (!SendMessage(&socket, bot.GetResults())) {
           log("Failed to send response");

@@ -143,6 +143,8 @@ public:
         m_auth.scope        = auth_json["scope"].dump();
         m_auth.token_type   = auth_json["token_type"].dump();
         m_auth.expiry_date  = auth_json["expiry_date"].dump();
+
+        log("Fetched token successfully");
       }
     }
 
@@ -191,6 +193,7 @@ public:
         m_video_details.id = items[0]["id"]["videoId"].dump();
         SanitizeJSON(m_video_details.id);
       }
+      log("Fetched live video details for channel " + PARAM_VALUES.at(SL_CHAN_KEY_INDEX));
     }
 
     return m_video_details.id;
@@ -243,6 +246,7 @@ public:
         SanitizeJSON(m_video_details.chat_id);
         if (!m_video_details.chat_id.empty()) {
           m_chats.insert({m_video_details.chat_id, std::vector<LiveMessage>{}});
+          log("Added chat details for " + m_video_details.chat_id);
           return true;
         }
       }
@@ -258,6 +262,8 @@ public:
   std::string FetchChatMessages() {
   using namespace constants;
     if (m_auth.access_token.empty() || m_video_details.chat_id.empty()) return "";
+
+    log("Fetching chat messages for " + m_video_details.chat_id);
 
     cpr::Response r = cpr::Get(
       cpr::Url{URL_VALUES.at(LIVE_CHAT_URL_INDEX)},
@@ -544,6 +550,8 @@ public:
       log("No chat to post to");
       return false;
     }
+
+    log("Posting " + message);
 
     json payload{};
     payload["snippet"]["liveChatId"]                        = m_video_details.chat_id;
