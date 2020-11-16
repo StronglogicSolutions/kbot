@@ -16,8 +16,6 @@
 #include "util/process.hpp"
 
 using json = nlohmann::json;
-
-
 namespace youtube {
 const std::string CreateLocationResponse(std::string location);
 const std::string CreatePersonResponse(std::string name);
@@ -35,7 +33,7 @@ public:
   std::string         FetchLiveVideoID();
   bool                FetchLiveDetails();
   std::string         FetchChatMessages();
-
+  std::string         GetUsername() { return m_username; }
   std::string         GetBearerAuth();
   AuthData            GetAuth();
   VideoDetails        GetLiveDetails();

@@ -3,6 +3,7 @@
 namespace youtube {
 
 const std::string DEFAULT_API_NAME{"YouTube Data API"};
+const std::string DEFAULT_USERNAME{"@Emmanuel Buckshi"};
 
 /**
   * @constructor
@@ -13,7 +14,7 @@ YouTubeBot::YouTubeBot()
   m_has_promoted(false),
   m_is_own_livestream(false),
   m_time_value(clock()),
-  m_nlp(NLP{})
+  m_nlp(NLP{DEFAULT_USERNAME})
 {}
 
 /**

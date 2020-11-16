@@ -19,6 +19,8 @@ std::string CreateReply(std::string                      message,
     if (obj_ctx->question_type = conversation::QuestionType::TRANSLATE) {
        response_text = MockTranslate(message);
     }
+  } else {
+    response_text += "Sup, bitch?";
   }
   return response_text;
 }

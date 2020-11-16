@@ -17,7 +17,7 @@ source_set("ini_reader") {
   ]
 }
 
-source_set("youtube_api") {
+source_set("youtube_api_sources") {
   public_configs = [
     ":inih",
     ":json"
@@ -32,7 +32,7 @@ source_set("youtube_api") {
   ]
 }
 
-source_set("nlp") {
+source_set("nlp_sources") {
   sources = [
     "//src/api/nlp/nlp.cpp"
   ]
@@ -56,6 +56,36 @@ source_set("korean") {
 
 }
 
+shared_library("youtube_api") {
+  deps = [
+    ":youtube_api_sources",
+  ]
+
+  include_dirs = [
+    "//src",
+    "//third_party/",
+  ]
+
+  libs = [
+    "pthread",
+    "crypto",
+    "cpr",
+    "curl"
+  ]
+}
+
+shared_library("nlp") {
+
+  deps = [
+    ":nlp_sources"
+  ]
+
+  include_dirs = [
+    "//src",
+    "//third_party/",
+  ]
+}
+
 source_set("youtube_bot_sources") {
 
   public_configs = [
@@ -65,8 +95,8 @@ source_set("youtube_bot_sources") {
 
   deps = [
     ":ini_reader",
-    ":youtube_api",
-    ":nlp",
+    ":youtube_api_sources",
+    ":nlp_sources",
     ":korean"
   ]
 

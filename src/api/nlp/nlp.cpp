@@ -144,7 +144,7 @@ void NLP::Insert(Message&& node, std::string name, std::string subject) {
       name,
       node_ref
     });
-  } else {                                                    // Append
+  } else {                                                   // Append
     Message* previous_head       = &(*it->second);
     node_ref->next               = previous_head;
     node_ref->objective          = previous_head->objective;
@@ -161,10 +161,11 @@ void NLP::Insert(Message&& node, std::string name, std::string subject) {
  */
 void NLP::Reply(Message* node, std::string reply, std::string name) {
   Message reply_node{
-    .text = reply,
-    .received = false,
-    .next = node->next,
-    .subjective = node->subjective
+    .text       = reply,
+    .received   = false,
+    .next       = node->next,
+    .subjective = node->subjective,
+    .objective  = node->objective
   };
 
   m_q.emplace_back(std::move(reply_node));
@@ -196,10 +197,12 @@ std::string NLP::toString() {
     uint8_t n_idx{1};
     while ( node != nullptr) {
         node_string += "│ " + std::to_string(n_idx) + ": ";
-        for (int i = 0; i <= n_idx; i++)
-          node_string += "  ";
-        node_string += (n_idx > 1) ? "↳" : "";
-        node_string += node->text + "\n";
+        // for (int i = 0; i <= n_idx; i++)
+        //   node_string += "  ";
+        node_string += "Objective: "  + node->objective->toString() + "\n│   ";
+        node_string += "From:      ";
+        node_string += (node->received) ? c.first : GetUsername();
+        node_string += "\n│   " + node->text + "\n";
         node = node->next;
         n_idx++;
     }

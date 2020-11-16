@@ -127,7 +127,8 @@ class YouTubeChatTestFixture: public ::testing::Test {
 
  public:
   YouTubeChatTestFixture()
-  : api(MockYouTubeDataAPI{}) {}
+  : api(MockYouTubeDataAPI{}),
+    nlp(conversation::NLP{"@Emmanuel Buckshi"}) {}
 };
 
 #endif // __YOUTUBE_CHAT_TEST_HPP__

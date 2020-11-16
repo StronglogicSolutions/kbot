@@ -17,6 +17,7 @@ namespace youtube {
 using namespace conversation;
 
 extern const std::string DEFAULT_API_NAME;
+extern const std::string DEFAULT_USERNAME;
 
 /**
  * YouTubeBot

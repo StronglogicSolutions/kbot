@@ -393,7 +393,7 @@ YouTubeDataAPI::YouTubeDataAPI ()
    */
   LiveMessages YouTubeDataAPI::FindMentions(bool keep_messages) {
     using ChatPair = std::map<std::string, LiveMessages>;
-    const std::string bot_name{"@Emmanuel Buckshi"};
+    const std::string bot_name = GetUsername();
 
     LiveMessages matches{};
 
