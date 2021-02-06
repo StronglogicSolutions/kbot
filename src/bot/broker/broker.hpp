@@ -35,6 +35,13 @@ Broker()
 
 }
 
+/**
+ * @brief
+ *
+ * @param event
+ * @return true
+ * @return false
+ */
 static bool ProcessEvent(BotEvent event)
 {
   if (g_broker != nullptr)
@@ -45,16 +52,29 @@ static bool ProcessEvent(BotEvent event)
   return false;
 }
 
+/**
+ * @brief
+ *
+ * @param event
+ */
 void enqueue(BotEvent event)
 {
   m_queue.emplace_back(event);
 }
 
+/**
+ * @brief
+ *
+ */
 void run()
 {
   Worker::start();
 }
 
+/**
+ * @brief
+ *
+ */
 virtual void loop() override
 {
   YTBot().Start();
@@ -66,8 +86,8 @@ virtual void loop() override
     {
       BotEvent event = m_queue.front();
       if (event.platform == Platform::youtube)
-        if (event.name == "result livestream")
-          std::cout << "YouTube livestream status: " << event.data << std::endl;
+        if (event.name == "livestream active")
+          MDBot().HandleEvent(event);
       else
       if (event.platform == Platform::mastodon)
         if (event.name == "comment")
@@ -81,6 +101,12 @@ virtual void loop() override
   }
 }
 
+/**
+ * @brief
+ *
+ * @param platform
+ * @param event
+ */
 void SendEvent(Platform platform, std::string event)
 {
   if (platform == Platform::mastodon)
@@ -90,6 +116,12 @@ void SendEvent(Platform platform, std::string event)
     YTBot().HandleEvent(BotEvent{.platform = platform, .name = event});
 }
 
+/**
+ * @brief
+ *
+ * @return true
+ * @return false
+ */
 bool Shutdown()
 {
   try

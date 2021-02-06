@@ -76,15 +76,19 @@ bool HandleEvent(BotEvent event) {
   {
     for (const Status& status : FindComments())
       ss << status;
+
+    m_send_event_fn(BotEvent{
+      .platform = Platform::mastodon,
+      .name     = "comment",
+      .data     = ss.str()
+    });
   }
-
-  std::string result = ss.str();
-
-  m_send_event_fn(BotEvent{
-    .platform = Platform::mastodon,
-    .name     = "comment",
-    .data     = result
-  });
+  else
+  if (event.name == "livestream active")
+  {
+    Status status{event.data};
+    kstodon::Bot::PostStatus(status);
+  }
 
   return true;
 }

@@ -247,12 +247,14 @@ void YouTubeBot::SetCallback(BrokerCallback cb_fn) {
 }
 
 bool YouTubeBot::HandleEvent(BotEvent event) {
-  if (event.name == "find livestream")
+  YouTubeDataAPI* api = static_cast<YouTubeDataAPI *>(m_api.get());
+  if (event.name == "livestream find")
   {
-    std::string payload = (static_cast<YouTubeDataAPI *>(m_api.get())->HasChats()) ?
-                            "active" :
-                            "inactive";
-    m_send_event_fn(BotEvent{.platform = Platform::youtube, .name = "result livestream", .data = payload});
+    std::string name = (api->HasChats()) ?
+                            "livestrea active" :
+                            "livestream inactive";
+    std::string payload{"KSTYLEYO currently has a livestream RIGHT NOW: " + api->GetLiveDetails().chat_id};
+    m_send_event_fn(BotEvent{.platform = Platform::youtube, .name = "livestream result", .data = payload});
   }
 
   return true;
