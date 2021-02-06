@@ -28,7 +28,8 @@ source_set("youtube_api_sources") {
   ]
 
   sources = [
-    "//src/api/youtube/youtube_api.cpp"
+    "//src/api/youtube/youtube_api.cpp",
+    "//src/api/youtube/constants.cpp"
   ]
 }
 

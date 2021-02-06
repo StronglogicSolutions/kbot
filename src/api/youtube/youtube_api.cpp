@@ -1,7 +1,7 @@
 #include "youtube_api.hpp"
 
 
-namespace youtube {
+namespace kbot {
 const std::string CreateLocationResponse(std::string location) {
   return std::string{
     "Cool to see someone from " + location + ". How is life treating you there?"
@@ -598,4 +598,4 @@ bool YouTubeDataAPI::HasDiscussed(std::string value, Interaction type) {
   return (it->second == true);
 }
 
-} // namespace youtube
+} // namespace kbot

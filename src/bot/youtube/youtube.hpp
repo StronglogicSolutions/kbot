@@ -12,7 +12,7 @@
 #include <condition_variable>
 #include <mutex>
 
-namespace youtube {
+namespace kbot {
 
 using namespace conversation;
 
@@ -35,6 +35,12 @@ public:
  bool                         init();
  std::vector<std::string>     CreateReplyMessages(LiveMessages messages, bool bot_was_mentioned = false);
  virtual std::unique_ptr<API> GetAPI(std::string name = "") override;
+ virtual bool                 IsRunning() override;
+ virtual void                 Init() override;
+ virtual void                 Start() override;
+ virtual void                 Shutdown() override;
+ virtual void                 SetCallback(BrokerCallback cb_fn) override;
+ virtual bool                 HandleEvent(BotEvent event) override;
  LiveChatMap                  GetChats();
  std::string                  GetResults();
  bool                         PostMessage(std::string message);
@@ -46,8 +52,9 @@ private:
   clock_t                  m_time_value;
   std::vector<std::string> m_posted_messages;
   NLP                      m_nlp;
+  BrokerCallback           m_send_event_fn;
 };
 
-} // namespace youtube
+} // namespace kbot
 
 #endif // __YOUTUBE_HPP__

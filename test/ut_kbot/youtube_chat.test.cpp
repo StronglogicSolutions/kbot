@@ -45,8 +45,8 @@ TEST_F(YouTubeChatTestFixture, CreateChatMap) {
   // Video details with Chat ID to associate messages
   api.SetVideoDetails(TEST_VIDEO_DETAILS);
   // Variables
-  youtube::LiveMessages messages{};
-  youtube::LiveChatMap  chat_map{};
+  kbot::LiveMessages messages{};
+  kbot::LiveChatMap  chat_map{};
   auto                  live_messages_1 = GetLiveMessageSet1();
   // Capacity
   messages.reserve(15);
@@ -63,9 +63,9 @@ TEST_F(YouTubeChatTestFixture, CreateChatMap) {
 
   api.ParseTokens();
 
-  youtube::LiveMessages mentions = api.FindMentions();
+  kbot::LiveMessages mentions = api.FindMentions();
 
-  youtube::LiveChatMap parsed_chats = api.GetChats();
+  kbot::LiveChatMap parsed_chats = api.GetChats();
 
   std::vector<std::string> reply_messages{};
 

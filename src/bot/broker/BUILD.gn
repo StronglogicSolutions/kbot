@@ -1,0 +1,35 @@
+
+config("cpr") {
+  include_dirs = [
+    "//third_party/cpr/include"
+  ]
+}
+
+executable("broker") {
+public_configs = [
+  "//:cppzmq",
+  ":cpr",
+  "//src/bot/mastodon:kstodon",
+  "//src/bot/mastodon:nlp"
+]
+
+libs = [
+  "cpr",
+  "pthread"
+]
+
+include_dirs = [
+  "//third_party/inih/cpp",
+  "//third_party/json/include"
+]
+
+deps = [
+  "//src/bot/mastodon:kstodon_lib",
+  "//src/bot/youtube:youtube_bot_sources"
+]
+
+sources = [
+  "//src/bot/broker/main.cpp"
+]
+
+}

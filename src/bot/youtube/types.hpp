@@ -9,7 +9,7 @@
 #include "api/nlp/types.hpp"
 #include "api/youtube/constants.hpp"
 
-namespace youtube {
+namespace kbot {
 using namespace conversation;
 struct AuthData {
   std::string access_token;

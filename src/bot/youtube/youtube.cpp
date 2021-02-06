@@ -1,6 +1,6 @@
 #include "youtube.hpp"
 
-namespace youtube {
+namespace kbot {
 
 const std::string DEFAULT_API_NAME{"YouTube Data API"};
 const std::string DEFAULT_USERNAME{"@Emmanuel Buckshi"};
@@ -16,6 +16,10 @@ YouTubeBot::YouTubeBot()
   m_time_value(clock()),
   m_nlp(NLP{DEFAULT_USERNAME})
 {}
+
+void YouTubeBot::Init() {
+  init();
+}
 
 /**
  * init
@@ -238,4 +242,34 @@ std::string YouTubeBot::GetResults() {
   return result;
 }
 
-} // namespace youtube
+void YouTubeBot::SetCallback(BrokerCallback cb_fn) {
+  m_send_event_fn = cb_fn;
+}
+
+bool YouTubeBot::HandleEvent(BotEvent event) {
+  if (event.name == "find livestream")
+  {
+    std::string payload = (static_cast<YouTubeDataAPI *>(m_api.get())->HasChats()) ?
+                            "active" :
+                            "inactive";
+    m_send_event_fn(BotEvent{.platform = Platform::youtube, .name = "result livestream", .data = payload});
+  }
+
+  return true;
+}
+
+bool YouTubeBot::IsRunning() {
+  return m_is_running;
+}
+
+void YouTubeBot::Start()
+{
+  if (!m_is_running)
+    Worker::start();
+}
+
+void YouTubeBot::Shutdown() {
+  Worker::stop();
+}
+
+} // namespace kbot

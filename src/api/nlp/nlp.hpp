@@ -40,7 +40,7 @@ class NLP {
   MessageObjects     m_q;        // Queue of objects
   ObjectiveContexts  m_o;        // Queue of objects
   SubjectContexts    m_s;        // Queue of objects
-  std::string_view   m_username;
+  std::string   m_username;
 };
 
 } // namespace Conversation

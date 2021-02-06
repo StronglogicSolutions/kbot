@@ -39,7 +39,7 @@ bool IsDataRequest(std::string s) {
   return s.compare(DATA_REQUEST) == 0;
 }
 
-using namespace youtube;
+using namespace kbot;
 
 int main(int argc, char** argv) {
   zmq::context_t context   {1};

@@ -16,7 +16,7 @@
 #include "util/process.hpp"
 
 using json = nlohmann::json;
-namespace youtube {
+namespace kbot {
 const std::string CreateLocationResponse(std::string location);
 const std::string CreatePersonResponse(std::string name);
 const std::string CreateOrganizationResponse(std::string name);
@@ -74,6 +74,6 @@ private:
   bool         m_retry_mode;
 };
 
-} // namespace youtube
+} // namespace kbot
 
 #endif // __YOUTUBE_DATA_API_HPP__

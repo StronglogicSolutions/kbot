@@ -1,5 +1,4 @@
-#ifndef __YOUTUBE_CONSTANTS_HPP__
-#define __YOUTUBE_CONSTANTS_HPP__
+#pragma once
 
 #include <vector>
 #include <string>
@@ -7,104 +6,64 @@
 
 namespace constants {
 // URL Indexes
-const uint8_t SEARCH_URL_INDEX         = 0x00;
-const uint8_t VIDEOS_URL_INDEX         = 0x01;
-const uint8_t LIVE_CHAT_URL_INDEX      = 0x02;
+extern const uint8_t SEARCH_URL_INDEX;
+extern const uint8_t VIDEOS_URL_INDEX;
+extern const uint8_t LIVE_CHAT_URL_INDEX;
 
 // Header Name Indexes
-const uint8_t ACCEPT_HEADER_INDEX      = 0x00;
-const uint8_t AUTH_HEADER_INDEX        = 0x01;
-const uint8_t CONTENT_TYPE_INDEX       = 0x02;
+extern const uint8_t ACCEPT_HEADER_INDEX;
+extern const uint8_t AUTH_HEADER_INDEX;
+extern const uint8_t CONTENT_TYPE_INDEX;
 
 // Header Value Indexes
-const uint8_t APP_JSON_INDEX           = 0x00;
+extern const uint8_t APP_JSON_INDEX;
 
 // Param Name Indexes
-const uint8_t PART_INDEX               = 0x00;
-const uint8_t CHAN_ID_INDEX            = 0x01;
-const uint8_t EVENT_T_INDEX            = 0x02;
-const uint8_t TYPE_INDEX               = 0x03;
-const uint8_t KEY_INDEX                = 0x04;
-const uint8_t ID_INDEX                 = 0x05;
-const uint8_t LIVE_CHAT_ID_INDEX       = 0x06;
+extern const uint8_t PART_INDEX;
+extern const uint8_t CHAN_ID_INDEX;
+extern const uint8_t EVENT_T_INDEX;
+extern const uint8_t TYPE_INDEX;
+extern const uint8_t KEY_INDEX;
+extern const uint8_t ID_INDEX;
+extern const uint8_t LIVE_CHAT_ID_INDEX;
 
 // Param Value Indexes
-const uint8_t SL_CHAN_KEY_INDEX        = 0x00;
-const uint8_t LIVE_EVENT_TYPE_INDEX    = 0x01;
-const uint8_t SNIPPET_INDEX            = 0x02;
-const uint8_t VIDEO_TYPE_INDEX         = 0x03;
-const uint8_t LIVESTREAM_DETAILS_INDEX = 0x04;
-const uint8_t KY_CHAN_KEY_INDEX        = 0x05;
+extern const uint8_t SL_CHAN_KEY_INDEX;
+extern const uint8_t LIVE_EVENT_TYPE_INDEX;
+extern const uint8_t SNIPPET_INDEX;
+extern const uint8_t VIDEO_TYPE_INDEX;
+extern const uint8_t LIVESTREAM_DETAILS_INDEX;
+extern const uint8_t KY_CHAN_KEY_INDEX;
 
 // Strings
-const std::vector<std::string> URL_VALUES{
-  "https://www.googleapis.com/youtube/v3/search",
-  "https://www.googleapis.com/youtube/v3/videos",
-  "https://www.googleapis.com/youtube/v3/liveChat/messages"
-};
+extern const std::vector<std::string> URL_VALUES;
 
-const std::vector<std::string> HEADER_NAMES{
-  "Accept",
-  "Authorization",
-  "Content-Type"
-};
+extern const std::vector<std::string> HEADER_NAMES;
 
-const std::vector<std::string> HEADER_VALUES{
-  "application/json"
-};
+extern const std::vector<std::string> HEADER_VALUES;
 
-const std::vector<std::string> PARAM_NAMES = {
-  "part",
-  "channelId",
-  "eventType",
-  "type",
-  "key",
-  "id",
-  "liveChatId"
-};
+extern const std::vector<std::string> PARAM_NAMES;
 
-const std::vector<std::string> PARAM_VALUES{
-  "UCK0xH_L9OBM0CVwC438bMGA",   // StrongLogic Solutions
-  // "UCm5J1Fu_dHgBcMTpXu-NXUw", // Pangburn
-  // "UCLwNTXWEjVd2qIHLcXxQWxA", // Timecast IRL
-  // "UC1XoiwW6b0VIYPOaP1KgV7A", // KStyleYo
-  // "UCfpnY5NnBl-8L7SvICuYkYQ",  // Scott Adams
-  // "UCQ7ZcQSfCiY0EJL8ZdbZ3Hw", // Samara games
-  // "UCPfC_6VjklQDGuxgRt43m1w", // Fazmash
-  // "UCPGuorlvarThSlwJpyTHOmQ", // Capcom fighting
-  // "UCd534c_ehOvrLVL2v7Nl61w", // Muselk
-  // "UCWjBpFRzYt4vB3zIleLKrLA", // Korea Museum stream
+extern const std::vector<std::string> PARAM_VALUES;
 
-  "live",
-  "snippet",
-  "video",
-  "liveStreamingDetails",
-  "S15j0LRydks",
-};
-
-const std::string E_CHANNEL_ID{"UCFP7BAwQIzqml"};
-const std::string DEFAULT_CONFIG_PATH{"config/config.ini"};
-const std::string YOUTUBE_KEY{"key"};
-const std::string YOUTUBE_CONFIG_SECTION{"youtube"};
-const std::string YOUTUBE_TOKEN_APP{"token_app"};
-const std::string YOUTUBE_USERNAME{"chat_name"};
-const std::string YOUTUBE_GREET{"greet"};
-const std::string YOUTUBE_TEST_MODE{"test_mode"};
-const std::string YOUTUBE_RETRY_MODE{"retry"};
+extern const std::string E_CHANNEL_ID;
+extern const std::string DEFAULT_CONFIG_PATH;
+extern const std::string YOUTUBE_KEY;
+extern const std::string YOUTUBE_CONFIG_SECTION;
+extern const std::string YOUTUBE_TOKEN_APP;
+extern const std::string YOUTUBE_USERNAME;
+extern const std::string YOUTUBE_GREET;
+extern const std::string YOUTUBE_TEST_MODE;
+extern const std::string YOUTUBE_RETRY_MODE;
 
 namespace invitations {
-const std::string OFFER_TO_INQUIRE{
-  "Ask me a question: '@' me, and say \"!q <your question>\"\n\
-   If I can't respond immediately, someone will get back to you!"
-};
+extern const std::string OFFER_TO_INQUIRE;
 } // namespace invitations
 
 namespace promotion {
-const std::string support{"Please click like and subscribe!"};
-const std::string test_support{"I hope you are all having a good day."};
+extern const std::string support;
+extern const std::string test_support;
 } // namespace promotion
 
 // const std::vector<std::string
 } // namespace constants
-
-#endif // __YOUTUBE_CONSTANTS_HPP__

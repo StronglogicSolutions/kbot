@@ -1,5 +1,4 @@
-#ifndef __INTERFACES_HPP__
-#define __INTERFACES_HPP__
+#pragma once
 
 #include <string>
 #include <thread>
@@ -13,6 +12,24 @@ class API {
   }
 };
 
+namespace kbot {
+class  Broker;
+
+enum Platform
+{
+  youtube  = 0x00,
+  mastodon = 0x01
+};
+
+struct BotEvent
+{
+Platform    platform;
+std::string name;
+std::string data;
+};
+
+using BrokerCallback = bool(*)(BotEvent event);
+
 class Bot {
  public:
   Bot(std::string name)
@@ -22,6 +39,12 @@ class Bot {
   std::string GetName() { return m_name; }
 
   virtual std::unique_ptr<API> GetAPI(std::string name) = 0;
+  virtual void                 SetCallback(BrokerCallback cb_fn_ptr) = 0;
+  virtual bool                 HandleEvent(BotEvent event) = 0;
+  virtual bool                 IsRunning() = 0;
+  virtual void                 Start() = 0;
+  virtual void                 Shutdown() = 0;
+  virtual void                 Init() = 0;
 
  private:
   std::string m_name;
@@ -57,4 +80,4 @@ class Worker {
   std::thread m_thread;
 };
 
-#endif // __INTERFACES_HPP__
+} // namespace kbot
