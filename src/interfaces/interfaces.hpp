@@ -3,6 +3,7 @@
 #include <string>
 #include <thread>
 #include <memory>
+#include <vector>
 
 class API {
  public:
@@ -26,6 +27,7 @@ struct BotEvent
 Platform    platform;
 std::string name;
 std::string data;
+std::vector<std::string> urls;
 };
 
 using BrokerCallback = bool(*)(BotEvent event);
