@@ -15,7 +15,8 @@ public_configs = [
 
 libs = [
   "cpr",
-  "pthread"
+  "pthread",
+  "zmq"
 ]
 
 include_dirs = [

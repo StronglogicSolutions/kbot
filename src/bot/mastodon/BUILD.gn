@@ -1,8 +1,7 @@
 
 config("kstodon") {
   include_dirs = ["//third_party/kstodon/src"]
-  # lib_dirs = [ "//third_party/libkstodon" ]
-  libs = ["//third_party/libkstodon/libkstodon_lib.so"] # or use full path directly
+  libs = ["//third_party/libkstodon/libkstodon_lib.so"]
   visibility = [ ":kstodon_lib" ]
 }
 
@@ -34,7 +33,6 @@ group("kstodon_lib") {
 
 executable("mastodon_bot") {
 public_configs = [
-  ":kstodon",
   ":nlp",
   ":cpr",
   "//src/bot/youtube:json",

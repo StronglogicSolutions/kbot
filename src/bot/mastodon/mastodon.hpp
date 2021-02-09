@@ -10,7 +10,7 @@ using ReplyFunction    = Status(*)(Status status);
 
 namespace kbot {
 namespace constants {
-const std::string USERNAME{"koreannews"};
+const std::string USERNAME{"stronglogicsolutions"};
 } // namespace constants
 /**
  * @brief
@@ -46,8 +46,8 @@ virtual void loop() override
 {
   while (m_is_running)
   {
-    std::cout << "Hello" << std::endl;
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::cout << "MastodonBot alive" << std::endl;
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
   }
 }
 
@@ -72,7 +72,7 @@ void SetCallback(BrokerCallback cb_fn) {
 bool HandleEvent(BotEvent event) {
   std::stringstream ss{};
 
-  if (event.name == "find comments")
+  if (event.name == "comments find")
   {
     for (const Status& status : FindComments())
       ss << status;
@@ -87,7 +87,9 @@ bool HandleEvent(BotEvent event) {
   if (event.name == "livestream active")
   {
     Status status{event.data};
-    kstodon::Bot::PostStatus(status);
+
+    bool result = kstodon::Bot::PostStatus(status, event.urls);
+    std::cout << "Mastodon bot posted " << status << std::endl;
   }
 
   return true;

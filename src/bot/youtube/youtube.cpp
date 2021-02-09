@@ -57,6 +57,16 @@ void YouTubeBot::loop() {
   uint8_t no_hits{0};
 
   while (m_is_running) {
+    if (!api->GetLiveDetails().id.empty())
+    {
+      auto elapsed = ((clock() - m_time_value) / 1000);
+      if (elapsed > 360)
+      {
+        PostMessage("If you like this type of content, smash the LIKE and SHARE!! :)");
+        m_time_value = clock();
+      }
+    }
+
     api->ParseTokens();
 
     if (api->HasChats()) {
@@ -96,11 +106,11 @@ void YouTubeBot::loop() {
     api->FetchChatMessages();
 
     if (no_hits < 1000) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(30000));
+      std::this_thread::sleep_for(std::chrono::milliseconds(20000));
     } else {
       // Not having much luck. Take a break.
       no_hits = 0;
-      std::this_thread::sleep_for(std::chrono::seconds(360));
+      std::this_thread::sleep_for(std::chrono::seconds(100));
     }
   }
 }
@@ -248,13 +258,31 @@ void YouTubeBot::SetCallback(BrokerCallback cb_fn) {
 
 bool YouTubeBot::HandleEvent(BotEvent event) {
   YouTubeDataAPI* api = static_cast<YouTubeDataAPI *>(m_api.get());
-  if (event.name == "livestream find")
+
+
+  if (event.name == "youtube:livestream")
   {
-    std::string name = (api->HasChats()) ?
-                            "livestrea active" :
-                            "livestream inactive";
-    std::string payload{"KSTYLEYO currently has a livestream RIGHT NOW: " + api->GetLiveDetails().chat_id};
-    m_send_event_fn(BotEvent{.platform = Platform::youtube, .name = "livestream result", .data = payload});
+    VideoDetails video_info = api->GetLiveDetails();
+
+    std::string name = (!video_info.id.empty()) ?
+                         "livestream active" :
+                         "livestream inactive";
+    std::string payload{
+      video_info.channel_title +
+      " currently has a livestream RIGHT NOW!!\n" +
+      video_info.url + '\n' +
+      video_info.title + '\n'
+    };
+
+    BotEvent outbound_event{
+      .platform = Platform::youtube,
+      .name = name,
+      .data = payload
+    };
+
+    if (!video_info.thumbnail.empty()) outbound_event.urls.emplace_back(video_info.thumbnail);
+
+    m_send_event_fn(outbound_event);
   }
 
   return true;

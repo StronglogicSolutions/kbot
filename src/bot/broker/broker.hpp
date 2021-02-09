@@ -9,6 +9,16 @@ using u_bot_ptr  = std::unique_ptr<Bot>;
 using BotPool    = std::vector<u_bot_ptr>;
 using EventQueue = std::deque<BotEvent>;
 
+inline std::vector<std::string> GetArgs(std::string s) {
+  using json = nlohmann::json;
+  json d = json::parse(s, nullptr, false);
+
+  if (!d.is_null() && d.contains("args")) {
+    return d["args"].get<std::vector<std::string>>();
+  }
+  return {};
+}
+
 namespace constants {
 const uint8_t YOUTUBE_BOT_INDEX {0x00};
 const uint8_t MASTODON_BOT_INDEX{0x01};
@@ -33,6 +43,22 @@ Broker()
   YTBot().Init();
   MDBot().Init();
 
+}
+
+void ProcessMessage(std::string message) {
+  for (const auto& command : GetArgs(message))
+  {
+    bool is_equal = command == "youtube:livestream";
+    if (command == "youtube:livestream")
+    {
+      SendEvent(Platform::youtube, command);
+    }
+    else
+    if (command == "mastodon:comments")
+    {
+      SendEvent(Platform::mastodon, "comments:find");
+    }
+  }
 }
 
 /**
@@ -88,6 +114,9 @@ virtual void loop() override
       if (event.platform == Platform::youtube)
         if (event.name == "livestream active")
           MDBot().HandleEvent(event);
+        else
+        if (event.name == "livestream inactive")
+          std::cout << "YouTube bot returned no livestreams" << std::endl;
       else
       if (event.platform == Platform::mastodon)
         if (event.name == "comment")

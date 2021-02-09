@@ -1,18 +1,22 @@
 #include "broker.hpp"
+#include "channel_port.hpp"
+
+const std::string OK{"OK"};
 
 int main(int argc, char** argv)
 {
-  kbot::Broker broker{};
+  kbot::Broker      broker{};
+  kbot::ChannelPort channel_port;
 
   broker.run();
 
-  for (uint8_t i{0}; i < 5; i++)
+  for (;;)
   {
-    if (i == 1)
-      broker.SendEvent(kbot::Platform::mastodon, "find comments");
-    else
-    if (i == 3)
-      broker.SendEvent(kbot::Platform::youtube, "find livestream");
+    if (channel_port.Poll())
+    {
+      broker.ProcessMessage(channel_port.ReceiveMessage());
+      channel_port.SendMessage(OK);
+    }
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
