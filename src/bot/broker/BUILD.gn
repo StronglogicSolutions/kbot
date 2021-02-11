@@ -26,6 +26,7 @@ include_dirs = [
 
 deps = [
   "//src/bot/mastodon:kstodon_lib",
+  "//src/bot/youtube:ktube_lib",
   "//src/bot/youtube:youtube_bot_sources"
 ]
 

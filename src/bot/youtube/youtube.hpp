@@ -2,19 +2,23 @@
 #define __YOUTUBE_HPP__
 
 #include <iostream>
-#include <interfaces/interfaces.hpp>
-#include <api/api.hpp>
-#include <api/youtube/youtube_api.hpp>
-#include <api/korean/korean.hpp>
 #include <iterator>
 #include <chrono>
 #include <ctime>
 #include <condition_variable>
 #include <mutex>
 
+#include <interfaces/interfaces.hpp>
+#include <api/api.hpp>
+#include <api/korean/korean.hpp>
+
+#include <ktube/ktube.hpp>
+
 namespace kbot {
 
 using namespace conversation;
+using namespace ktube;
+using namespace korean;
 
 extern const std::string DEFAULT_API_NAME;
 extern const std::string DEFAULT_USERNAME;
@@ -46,7 +50,8 @@ public:
  bool                         PostMessage(std::string message);
 
 private:
-  std::unique_ptr<API>     m_api;
+  YouTubeDataAPI           m_api;
+  KoreanAPI                m_korean_api;
   bool                     m_is_own_livestream;
   bool                     m_has_promoted;
   clock_t                  m_time_value;

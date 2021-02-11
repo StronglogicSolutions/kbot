@@ -38,7 +38,7 @@ std::string ReceiveMessage() {
 }
 
 bool SendMessage(std::string message) {
-  log("Sending IPC message: " + message + "\n");
+  kbot::log("Sending IPC message: " + message + "\n");
   zmq::message_t ipc_msg{message.size()};
   memcpy(ipc_msg.data(), message.data(), message.size());
   zmq::send_result_t result = m_socket.send(std::move(ipc_msg), zmq::send_flags::none);

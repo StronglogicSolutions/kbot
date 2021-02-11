@@ -25,18 +25,15 @@ void YouTubeBot::Init() {
  * init
  */
 bool YouTubeBot::init() {
-  m_api               = GetAPI(DEFAULT_API_NAME);
-  YouTubeDataAPI* api = static_cast<YouTubeDataAPI*>(m_api.get());
+  if (!m_api.is_authenticated() && !m_api.init())
+    throw std::runtime_error{"Could not authenticate YouTube API"};
 
-  if (
-    !api->FetchToken()      .empty() &&
-    !api->FetchLiveVideoID().empty() &&
-      api->FetchLiveDetails()
-  ) {
-    api->FetchChatMessages();
+  if (m_api.FetchLiveDetails())
+  {
+    m_api.FetchChatMessages();
 
-    if (api->GreetOnEntry()) {
-      api->PostMessage("Hello");
+    if (m_api.GreetOnEntry()) {
+      m_api.PostMessage("Hello");
     }
 
     return true;
@@ -52,12 +49,10 @@ bool YouTubeBot::init() {
 void YouTubeBot::loop() {
   using namespace korean;
 
-  YouTubeDataAPI* api = static_cast<YouTubeDataAPI *>(m_api.get());
-
   uint8_t no_hits{0};
 
   while (m_is_running) {
-    if (!api->GetLiveDetails().id.empty())
+    if (!m_api.GetLiveDetails().id.empty())
     {
       auto elapsed = ((clock() - m_time_value) / 1000);
       if (elapsed > 360)
@@ -67,24 +62,23 @@ void YouTubeBot::loop() {
       }
     }
 
-    api->ParseTokens();
+    m_api.ParseTokens();
 
-    if (api->HasChats()) {
+    if (m_api.HasChats()) {
       bool bot_was_mentioned = false;
-      LiveMessages messages = api->FindMentions();
+      LiveMessages messages = m_api.FindMentions();
 
       if (!messages.empty()) {
         bot_was_mentioned = true;
         log("Bot was mentioned");
       }
       // else { // We are doing this for now
-      messages = api->GetCurrentChat();
-      api->ClearChat();
+      messages = m_api.GetCurrentChat();
+      m_api.ClearChat();
       // }
-      auto k_api = GetAPI("Korean API");
-      KoreanAPI* korean_api = static_cast<KoreanAPI*>(k_api.get());
+
       for (const auto& message : messages) {
-        if (korean_api->MentionsKorean(message.text)) {
+        if (m_korean_api.MentionsKorean(message.text)) {
           log("Message from " + message.author + " mentions Korean:\n" + message.text);
         }
       }
@@ -93,7 +87,7 @@ void YouTubeBot::loop() {
       int max = 5;
       for (const auto& reply : reply_messages) {
         m_posted_messages.push_back(reply);
-        api->PostMessage(reply);
+        m_api.PostMessage(reply);
         log(m_nlp.toString());
         if (--max == 0)
           break;
@@ -103,7 +97,7 @@ void YouTubeBot::loop() {
       no_hits++;
     }
 
-    api->FetchChatMessages();
+    m_api.FetchChatMessages();
 
     if (no_hits < 1000) {
       std::this_thread::sleep_for(std::chrono::milliseconds(20000));
@@ -120,7 +114,6 @@ void YouTubeBot::loop() {
    */
 std::vector<std::string> YouTubeBot::CreateReplyMessages(LiveMessages messages, bool bot_was_mentioned) {
   std::vector<std::string> reply_messages{};
-  YouTubeDataAPI* api = static_cast<YouTubeDataAPI*>(m_api.get());
   // if (bot_was_mentioned) {
   auto reply_number = (!m_has_promoted) ? messages.size() + 1 : messages.size();
   reply_messages.reserve(reply_number); // Create responses to all who mentioned bot specifically
@@ -140,24 +133,24 @@ std::vector<std::string> YouTubeBot::CreateReplyMessages(LiveMessages messages, 
           */
 
         if (token.type == TokenType::location //&&
-            //!api->HasInteracted(user_id, Interaction::location_ask)
+            //!api.HasInteracted(user_id, Interaction::location_ask)
         ) {
           reply_messages.push_back(CreateLocationResponse(token.value));
-          api->RecordInteraction(message.author, Interaction::location_ask, token.value);
+          m_api.RecordInteraction(message.author, Interaction::location_ask, token.value);
         }
         else
         if (token.type == TokenType::person //&&
-                  //!api->HasInteracted(user_id, Interaction::greeting)
+                  //!api.HasInteracted(user_id, Interaction::greeting)
         ) {
           reply_messages.push_back(CreatePersonResponse(token.value));
-          api->RecordInteraction(message.author, Interaction::greeting, token.value);
+          m_api.RecordInteraction(message.author, Interaction::greeting, token.value);
         }
         else
         if (token.type == TokenType::organization //&&
-                  //!api->HasInteracted(user_id, Interaction::probing)
+                  //!api.HasInteracted(user_id, Interaction::probing)
         ) {
           reply_messages.push_back(CreateOrganizationResponse(token.value));
-          api->RecordInteraction(message.author, Interaction::probing, token.value);
+          m_api.RecordInteraction(message.author, Interaction::probing, token.value);
         }
 
         m_nlp.Insert(
@@ -188,21 +181,6 @@ std::vector<std::string> YouTubeBot::CreateReplyMessages(LiveMessages messages, 
    * @returns
    */
 std::unique_ptr<API> YouTubeBot::GetAPI(std::string name) {
-  if (name.empty()) {
-    return std::make_unique<DefaultAPI>();
-  }
-  else
-  if (name.compare("Request API") == 0) {
-    return std::make_unique<RequestAPI>();
-  }
-  else
-  if (name.compare("YouTube Data API") == 0) {
-    return std::make_unique<YouTubeDataAPI>();
-  }
-  else
-  if (name.compare("Korean API") == 0) {
-    return std::make_unique<korean::KoreanAPI>();
-  }
   return nullptr;
 }
 
@@ -212,10 +190,7 @@ std::unique_ptr<API> YouTubeBot::GetAPI(std::string name) {
  * @returns [out] {LiveChatMap}  A map of Live Chats indexed by chat id
  */
 LiveChatMap YouTubeBot::GetChats() {
-  if (m_api != nullptr) {
-    return static_cast<YouTubeDataAPI*>(m_api.get())->GetChats();
-  }
-  return LiveChatMap{};
+    return m_api.GetChats();
 }
 
 
@@ -227,7 +202,7 @@ LiveChatMap YouTubeBot::GetChats() {
  */
 bool YouTubeBot::PostMessage(std::string message) {
   m_posted_messages.push_back(message);
-  return static_cast<YouTubeDataAPI*>(m_api.get())->PostMessage(message);
+  return m_api.PostMessage(message);
 }
 
 /**
@@ -257,12 +232,9 @@ void YouTubeBot::SetCallback(BrokerCallback cb_fn) {
 }
 
 bool YouTubeBot::HandleEvent(BotEvent event) {
-  YouTubeDataAPI* api = static_cast<YouTubeDataAPI *>(m_api.get());
-
-
   if (event.name == "youtube:livestream")
   {
-    VideoDetails video_info = api->GetLiveDetails();
+    VideoDetails video_info = m_api.GetLiveDetails();
 
     std::string name = (!video_info.id.empty()) ?
                          "livestream active" :
