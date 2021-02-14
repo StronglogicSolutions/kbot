@@ -2,6 +2,7 @@
 
 #include "bot/mastodon/mastodon.hpp"
 #include "bot/youtube/youtube.hpp"
+#include "bot/discord/discord.hpp"
 #include <deque>
 
 namespace kbot {
@@ -22,6 +23,7 @@ inline std::vector<std::string> GetArgs(std::string s) {
 namespace constants {
 const uint8_t YOUTUBE_BOT_INDEX {0x00};
 const uint8_t MASTODON_BOT_INDEX{0x01};
+const uint8_t DISCORD_BOT_INDEX{0x02};
 } // namespace constants
 
 Broker* g_broker;
@@ -33,15 +35,19 @@ Broker()
 {
   u_bot_ptr u_yt_bot_ptr{new kbot::YouTubeBot{}};
   u_bot_ptr u_md_bot_ptr{new kbot::MastodonBot{}};
+  u_bot_ptr u_dc_bot_ptr{new kbot::DiscordBot{}};
   g_broker = this;
 
   m_pool.emplace_back(std::move(u_yt_bot_ptr));
   m_pool.emplace_back(std::move(u_md_bot_ptr));
+  m_pool.emplace_back(std::move(u_dc_bot_ptr));
 
   YTBot().SetCallback(&ProcessEvent);
   MDBot().SetCallback(&ProcessEvent);
+  DCBot().SetCallback(&ProcessEvent);
   YTBot().Init();
   MDBot().Init();
+  DCBot().Init();
 
 }
 
@@ -105,6 +111,7 @@ virtual void loop() override
 {
   YTBot().Start();
   MDBot().Start();
+  DCBot().Start();
 
   while (YTBot().IsRunning() || MDBot().IsRunning())
   {
@@ -157,11 +164,13 @@ bool Shutdown()
   {
     Bot& youtube_bot  = YTBot();
     Bot& mastodon_bot = MDBot();
+    Bot& discord_bot  = DCBot();
 
     youtube_bot.Shutdown();
     mastodon_bot.Shutdown();
+    discord_bot.Shutdown();
 
-    while (youtube_bot.IsRunning() || mastodon_bot.IsRunning())
+    while (youtube_bot.IsRunning() || mastodon_bot.IsRunning() || discord_bot.IsRunning())
     ;
 
     Worker::stop();
@@ -186,6 +195,11 @@ Bot& YTBot()
 Bot& MDBot()
 {
   return *m_pool.at(constants::MASTODON_BOT_INDEX).get();
+}
+
+Bot& DCBot()
+{
+  return *m_pool.at(constants::DISCORD_BOT_INDEX).get();
 }
 
 BotPool    m_pool;

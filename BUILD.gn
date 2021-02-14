@@ -37,6 +37,7 @@ executable("youtube_bot") {
 all_executables = [
   ":youtube_bot",
   "//src/bot/mastodon:mastodon_bot",
+  "//src/bot/discord:discord_bot",
   "//src/bot/broker:broker"
 ]
 

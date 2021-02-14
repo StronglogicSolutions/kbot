@@ -10,7 +10,8 @@ public_configs = [
   "//:cppzmq",
   ":cpr",
   "//src/bot/mastodon:kstodon",
-  "//src/bot/mastodon:nlp"
+  "//src/bot/mastodon:nlp",
+  "//src/bot/discord:kscord",
 ]
 
 libs = [
@@ -21,12 +22,14 @@ libs = [
 
 include_dirs = [
   "//third_party/inih/cpp",
-  "//third_party/json/include"
+  "//third_party/json/include",
+  "//third_party/kjson"
 ]
 
 deps = [
   "//src/bot/mastodon:kstodon_lib",
   "//src/bot/youtube:ktube_lib",
+  "//src/bot/discord:kscord_lib",
   "//src/bot/youtube:youtube_bot_sources"
 ]
 

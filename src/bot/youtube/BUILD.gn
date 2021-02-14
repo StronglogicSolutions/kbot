@@ -40,6 +40,15 @@ source_set("ini_reader") {
   ]
 }
 
+group("inih_lib") {
+  deps = [
+    ":ini_reader"
+  ]
+  public_configs = [
+    ":inih"
+  ]
+}
+
 config("html") {
   include_dirs = [
     "//third_party/HtmlBuilder/include"
