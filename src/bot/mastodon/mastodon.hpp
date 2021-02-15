@@ -10,21 +10,23 @@ using ReplyFunction    = Status(*)(Status status);
 
 namespace kbot {
 namespace constants {
-const std::string USERNAME{"stronglogicsolutions"};
+const std::string USERNAME{
+  kstodon::GetConfigReader().GetString("kstodon", "user", "koreannews")
+};
 } // namespace constants
 /**
  * @brief
  *
  * @return Status
  */
-Status GenerateStatusMessage()
+kstodon::Status GenerateStatusMessage()
 {
-  return Status{"Hello from KSTYLEYO!"};
+  return kstodon::Status{"Hello from KSTYLEYO!"};
 }
 
-Status ReplyToMastodonMessage(Status status)
+kstodon::Status ReplyToMastodonMessage(kstodon::Status status)
 {
-  return Status{"Nice to hear from you."};
+  return kstodon::Status{"Nice to hear from you."};
 }
 
 class MastodonBot : public kbot::Worker,
@@ -54,13 +56,13 @@ virtual void loop() override
 
 void SendPublicMessage(const std::string& message)
 {
-  PostStatus(Status{message});
+  PostStatus(kstodon::Status{message});
 }
 
 void SendPrivateMessage(const std::string& message, const std::string& user_id)
 {
-  Status status{message};
-  status.visibility = ::constants::StatusVisibility::DIRECT;
+  kstodon::Status status{message};
+  status.visibility = kstodon::constants::StatusVisibility::DIRECT;
   status.replying_to_id = user_id;
   PostStatus(status);
 }
@@ -74,7 +76,7 @@ bool HandleEvent(BotEvent event) {
 
   if (event.name == "comments find")
   {
-    for (const Status& status : FindComments())
+    for (const kstodon::Status& status : FindComments())
       ss << status;
 
     m_send_event_fn(BotEvent{
@@ -86,7 +88,7 @@ bool HandleEvent(BotEvent event) {
   else
   if (event.name == "livestream active")
   {
-    Status status{event.data};
+    kstodon::Status status{event.data};
 
     bool result = kstodon::Bot::PostStatus(status, event.urls);
     std::cout << "Mastodon bot posted " << status << std::endl;

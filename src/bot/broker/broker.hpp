@@ -51,18 +51,35 @@ Broker()
 
 }
 
+const uint8_t IPC_COMMAND_INDEX{0x00};
+const uint8_t IPC_PAYLOAD_INDEX{0x01};
+const uint8_t IPC_PARAM_NUMBER{0x02};
+
+bool ValidIPCArguments(const std::vector<std::string>& arguments)
+{
+  return arguments.size() >= IPC_PARAM_NUMBER;
+}
+
 void ProcessMessage(std::string message) {
-  for (const auto& command : GetArgs(message))
+  const auto frames = GetArgs(message);
+  if (ValidIPCArguments(frames));
   {
-    bool is_equal = command == "youtube:livestream";
+    const auto command = frames.at(IPC_COMMAND_INDEX);
+    const auto payload = frames.at(IPC_PAYLOAD_INDEX);
+
     if (command == "youtube:livestream")
     {
-      SendEvent(Platform::youtube, command);
+      SendEvent(Platform::youtube, command, payload);
     }
     else
     if (command == "mastodon:comments")
     {
-      SendEvent(Platform::mastodon, "comments:find");
+      SendEvent(Platform::mastodon, "comments:find", payload);
+    }
+    else
+    if (command == "discord:messages")
+    {
+      SendEvent(Platform::discord, command, payload);
     }
   }
 }
@@ -120,7 +137,10 @@ virtual void loop() override
       BotEvent event = m_queue.front();
       if (event.platform == Platform::youtube)
         if (event.name == "livestream active")
-          MDBot().HandleEvent(event);
+          {
+            MDBot().HandleEvent(event);
+            DCBot().HandleEvent(event);
+          }
         else
         if (event.name == "livestream inactive")
           std::cout << "YouTube bot returned no livestreams" << std::endl;
@@ -128,6 +148,10 @@ virtual void loop() override
       if (event.platform == Platform::mastodon)
         if (event.name == "comment")
           std::cout << "Mastodon bot has new comments: " << event.data << std::endl;
+      else
+      if (event.platform == Platform::discord)
+        if (event.name == "message")
+          std::cout << "Discord bot has new messages: " << event.data << std::endl;
       else
         throw std::runtime_error{"No bot to handle this type of event"};
 
@@ -143,13 +167,17 @@ virtual void loop() override
  * @param platform
  * @param event
  */
-void SendEvent(Platform platform, std::string event)
+void SendEvent(Platform platform, std::string event, std::string payload = "")
 {
   if (platform == Platform::mastodon)
-    MDBot().HandleEvent(BotEvent{.platform = platform, .name = event});
+    MDBot().HandleEvent(BotEvent{.platform = platform, .name = event, .data = payload});
   else
   if (platform == Platform::youtube)
-    YTBot().HandleEvent(BotEvent{.platform = platform, .name = event});
+    YTBot().HandleEvent(BotEvent{.platform = platform, .name = event, .data = payload});
+  else
+  if (platform == Platform::discord)
+    DCBot().HandleEvent(BotEvent{.platform = platform, .name = event, .data = payload});
+
 }
 
 /**

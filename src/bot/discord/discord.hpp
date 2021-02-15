@@ -37,7 +37,7 @@ virtual void loop() override
 
 void SendPublicMessage(const std::string& message)
 {
-  (void)(0);
+  kscord::Client::PostMessage(message);
 }
 
 void SendPrivateMessage(const std::string& message, const std::string& user_id)
@@ -50,8 +50,17 @@ void SetCallback(BrokerCallback cb_fn) {
 }
 
 bool HandleEvent(BotEvent event) {
-  (void)(0);
-  return false;
+  if (event.name == "discord:messages")
+    SendPublicMessage((event.data.empty()) ?
+      "Hi" :
+      event.data
+    );
+  if (event.name == "livestream active")
+  {
+    bool result = kscord::Client::PostMessage(event.data);
+    std::cout << "Discord post result: " << std::to_string(result) << std::endl;
+  }
+  return true;
 }
 
 virtual std::unique_ptr<API> GetAPI(std::string name) override

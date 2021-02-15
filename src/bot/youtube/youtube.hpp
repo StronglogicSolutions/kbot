@@ -1,5 +1,4 @@
-#ifndef __YOUTUBE_HPP__
-#define __YOUTUBE_HPP__
+#pragma once
 
 #include <iostream>
 #include <iterator>
@@ -61,5 +60,3 @@ private:
 };
 
 } // namespace kbot
-
-#endif // __YOUTUBE_HPP__
