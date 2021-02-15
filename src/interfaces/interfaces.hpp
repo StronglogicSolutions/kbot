@@ -19,7 +19,8 @@ class  Broker;
 enum Platform
 {
   youtube  = 0x00,
-  mastodon = 0x01
+  mastodon = 0x01,
+  discord  = 0x02
 };
 
 struct BotEvent
