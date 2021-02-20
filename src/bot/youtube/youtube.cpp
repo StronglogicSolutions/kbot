@@ -25,20 +25,20 @@ void YouTubeBot::Init() {
  * init
  */
 bool YouTubeBot::init() {
-  // if (!m_api.is_authenticated() && !m_api.init())
-  //   throw std::runtime_error{"Could not authenticate YouTube API"};
-  // if (!m_api.FetchLiveVideoID().empty()) {
-  //   if (m_api.FetchLiveDetails())
-  //   {
-  //     m_api.FetchChatMessages();
+  if (!m_api.is_authenticated() && !m_api.init())
+    throw std::runtime_error{"Could not authenticate YouTube API"};
+  if (!m_api.FetchLiveVideoID().empty()) {
+    if (m_api.FetchLiveDetails())
+    {
+      m_api.FetchChatMessages();
 
-  //     if (m_api.GreetOnEntry()) {
-  //       m_api.PostMessage("Hello");
-  //     }
+      if (m_api.GreetOnEntry()) {
+        // m_api.PostMessage("Hello");
+      }
       return true;
-  //   }
-  // }
-  // return false;
+    }
+  }
+  return false;
 }
 
 /**
@@ -54,52 +54,52 @@ void YouTubeBot::loop() {
   while (m_is_running) {
     log("YouTubeBot alive");
 
-    // if (!m_api.GetLiveDetails().id.empty())
-    // {
-    //   auto elapsed = ((clock() - m_time_value) / 1000);
-    //   if (elapsed > 360)
-    //   {
-    //     PostMessage("If you like this type of content, smash the LIKE and SHARE!! :)");
-    //     m_time_value = clock();
-    //   }
-    // }
+    if (!m_api.GetLiveDetails().id.empty())
+    {
+      auto elapsed = ((clock() - m_time_value) / 1000);
+      if (elapsed > 720)
+      {
+        PostMessage("If you like this type of content, smash the LIKE and SHARE!! :)");
+        m_time_value = clock();
+      }
+    }
 
-    // m_api.ParseTokens();
+    m_api.ParseTokens();
 
-    // if (m_api.HasChats()) {
-    //   bool bot_was_mentioned = false;
-    //   LiveMessages messages = m_api.FindMentions();
+    if (m_api.HasChats()) {
+      bool bot_was_mentioned = false;
+      LiveMessages messages = m_api.FindMentions();
 
-    //   if (!messages.empty()) {
-    //     bot_was_mentioned = true;
-    //     log("Bot was mentioned");
-    //   }
-    //   // else { // We are doing this for now
-    //   messages = m_api.GetCurrentChat();
-    //   m_api.ClearChat();
-    //   // }
+      if (!messages.empty()) {
+        bot_was_mentioned = true;
+        log("Bot was mentioned");
+      }
+      // else { // We are doing this for now
+      messages = m_api.GetCurrentChat();
+      m_api.ClearChat();
+      // }
 
-    //   for (const auto& message : messages) {
-    //     if (m_korean_api.MentionsKorean(message.text)) {
-    //       log("Message from " + message.author + " mentions Korean:\n" + message.text);
-    //     }
-    //   }
+      for (const auto& message : messages) {
+        if (m_korean_api.MentionsKorean(message.text)) {
+          log("Message from " + message.author + " mentions Korean:\n" + message.text);
+        }
+      }
 
-    //   std::vector<std::string> reply_messages = CreateReplyMessages(messages, bot_was_mentioned);
-    //   int max = 5;
-    //   for (const auto& reply : reply_messages) {
-    //     m_posted_messages.push_back(reply);
-    //     m_api.PostMessage(reply);
-    //     log(m_nlp.toString());
-    //     if (--max == 0)
-    //       break;
-    //   }
-    // }
-    // else {
+      std::vector<std::string> reply_messages = CreateReplyMessages(messages, bot_was_mentioned);
+      int max = 5;
+      for (const auto& reply : reply_messages) {
+        m_posted_messages.push_back(reply);
+        // m_api.PostMessage(reply);
+        log(m_nlp.toString());
+        if (--max == 0)
+          break;
+      }
+    }
+    else {
       no_hits++;
-    // }
+    }
 
-    // m_api.FetchChatMessages();
+    m_api.FetchChatMessages();
 
     if (no_hits < 1000) {
       std::this_thread::sleep_for(std::chrono::milliseconds(30000));

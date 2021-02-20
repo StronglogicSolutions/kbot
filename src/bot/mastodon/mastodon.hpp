@@ -54,9 +54,17 @@ virtual void loop() override
 }
 
 
-void SendPublicMessage(const std::string& message)
+void SendPublicMessage(const std::string& message, const std::vector<std::string>& file_urls)
 {
-  PostStatus(kstodon::Status{message});
+  PostStatus(kstodon::Status{message}, file_urls);
+
+  m_send_event_fn(BotEvent{
+    .platform = Platform::mastodon,
+    .name = "platform:post",
+    .data = message,
+    .urls = file_urls,
+    .id = ""
+  });
 }
 
 void SendPrivateMessage(const std::string& message, const std::string& user_id)
@@ -88,10 +96,7 @@ bool HandleEvent(BotEvent event) {
   else
   if (event.name == "livestream active")
   {
-    kstodon::Status status{event.data};
-
-    bool result = kstodon::Bot::PostStatus(status, event.urls);
-    std::cout << "Mastodon bot posted " << status << std::endl;
+    SendPublicMessage(event.data, event.urls);
   }
 
   return true;

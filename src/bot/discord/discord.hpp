@@ -6,7 +6,7 @@
 
 namespace kbot {
 namespace constants {
-const std::string USER{"stronglogicsolutions"};
+const std::string USER{"kstyleyo"};
 } // namespace constants
 
 

@@ -1,14 +1,17 @@
 #pragma once
 
+#include <deque>
+
 #include "bot/mastodon/mastodon.hpp"
 #include "bot/youtube/youtube.hpp"
 #include "bot/discord/discord.hpp"
-#include <deque>
+#include "ipc.hpp"
 
 namespace kbot {
-using u_bot_ptr  = std::unique_ptr<Bot>;
-using BotPool    = std::vector<u_bot_ptr>;
-using EventQueue = std::deque<BotEvent>;
+using u_bot_ptr     = std::unique_ptr<Bot>;
+using BotPool       = std::vector<u_bot_ptr>;
+using EventQueue    = std::deque<BotEvent>;
+using u_ipc_msg_ptr = ipc_message::u_ipc_msg_ptr;
 
 inline std::vector<std::string> GetArgs(std::string s) {
   using json = nlohmann::json;
@@ -81,6 +84,11 @@ void ProcessMessage(std::string message) {
     {
       SendEvent(Platform::discord, command, payload);
     }
+    else
+    if (command == "social:post")
+    {
+
+    }
   }
 }
 
@@ -119,6 +127,17 @@ void run()
 {
   Worker::start();
 }
+const std::string get_platform_name(Platform platform)
+{
+  if (platform == Platform::youtube)
+    return "YouTube";
+  if (platform == Platform::mastodon)
+    return "Mastodon";
+  if (platform == Platform::discord)
+    return "Discord";
+
+  return "";
+};
 
 /**
  * @brief
@@ -135,7 +154,19 @@ virtual void loop() override
     if (!m_queue.empty())
     {
       BotEvent event = m_queue.front();
-      if (event.platform == Platform::youtube)
+      if (event.name == "platform:post")                            // ALL Platforms
+      {
+        m_outbound_queue.emplace_back(
+          std::make_unique<platform_message>(
+            get_platform_name(event.platform),
+            event.id,
+            event.data,
+            event.url_string(),
+            SHOULD_REPOST
+          )
+        );
+      }
+      if (event.platform == Platform::youtube)                      // YouTube
         if (event.name == "livestream active")
           {
             MDBot().HandleEvent(event);
@@ -145,11 +176,11 @@ virtual void loop() override
         if (event.name == "livestream inactive")
           std::cout << "YouTube bot returned no livestreams" << std::endl;
       else
-      if (event.platform == Platform::mastodon)
+      if (event.platform == Platform::mastodon)                     // Mastodon
         if (event.name == "comment")
           std::cout << "Mastodon bot has new comments: " << event.data << std::endl;
       else
-      if (event.platform == Platform::discord)
+      if (event.platform == Platform::discord)                      // Discord
         if (event.name == "message")
           std::cout << "Discord bot has new messages: " << event.data << std::endl;
       else
@@ -213,6 +244,18 @@ bool Shutdown()
   }
 }
 
+const bool Poll() const
+{
+  return !m_outbound_queue.empty();
+}
+
+u_ipc_msg_ptr DeQueue()
+{
+  u_ipc_msg_ptr message = std::move(m_outbound_queue.front());
+  m_outbound_queue.pop_front();
+  return std::move(message);
+}
+
 private:
 
 Bot& YTBot()
@@ -230,9 +273,10 @@ Bot& DCBot()
   return *m_pool.at(constants::DISCORD_BOT_INDEX).get();
 }
 
-BotPool    m_pool;
-EventQueue m_queue;
-bool       m_bots_active;
+BotPool                    m_pool;
+EventQueue                 m_queue;
+std::deque<u_ipc_msg_ptr>  m_outbound_queue;
+bool                       m_bots_active;
 };
 
 } // namespace kbot
