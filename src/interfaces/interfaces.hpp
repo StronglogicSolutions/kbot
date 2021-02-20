@@ -29,7 +29,24 @@ Platform    platform;
 std::string name;
 std::string data;
 std::vector<std::string> urls;
+std::string id;
+
+const std::string url_string() const
+{
+  std::string output;
+  std::string delim{};
+
+  for (const auto& url : urls)
+  {
+    output += delim + url;
+    delim = ">";
+  }
+
+  return output;
+}
 };
+
+const bool SHOULD_REPOST{true};
 
 using BrokerCallback = bool(*)(BotEvent event);
 
