@@ -16,15 +16,19 @@ int main(int argc, char** argv)
   {
     const uint8_t mask = channel_port.Poll();
 
-    if (kbot::HasMessage(mask))
+    if (kbot::HasRequest(mask))
     {
-      broker.ProcessMessage(channel_port.ReceiveMessage());
-      channel_port.SendMessage(OK);
+      channel_port.ReceiveIPCMessage(false);
+      for (auto&& message : channel_port.GetRXMessages())
+      {
+        broker.ProcessMessage(std::move(message));
+      }
+      channel_port.SendIPCMessage(std::make_unique<okay_message>());
     }
 
-    if (kbot::HasIPCMessage(mask))
+    if (kbot::HasReply(mask))
     {
-      channel_port.ReceiveIPCMessage();
+      channel_port.ReceiveIPCMessage(true);
     }
 
     if (broker.Poll())

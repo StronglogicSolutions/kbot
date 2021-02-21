@@ -63,31 +63,37 @@ bool ValidIPCArguments(const std::vector<std::string>& arguments)
   return arguments.size() >= IPC_PARAM_NUMBER;
 }
 
-void ProcessMessage(std::string message) {
-  const auto frames = GetArgs(message);
-  if (ValidIPCArguments(frames));
+void ProcessMessage(u_ipc_msg_ptr message) {
+
+  if (message->type() == ::constants::KIQ_MESSAGE)
   {
-    const auto command = frames.at(IPC_COMMAND_INDEX);
-    const auto payload = frames.at(IPC_PAYLOAD_INDEX);
+    kiq_message* kiq_msg = static_cast<kiq_message*>(message.get());
+    const auto args = GetArgs(kiq_msg->payload());
 
-    if (command == "youtube:livestream")
+    if (ValidIPCArguments(args));
     {
-      SendEvent(Platform::youtube, command, payload);
-    }
-    else
-    if (command == "mastodon:comments")
-    {
-      SendEvent(Platform::mastodon, "comments:find", payload);
-    }
-    else
-    if (command == "discord:messages")
-    {
-      SendEvent(Platform::discord, command, payload);
-    }
-    else
-    if (command == "social:post")
-    {
+      const auto command = args.at(IPC_COMMAND_INDEX);
+      const auto payload = args.at(IPC_PAYLOAD_INDEX);
 
+      if (command == "youtube:livestream")
+      {
+        SendEvent(Platform::youtube, command, payload);
+      }
+      else
+      if (command == "mastodon:comments")
+      {
+        SendEvent(Platform::mastodon, "comments:find", payload);
+      }
+      else
+      if (command == "discord:messages")
+      {
+        SendEvent(Platform::discord, command, payload);
+      }
+      else
+      if (command == "social:post")
+      {
+
+      }
     }
   }
 }
