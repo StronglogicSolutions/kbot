@@ -1,20 +1,23 @@
-#ifndef __YOUTUBE_HPP__
-#define __YOUTUBE_HPP__
+#pragma once
 
 #include <iostream>
-#include <interfaces/interfaces.hpp>
-#include <api/api.hpp>
-#include <api/youtube/youtube_api.hpp>
-#include <api/korean/korean.hpp>
 #include <iterator>
 #include <chrono>
 #include <ctime>
 #include <condition_variable>
 #include <mutex>
 
-namespace youtube {
+#include <interfaces/interfaces.hpp>
+#include <api/api.hpp>
+#include <api/korean/korean.hpp>
+
+#include <ktube/ktube.hpp>
+
+namespace kbot {
 
 using namespace conversation;
+using namespace ktube;
+using namespace korean;
 
 extern const std::string DEFAULT_API_NAME;
 extern const std::string DEFAULT_USERNAME;
@@ -35,19 +38,25 @@ public:
  bool                         init();
  std::vector<std::string>     CreateReplyMessages(LiveMessages messages, bool bot_was_mentioned = false);
  virtual std::unique_ptr<API> GetAPI(std::string name = "") override;
+ virtual bool                 IsRunning() override;
+ virtual void                 Init() override;
+ virtual void                 Start() override;
+ virtual void                 Shutdown() override;
+ virtual void                 SetCallback(BrokerCallback cb_fn) override;
+ virtual bool                 HandleEvent(BotEvent event) override;
  LiveChatMap                  GetChats();
  std::string                  GetResults();
  bool                         PostMessage(std::string message);
 
 private:
-  std::unique_ptr<API>     m_api;
+  YouTubeDataAPI           m_api;
+  KoreanAPI                m_korean_api;
   bool                     m_is_own_livestream;
   bool                     m_has_promoted;
   clock_t                  m_time_value;
   std::vector<std::string> m_posted_messages;
   NLP                      m_nlp;
+  BrokerCallback           m_send_event_fn;
 };
 
-} // namespace youtube
-
-#endif // __YOUTUBE_HPP__
+} // namespace kbot

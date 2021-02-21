@@ -1,48 +1,13 @@
-config("inih") {
+config("process_executor") {
   include_dirs = [
-    "//third_party/inih/cpp",
-  ]
-}
-
-config("json") {
-  include_dirs = [
-    "//third_party/json/include",
-  ]
-}
-
-source_set("ini_reader") {
-  sources = [
-    "//third_party/inih/ini.c",
-    "//third_party/inih/cpp/INIReader.cpp",
-  ]
-}
-
-source_set("youtube_api_sources") {
-  public_configs = [
-    ":inih",
-    ":json"
-  ]
-
-  include_dirs = [
-    "//src",
-  ]
-
-  sources = [
-    "//src/api/youtube/youtube_api.cpp"
-  ]
-}
-
-source_set("nlp_sources") {
-  sources = [
-    "//src/api/nlp/nlp.cpp"
+    "//third_party/process_executor"
   ]
 }
 
 source_set("korean") {
-
   public_configs = [
     ":inih",
-    ":json"
+    ":kjson"
   ]
 
   include_dirs = [
@@ -53,65 +18,92 @@ source_set("korean") {
   sources = [
     "//src/api/korean/korean.cpp"
   ]
-
 }
 
-shared_library("youtube_api") {
-  deps = [
-    ":youtube_api_sources",
-  ]
-
+config("inih") {
   include_dirs = [
-    "//src",
-    "//third_party/",
-  ]
-
-  libs = [
-    "pthread",
-    "crypto",
-    "cpr",
-    "curl"
+    "//third_party/inih/cpp",
   ]
 }
 
-shared_library("nlp") {
-
-  deps = [
-    ":nlp_sources"
-  ]
-
+config("kjson") {
   include_dirs = [
-    "//src",
-    "//third_party/",
+    "//third_party/json/include",
+    "//third_party/kjson",
+  ]
+}
+
+source_set("ini_reader") {
+  sources = [
+    "//third_party/inih/ini.c",
+    "//third_party/inih/cpp/INIReader.cpp",
+  ]
+}
+
+group("inih_lib") {
+  deps = [
+    ":ini_reader"
+  ]
+  public_configs = [
+    ":inih"
+  ]
+}
+
+config("html") {
+  include_dirs = [
+    "//third_party/HtmlBuilder/include"
+  ]
+}
+
+config("ktube") {
+  include_dirs = ["//third_party/ktube/src", "//third_party/kjson",
+   "//third_party/ktube/third_party/kjson"]
+  libs = ["//third_party/ktube/out/libktube_lib.so"]
+}
+
+group("ktube_lib") {
+  public_configs = [
+    ":ktube"
+  ]
+}
+
+config("knlp") {
+  include_dirs = ["//third_party/knlp/src"]
+  libs = ["//third_party/knlp/out/libknlp.so"]
+}
+
+group("knlp_lib") {
+  public_configs = [
+    ":knlp"
   ]
 }
 
 source_set("youtube_bot_sources") {
 
   public_configs = [
+    ":html",
     ":inih",
-    ":json"
+    ":kjson",
+    ":ktube",
+    ":knlp",
+    ":process_executor"
   ]
-
   deps = [
     ":ini_reader",
-    ":youtube_api_sources",
-    ":nlp_sources",
+    ":ktube_lib",
+    ":knlp_lib",
     ":korean"
   ]
-
   include_dirs = [
     "//src",
     "//third_party/",
   ]
-
   libs = [
     "pthread",
     "crypto",
     "cpr",
-    "curl"
+    "curl",
   ]
-
   sources = [
     "youtube.cpp",
   ]

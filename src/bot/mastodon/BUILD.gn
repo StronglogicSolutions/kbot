@@ -1,0 +1,57 @@
+
+config("kstodon") {
+  include_dirs = ["//third_party/kstodon/src", "//third_party/kstodon/third_party/kjson"]
+  libs = ["//third_party/libkstodon/libkstodon_lib.so"]
+  visibility = [ ":kstodon_lib" ]
+}
+
+config("nlp") {
+  include_dirs = [
+    "//src/api/nlp",
+  ]
+}
+
+config("cpr") {
+  include_dirs = [
+    "//third_party/cpr/include"
+  ]
+}
+
+config("kbot_includes") {
+  include_dirs = [
+    "//src/"
+  ]
+}
+
+
+group("kstodon_lib") {
+  public_configs = [
+    ":kstodon",
+    ":kbot_includes"
+    ]
+}
+
+executable("mastodon_bot") {
+public_configs = [
+  ":nlp",
+  ":cpr",
+  "//src/bot/youtube:kjson",
+  "//src/bot/youtube:inih",
+]
+
+deps = [
+  ":kstodon_lib"
+]
+
+libs = [
+  "crypto",
+  "cpr",
+  "curl",
+  "pthread"
+]
+
+sources = [
+  "//src/bot/mastodon/main.cpp"
+]
+
+}

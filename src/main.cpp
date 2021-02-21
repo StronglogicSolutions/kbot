@@ -4,10 +4,28 @@
 
 const std::string DATA_REQUEST{"Get Results"};
 
-std::string ReceiveMessage(zmq::socket_t* socket) {
+class ChannelPort
+{
+public:
+ChannelPort()
+:
+m_context   {1},
+m_socket    {m_context, ZMQ_REP},
+m_socket_num{1},
+m_timeout   {0}
+{
+  Reset();
+}
+
+void Reset()
+{
+  m_socket.bind("tcp://0.0.0.0:28473");
+}
+
+std::string ReceiveMessage() {
   zmq::message_t message{};
 
-  zmq::recv_result_t result = socket->recv(message, zmq::recv_flags::none);
+  zmq::recv_result_t result = m_socket.recv(message, zmq::recv_flags::none);
 
   if (result.has_value()) {
     return std::string{
@@ -19,33 +37,51 @@ std::string ReceiveMessage(zmq::socket_t* socket) {
   return "";
 }
 
-std::string const ProcessMessage(std::string message) {
+bool SendMessage(std::string message) {
+  kbot::log("Sending IPC message: " + message + "\n");
+  zmq::message_t ipc_msg{message.size()};
+  memcpy(ipc_msg.data(), message.data(), message.size());
+  zmq::send_result_t result = m_socket.send(std::move(ipc_msg), zmq::send_flags::none);
+
+  return result.has_value();
+}
+
+bool Poll()
+{
+  void*          socket_ptr = static_cast<void*>(m_socket);
+  zmq_pollitem_t items[1]{
+    {socket_ptr, 0, ZMQ_POLLIN, 0}
+  };
+
+  zmq::poll(&items[0], m_socket_num, m_timeout);
+
+  return (items[0].revents & ZMQ_POLLIN);
+
+}
+
+static bool IsDataRequest(std::string s) {
+  return (FindDataRequest(s) == DATA_REQUEST);
+}
+
+private:
+static std::string const FindDataRequest(std::string message) {
   if (message.find(DATA_REQUEST) != std::string::npos) {
     return DATA_REQUEST;
   }
   return "";
 }
 
-bool SendMessage(zmq::socket_t* socket, std::string message) {
-  log("Sending IPC message: " + message + "\n");
-  zmq::message_t ipc_msg{message.size()};
-  memcpy(ipc_msg.data(), message.data(), message.size());
-  zmq::send_result_t result = socket->send(std::move(ipc_msg), zmq::send_flags::none);
+zmq::context_t m_context;
+zmq::socket_t  m_socket;
+uint8_t        m_socket_num;
+uint8_t        m_timeout;
+};
 
-  return result.has_value();
-}
-
-bool IsDataRequest(std::string s) {
-  return s.compare(DATA_REQUEST) == 0;
-}
-
-using namespace youtube;
 
 int main(int argc, char** argv) {
-  zmq::context_t context   {1};
-  zmq::socket_t  socket    {context, ZMQ_REP};
-  uint8_t        socket_num{1};
-  uint8_t        timeout   {0};
+  using namespace kbot;
+
+  ChannelPort channel_port{};
 
   try {
     YouTubeBot bot{};
@@ -54,25 +90,18 @@ int main(int argc, char** argv) {
       bot.start();
     }
 
-    socket.bind("tcp://0.0.0.0:28473");
-
-    void* socket_ptr = static_cast<void*>(socket);
 
     for (;;) {
-      zmq_pollitem_t items[1]{
-        {socket_ptr, 0, ZMQ_POLLIN, 0}
-      };
+      if (channel_port.Poll())
+      {
+        std::string message = channel_port.ReceiveMessage();
+        log ("Received IPC message: \n" + message);
 
-      zmq::poll(&items[0], socket_num, timeout);
-
-      if (
-        items[0].revents & ZMQ_POLLIN &&                       // Message
-        IsDataRequest(ProcessMessage(ReceiveMessage(&socket))) // Request confirmed
-      ) {
-        log ("Received IPC message");
-
-        if (!SendMessage(&socket, bot.GetResults())) {
-          log("Failed to send response");
+        if (ChannelPort::IsDataRequest(message))
+        {
+          if (!channel_port.SendMessage(bot.GetResults())) {
+            log("Failed to send response");
+          }
         }
       }
 

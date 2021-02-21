@@ -1,5 +1,4 @@
-#ifndef __TYPES_HPP__
-#define __TYPES_HPP__
+#pragma once
 
 #include <vector>
 #include <map>
@@ -9,7 +8,7 @@
 #include "api/nlp/types.hpp"
 #include "api/youtube/constants.hpp"
 
-namespace youtube {
+namespace kbot {
 using namespace conversation;
 struct AuthData {
   std::string access_token;
@@ -23,6 +22,12 @@ struct AuthData {
 struct VideoDetails {
   std::string id;
   std::string chat_id;
+  std::string title;
+  std::string description;
+  std::string channel_title;
+  std::string channel_id;
+  std::string url;
+  std::string thumbnail;
 };
 
 struct LiveMessage {
@@ -55,5 +60,3 @@ using LocationMap  = std::map<std::string, bool>;
 using PersonMap    = LocationMap;
 using OrgMap       = LocationMap;
 }
-
-#endif // __TYPES_HPP__

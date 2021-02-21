@@ -7,7 +7,7 @@
  * BotInstantiated
  */
 TEST_F(YouTubeBotTestFixture, BotInstantiated) {
-  ASSERT_NO_THROW(youtube::YouTubeBot{});
+  ASSERT_NO_THROW(kbot::YouTubeBot{});
 }
 
 /**
@@ -36,7 +36,7 @@ TEST_F(YouTubeBotTestFixture, GetAPIReturnsDefaultApi) {
 }
 
 TEST(YouTubeBotTest, RequestAPIPerformsGet) {
-  youtube::YouTubeBot  bot{};
+  kbot::YouTubeBot  bot{};
   std::unique_ptr<API> request_api = bot.GetAPI("Request API");
   std::string          result = static_cast<RequestAPI*>(request_api.get())->Get();
 
@@ -44,7 +44,7 @@ TEST(YouTubeBotTest, RequestAPIPerformsGet) {
 }
 
 TEST_F(YouTubeBotTestFixture, DISABLED_YouTubeDataAPI) {
-  using namespace youtube;
+  using namespace kbot;
   std::unique_ptr<API> youtube_api = bot.GetAPI("YouTube Data API");
 
   json     auth_json = json::parse(static_cast<YouTubeDataAPI*>(youtube_api.get())->FetchToken());
@@ -57,7 +57,7 @@ TEST_F(YouTubeBotTestFixture, DISABLED_YouTubeDataAPI) {
 }
 
 TEST_F(YouTubeBotTestFixture, DISABLED_LiveStreamFetchMessages) {
-  using namespace youtube;
+  using namespace kbot;
 
   std::unique_ptr<API> youtube_api = bot.GetAPI("YouTube Data API");
 
@@ -73,7 +73,7 @@ TEST_F(YouTubeBotTestFixture, DISABLED_LiveStreamFetchMessages) {
  * PostMessage
  */
 TEST_F(YouTubeBotTestFixture, DISABLED_PostMessage) {
-  using namespace youtube;
+  using namespace kbot;
   std::unique_ptr<API> api    = bot.GetAPI("YouTube Data API");
   YouTubeDataAPI* youtube_api = static_cast<YouTubeDataAPI*>(api.get());
 
@@ -90,7 +90,7 @@ TEST_F(YouTubeBotTestFixture, DISABLED_PostMessage) {
  * Loop
  */
 TEST_F(YouTubeBotTestFixture, DISABLED_Loop) {
-  using namespace youtube;
+  using namespace kbot;
   size_t        count{};
   std::string   chat_id{};
   LiveMessages  messages{};
@@ -126,7 +126,7 @@ TEST_F(YouTubeBotTestFixture, DISABLED_Loop) {
  * ParsingStringFindsTokens
  */
 TEST(YouTubeAPITest, ParsingStringFindsTokens) {
-  using namespace youtube;
+  using namespace kbot;
   std::string     s{"This is a string with tokens in it, created by [PERSON Emmanuel] while living in [LOCATION Canada]"};
   YouTubeBot      bot{};
   auto            api         = bot.GetAPI("YouTubeDataAPI");

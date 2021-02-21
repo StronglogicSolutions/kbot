@@ -1,0 +1,60 @@
+
+config("kscord") {
+  include_dirs = ["//third_party/kscord/src", "//third_party/kstodon/third_party/kjson"]
+  # libs = ["//third_party/kscord/out/obj/src/kscord/libkscord_lib.a"]
+  libs = ["//third_party/kscord/out/libkscord_lib.so"]
+
+  # visibility = [ ":kscord_lib" ]
+}
+
+config("nlp") {
+  include_dirs = [
+    "//src/api/nlp",
+  ]
+}
+
+config("cpr") {
+  include_dirs = [
+    "//third_party/cpr/include"
+  ]
+}
+
+config("kbot_includes") {
+  include_dirs = [
+    "//src/"
+  ]
+}
+
+group("kscord_lib") {
+  public_configs = [
+    ":kscord",
+    ":cpr",
+    ":kbot_includes",
+  ]
+}
+
+executable("discord_bot") {
+public_configs = [
+  ":nlp",
+  ":cpr",
+  "//src/bot/youtube:kjson",
+  "//src/bot/youtube:inih",
+]
+
+deps = [
+  ":kscord_lib",
+  "//src/bot/youtube:inih_lib"
+]
+
+libs = [
+  "crypto",
+  "cpr",
+  "curl",
+  "pthread"
+]
+
+sources = [
+  "//src/bot/discord/main.cpp"
+]
+
+}

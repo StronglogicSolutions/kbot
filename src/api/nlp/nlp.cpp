@@ -3,7 +3,7 @@
 namespace conversation {
 const std::string TOKENIZER_PATH{"third_party/MITIE/tools/ner_stream/ner_stream third_party/MITIE/MITIE-models/english/ner_model.dat > tokenized_message.txt > tokenized_message.txt"};
 
-const std::string get_executable_cwd() {
+const std::string get_cwd() {
   char* path = realpath("/proc/self/exe", NULL);
   char* name = basename(path);
   return std::string{path, path + strlen(path) - strlen(name)};

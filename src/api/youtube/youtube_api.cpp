@@ -1,7 +1,7 @@
 #include "youtube_api.hpp"
 
 
-namespace youtube {
+namespace kbot {
 const std::string CreateLocationResponse(std::string location) {
   return std::string{
     "Cool to see someone from " + location + ". How is life treating you there?"
@@ -26,6 +26,11 @@ const std::string CreatePromoteResponse(bool test_mode) {
   }
 
   return constants::promotion::test_support;
+}
+
+std::string to_youtube_url(const std::string& id)
+{
+  return "https://www.youtube.com/watch?v=" + id;
 }
 
 
@@ -166,8 +171,18 @@ YouTubeDataAPI::YouTubeDataAPI ()
     if (!video_info.is_null() && video_info.is_object()) {
       auto items = video_info["items"];
       if (!items.is_null() && items.is_array() && items.size() > 0) {
-        m_video_details.id = items[0]["id"]["videoId"].dump();
+        log(items[0]["snippet"].dump());
+        m_video_details.id = items[0]["id"]["videoId"];
         SanitizeJSON(m_video_details.id);
+        m_video_details.title         = items[0]["snippet"]["title"];
+        m_video_details.description   = items[0]["snippet"]["description"];
+        m_video_details.channel_title = items[0]["snippet"]["channelTitle"];
+        m_video_details.channel_id    = items[0]["snippet"]["channelId"];
+        m_video_details.url           = to_youtube_url(m_video_details.id);
+        m_video_details.thumbnail     = (items[0]["snippet"].contains("thumbnails") &&
+                                        !items[0]["snippet"]["thumbnails"].is_null()) ?
+                                        items[0]["snippet"]["thumbnails"]["high"]["url"] :
+                                        "";
       }
       log("Fetched live video details for channel " + PARAM_VALUES.at(SL_CHAN_KEY_INDEX));
     }
@@ -273,7 +288,7 @@ YouTubeDataAPI::YouTubeDataAPI ()
             std::string time   = item["snippet"]["publishedAt"];
 
             if (!IsNewer(time.c_str())) { // Ignore duplicates
-              continue;
+              continue; // FIX: This is a bug -> tie is always old -> timezone issues?
             }
 
             SanitizeJSON(text);
@@ -598,4 +613,4 @@ bool YouTubeDataAPI::HasDiscussed(std::string value, Interaction type) {
   return (it->second == true);
 }
 
-} // namespace youtube
+} // namespace kbot

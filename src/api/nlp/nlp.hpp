@@ -14,7 +14,7 @@
 namespace conversation {
 extern const std::string TOKENIZER_PATH;
 
-const  std::string        get_executable_cwd();
+static const  std::string get_cwd();
        std::string        TokenizeText(std::string s);
        std::vector<Token> SplitTokens(std::string s);
        Token              ParseToken(std::string s);
@@ -40,7 +40,7 @@ class NLP {
   MessageObjects     m_q;        // Queue of objects
   ObjectiveContexts  m_o;        // Queue of objects
   SubjectContexts    m_s;        // Queue of objects
-  std::string_view   m_username;
+  std::string   m_username;
 };
 
 } // namespace Conversation

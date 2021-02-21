@@ -1,9 +1,9 @@
-#ifndef __INTERFACES_HPP__
-#define __INTERFACES_HPP__
+#pragma once
 
 #include <string>
 #include <thread>
 #include <memory>
+#include <vector>
 
 class API {
  public:
@@ -12,6 +12,43 @@ class API {
     return true;
   }
 };
+
+namespace kbot {
+class  Broker;
+
+enum Platform
+{
+  youtube  = 0x00,
+  mastodon = 0x01,
+  discord  = 0x02
+};
+
+struct BotEvent
+{
+Platform    platform;
+std::string name;
+std::string data;
+std::vector<std::string> urls;
+std::string id;
+
+const std::string url_string() const
+{
+  std::string output;
+  std::string delim{};
+
+  for (const auto& url : urls)
+  {
+    output += delim + url;
+    delim = ">";
+  }
+
+  return output;
+}
+};
+
+const bool SHOULD_REPOST{true};
+
+using BrokerCallback = bool(*)(BotEvent event);
 
 class Bot {
  public:
@@ -22,6 +59,12 @@ class Bot {
   std::string GetName() { return m_name; }
 
   virtual std::unique_ptr<API> GetAPI(std::string name) = 0;
+  virtual void                 SetCallback(BrokerCallback cb_fn_ptr) = 0;
+  virtual bool                 HandleEvent(BotEvent event) = 0;
+  virtual bool                 IsRunning() = 0;
+  virtual void                 Start() = 0;
+  virtual void                 Shutdown() = 0;
+  virtual void                 Init() = 0;
 
  private:
   std::string m_name;
@@ -57,4 +100,4 @@ class Worker {
   std::thread m_thread;
 };
 
-#endif // __INTERFACES_HPP__
+} // namespace kbot
