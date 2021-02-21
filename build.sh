@@ -8,5 +8,4 @@ patchelf --replace-needed libkscord_lib.so third_party/kscord/out/libkscord_lib.
 patchelf --replace-needed libkstodon_lib.so third_party/libkstodon/libkstodon_lib.so out/broker
 patchelf --replace-needed libkscord_lib.so third_party/kscord/out/libkscord_lib.so out/broker
 patchelf --replace-needed libktube_lib.so third_party/ktube/out/libktube_lib.so out/broker
-
-#patchelf --replace-needed libcpr.so.1 third_party/cpr/build/lib/libcpr.so out/ut_kbot
+Patchelf --replace-needed libcpr.so.1 third_party/cpr/build/lib/libcpr.so out/ut_kbot
