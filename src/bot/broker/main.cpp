@@ -18,16 +18,18 @@ int main(int argc, char** argv)
 
     if (kbot::HasRequest(mask))
     {
+      kbot::log("Incoming IPC req");
       channel_port.ReceiveIPCMessage(false);
       for (auto&& message : channel_port.GetRXMessages())
       {
         broker.ProcessMessage(std::move(message));
       }
-      channel_port.SendIPCMessage(std::make_unique<okay_message>());
+      channel_port.SendIPCMessage(std::make_unique<okay_message>(), false);
     }
 
     if (kbot::HasReply(mask))
     {
+      kbot::log("Incoming IPC rep");
       channel_port.ReceiveIPCMessage(true);
     }
 
