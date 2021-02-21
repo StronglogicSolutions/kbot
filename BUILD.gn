@@ -1,6 +1,6 @@
-# all_tests = [
-#   "//test/ut_kbot"
-# ]
+all_tests = [
+  "//test/ut_kbot"
+]
 
 config("cppzmq") {
   include_dirs = [
@@ -45,7 +45,7 @@ group("executables") {
   deps = all_executables
 }
 
-# group("tests") {
-#   testonly = true
-#   deps = all_tests
-# }
+group("tests") {
+  testonly = true
+  deps = all_tests
+}
