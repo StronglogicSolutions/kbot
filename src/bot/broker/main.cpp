@@ -33,7 +33,7 @@ int main(int argc, char** argv)
       channel_port.ReceiveIPCMessage(true);
     }
 
-    if (broker.Poll())
+    if (broker.Poll() && channel_port.REQReady())
       channel_port.SendIPCMessage(std::move(broker.DeQueue()));
 
     std::mutex                   mtx{};
