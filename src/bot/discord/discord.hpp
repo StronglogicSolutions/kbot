@@ -35,9 +35,9 @@ virtual void loop() override
 }
 
 
-void SendPublicMessage(const std::string& message)
+void SendPublicMessage(const std::string& message, const std::vector<std::string> urls = {})
 {
-  kscord::Client::PostMessage(message);
+
 }
 
 void SendPrivateMessage(const std::string& message, const std::string& user_id)
@@ -59,6 +59,21 @@ bool HandleEvent(BotEvent event) {
   {
     bool result = kscord::Client::PostMessage(event.data);
     std::cout << "Discord post result: " << std::to_string(result) << std::endl;
+  }
+  if (event.name == "platform:create")
+  {
+    if (kscord::Client::PostMessage(event.data))
+    {
+      m_send_event_fn(
+        BotEvent{
+          .platform = Platform::discord,
+          .name     = "platform:complete",
+          .data     = event.data,
+          .urls     = event.urls,
+          .id       = event.id
+        }
+      );
+    }
   }
   return true;
 }

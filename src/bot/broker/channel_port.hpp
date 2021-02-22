@@ -29,7 +29,8 @@ m_context   {1},
 m_rep_socket{m_context, ZMQ_REP},
 m_req_socket{m_context, ZMQ_REQ},
 m_socket_num{2},
-m_timeout   {0}
+m_timeout   {0},
+m_req_ready {true}
 {
   Reset();
 }
@@ -38,27 +39,6 @@ void Reset()
 {
   m_rep_socket.bind(REP_ADDRESS);
   m_req_socket.connect(REQ_ADDRESS);
-}
-
-std::string ReceiveMessage() {
-  zmq::message_t     message{};
-  zmq::recv_result_t result = m_rep_socket.recv(message, zmq::recv_flags::none);
-
-  return (result.has_value()) ?
-    std::string{
-      static_cast<char*>(message.data()),
-      static_cast<char*>(message.data()) + message.size()
-    } :
-    "";
-}
-
-bool SendMessage(std::string message) {
-  kbot::log("Sending IPC message: " + message + "\n");
-  zmq::message_t ipc_msg{message.size()};
-  memcpy(ipc_msg.data(), message.data(), message.size());
-  zmq::send_result_t result = m_rep_socket.send(std::move(ipc_msg), zmq::send_flags::none);
-
-  return result.has_value();
 }
 
 bool ReceiveIPCMessage(const bool use_req = true)
@@ -87,6 +67,7 @@ bool ReceiveIPCMessage(const bool use_req = true)
   if (ipc_message != nullptr)
   {
     m_rx_msgs.emplace_back(std::move(ipc_message));
+    m_req_ready = (use_req) ? true : m_req_ready;
     return true;
   }
 
@@ -112,6 +93,7 @@ bool SendIPCMessage(u_ipc_msg_ptr message, const bool use_req = false)
     socket.send(message, flag);
   }
 
+  m_req_ready = (use_req) ? false : m_req_ready;
   return true;
 }
 
@@ -145,6 +127,11 @@ std::vector<u_ipc_msg_ptr> GetRXMessages()
   return std::move(m_rx_msgs);
 }
 
+bool REQReady() const
+{
+  return m_req_ready;
+}
+
 private:
 static std::string const FindDataRequest(std::string message) {
   return (message.find(DATA_REQUEST) != std::string::npos) ?
@@ -159,5 +146,6 @@ std::vector<u_ipc_msg_ptr>     m_tx_msgs;
 std::vector<u_ipc_msg_ptr>     m_rx_msgs;
 uint8_t        m_socket_num;
 uint8_t        m_timeout;
+bool           m_req_ready;
 };
 } // namespace kbot
