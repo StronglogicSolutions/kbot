@@ -20,7 +20,31 @@ enum Platform
 {
   youtube  = 0x00,
   mastodon = 0x01,
-  discord  = 0x02
+  discord  = 0x02,
+  unknown  = 0x03
+};
+
+static enum Platform get_platform(const std::string& name)
+{
+  if (name == "Discord")
+    return Platform::discord;
+  if (name == "Mastodon")
+    return Platform::mastodon;
+  if (name == "YouTube")
+    return Platform::youtube;
+  return Platform::unknown;
+}
+
+static const std::string get_platform_name(Platform platform)
+{
+  if (platform == Platform::youtube)
+    return "YouTube";
+  if (platform == Platform::mastodon)
+    return "Mastodon";
+  if (platform == Platform::discord)
+    return "Discord";
+
+  return "";
 };
 
 struct BotEvent
@@ -44,9 +68,23 @@ const std::string url_string() const
 
   return output;
 }
+
+static const std::vector<std::string> urls_from_string(std::string s)
+{
+  static const std::string delim{'<'};
+  std::vector<std::string> urls{};
+  auto pos = s.find_first_of(delim);
+  while (pos != s.npos)
+  {
+    urls.emplace_back(s.substr(0, pos));
+    s = s.substr(pos);
+  }
+  return urls;
+}
 };
 
-const bool SHOULD_REPOST{true};
+static const bool SHOULD_REPOST{true};
+static const bool SHOULD_NOT_REPOST{false};
 
 using BrokerCallback = bool(*)(BotEvent event);
 
