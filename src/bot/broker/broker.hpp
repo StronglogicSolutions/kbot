@@ -23,6 +23,17 @@ inline std::vector<std::string> GetArgs(std::string s) {
   return {};
 }
 
+inline const BotEvent CreatePlatformEvent(platform_message* message)
+{
+  return BotEvent{
+    .platform = get_platform(message->name()),
+    .name     = "platform:create",
+    .data     = message->content(),
+    .urls     = BotEvent::urls_from_string(message->urls()),
+    .id       = message->id()
+  };
+}
+
 namespace constants {
 const uint8_t YOUTUBE_BOT_INDEX {0x00};
 const uint8_t MASTODON_BOT_INDEX{0x01};
@@ -76,25 +87,21 @@ void ProcessMessage(u_ipc_msg_ptr message) {
       const auto payload = args.at(IPC_PAYLOAD_INDEX);
 
       if (command == "youtube:livestream")
-      {
         SendEvent(Platform::youtube, command, payload);
-      }
       else
       if (command == "mastodon:comments")
-      {
         SendEvent(Platform::mastodon, "comments:find", payload);
-      }
       else
       if (command == "discord:messages")
-      {
         SendEvent(Platform::discord, command, payload);
-      }
-      else
-      if (command == "social:post")
-      {
-
-      }
+      // else
+      // if (command == "social:post")
     }
+  }
+  else
+  if (message->type() == ::constants::IPC_PLATFORM_TYPE)
+  {
+    SendEvent(CreatePlatformEvent(static_cast<platform_message*>(message.get())));
   }
 }
 
@@ -133,17 +140,6 @@ void run()
 {
   Worker::start();
 }
-const std::string get_platform_name(Platform platform)
-{
-  if (platform == Platform::youtube)
-    return "YouTube";
-  if (platform == Platform::mastodon)
-    return "Mastodon";
-  if (platform == Platform::discord)
-    return "Discord";
-
-  return "";
-};
 
 /**
  * @brief
@@ -171,6 +167,24 @@ virtual void loop() override
             SHOULD_REPOST
           )
         );
+      }
+      else
+      if (event.name == "platform:complete")                            // ALL Platforms
+      {
+        m_outbound_queue.emplace_back(
+          std::make_unique<platform_message>(
+            get_platform_name(event.platform),
+            event.id,
+            event.data,
+            event.url_string(),
+            SHOULD_NOT_REPOST
+          )
+        );
+      }
+      else
+      if (event.name == "platform:create")
+      {
+        SendEvent(event);
       }
       if (event.platform == Platform::youtube)                      // YouTube
         if (event.name == "livestream active")
@@ -214,7 +228,22 @@ void SendEvent(Platform platform, std::string event, std::string payload = "")
   else
   if (platform == Platform::discord)
     DCBot().HandleEvent(BotEvent{.platform = platform, .name = event, .data = payload});
+}
 
+void SendEvent(const BotEvent& event)
+{
+  if (event.platform == Platform::discord)
+    DCBot().HandleEvent(event);
+  else
+  if (event.platform == Platform::mastodon)
+    MDBot().HandleEvent(event);
+  else
+  if (event.platform == Platform::youtube)
+  {
+    YTBot().HandleEvent(event);
+  }
+  else
+    kbot::log("Unable to send event for unknown platform");
 }
 
 /**
