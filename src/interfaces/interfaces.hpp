@@ -5,6 +5,8 @@
 #include <memory>
 #include <vector>
 
+#include "util/util.hpp"
+
 class API {
  public:
   virtual std::string GetType() = 0;
@@ -54,6 +56,7 @@ std::string name;
 std::string data;
 std::vector<std::string> urls;
 std::string id;
+std::string previous_name;
 
 const std::string url_string() const
 {
@@ -69,15 +72,24 @@ const std::string url_string() const
   return output;
 }
 
-static const std::vector<std::string> urls_from_string(std::string s)
+static const std::vector<std::string> urls_from_string(std::string input_string)
 {
-  static const std::string delim{'<'};
+  std::string s = kbot::UnescapeQuotes(input_string);
+  static const std::string delim{'>'};
   std::vector<std::string> urls{};
-  auto pos = s.find_first_of(delim);
-  while (pos != s.npos)
+
+  if (!s.empty())
   {
-    urls.emplace_back(s.substr(0, pos));
-    s = s.substr(pos);
+    auto pos = s.find_first_of(delim);
+
+    while (pos != s.npos)
+    {
+      urls.emplace_back(s.substr(0, pos));
+      s = s.substr(pos + 1);
+      pos = s.find_first_of(delim);
+    }
+
+    urls.emplace_back(s);
   }
   return urls;
 }
@@ -85,6 +97,30 @@ static const std::vector<std::string> urls_from_string(std::string s)
 
 static const bool SHOULD_REPOST{true};
 static const bool SHOULD_NOT_REPOST{false};
+static const std::string SUCCESS_EVENT{"bot:success"};
+
+static const BotEvent CreateSuccessEvent(const BotEvent& previous_event)
+{
+  return BotEvent{
+    .platform      = previous_event.platform,
+    .name          = SUCCESS_EVENT,
+    .data          = previous_event.data,
+    .urls          = previous_event.urls,
+    .id            = previous_event.id,
+    .previous_name = previous_event.name
+  };
+}
+
+static const BotEvent CreateErrorEvent(const std::string& error_message, const BotEvent& previous_event)
+{
+  return BotEvent{
+    .platform = previous_event.platform,
+    .name     = "bot:error",
+    .data     = error_message,
+    .urls     = previous_event.urls,
+    .id       = previous_event.id
+  };
+}
 
 using BrokerCallback = bool(*)(BotEvent event);
 
