@@ -80,26 +80,49 @@ void SetCallback(BrokerCallback cb_fn) {
 }
 
 bool HandleEvent(BotEvent event) {
-  std::stringstream ss{};
+  bool error{false};
 
   if (event.name == "comments find")
   {
+    std::stringstream ss{};
     for (const kstodon::Status& status : FindComments())
       ss << status;
 
-    m_send_event_fn(BotEvent{
-      .platform = Platform::mastodon,
-      .name     = "comment",
-      .data     = ss.str()
-    });
+    std::string comment_string = ss.str();
+    if (!comment_string.empty())
+      m_send_event_fn(BotEvent{
+        .platform = Platform::mastodon,
+        .name     = "comment",
+        .data     = comment_string
+      });
+
+    return true;
   }
   else
   if (event.name == "livestream active")
+    if (!PostStatus(kstodon::Status{event.data}, event.urls))
+      error = true;
+
+  else
+  if (event.name == "platform:repost")
   {
-    SendPublicMessage(event.data, event.urls);
+    kstodon::Status status{event.data};
+    status.visibility = kstodon::constants::StatusVisibility::UNLISTED;
+    std::vector<std::string> urls = (event.urls.empty()) ? std::vector<std::string>{} : std::vector<std::string>{event.urls.front()};
+    if (!PostStatus(status, urls))
+      error = true;
   }
 
-  return true;
+  if (error)
+  {
+    std::string error_message{"Failed to handle " + event.name + " event"};
+    kbot::log(error_message);
+    m_send_event_fn(CreateErrorEvent(error_message, event));
+  }
+  else
+    m_send_event_fn(CreateSuccessEvent(event));
+
+  return (!error);
 }
 
 virtual std::unique_ptr<API> GetAPI(std::string name) override
