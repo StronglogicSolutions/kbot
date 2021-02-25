@@ -95,12 +95,12 @@ int main(int argc, char** argv) {
       if (channel_port.Poll())
       {
         std::string message = channel_port.ReceiveMessage();
-        log ("Received IPC message: \n" + message);
+        kbot::log("Received IPC message: \n" + message);
 
         if (ChannelPort::IsDataRequest(message))
         {
           if (!channel_port.SendMessage(bot.GetResults())) {
-            log("Failed to send response");
+            kbot::log("Failed to send response");
           }
         }
       }
@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
     bot.stop();
   }
   catch (const std::exception& e) {
-    log(e.what());
+    kbot::log(e.what());
   }
 
   return 0;
