@@ -50,32 +50,30 @@ void SetCallback(BrokerCallback cb_fn) {
 }
 
 bool HandleEvent(BotEvent event) {
-  if (event.name == "discord:messages")
-    SendPublicMessage((event.data.empty()) ?
-      "Hi" :
-      event.data
-    );
+  bool error{false};
+
   if (event.name == "livestream active")
+    if (!kscord::Client::PostMessage(event.data))
+      error = true;
+  else
+  if (event.name == "platform:repost")
+    if (!kscord::Client::PostMessage(event.data))
+      error = true;
+  else
+  if (event.name == "discord:messages")
+    if (!kscord::Client::PostMessage(event.data))
+      error = true;
+
+  if (error)
   {
-    bool result = kscord::Client::PostMessage(event.data);
-    std::cout << "Discord post result: " << std::to_string(result) << std::endl;
+    std::string error_message{"Failed to handle " + event.name + " event"};
+    kbot::log(error_message);
+    m_send_event_fn(CreateErrorEvent(error_message, event));
   }
-  if (event.name == "platform:create")
-  {
-    if (kscord::Client::PostMessage(event.data))
-    {
-      m_send_event_fn(
-        BotEvent{
-          .platform = Platform::discord,
-          .name     = "platform:complete",
-          .data     = event.data,
-          .urls     = event.urls,
-          .id       = event.id
-        }
-      );
-    }
-  }
-  return true;
+  else
+    m_send_event_fn(CreateSuccessEvent(event));
+
+  return (!error);
 }
 
 virtual std::unique_ptr<API> GetAPI(std::string name) override
