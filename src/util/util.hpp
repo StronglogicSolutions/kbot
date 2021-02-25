@@ -1,9 +1,11 @@
-#ifndef __UTIL_HPP__
-#define __UTIL_HPP__
+#pragma once
 
 #include <ctime>
 #include <iomanip>
+#include <iostream>
+#include <algorithm>
 
+namespace kbot {
 /**
  * Poor man's log
  */
@@ -19,11 +21,13 @@ inline void log(T s) {
  *
  * @param [in] {std::string&} A reference to a string object
  */
-inline void SanitizeJSON(std::string& s) {
+inline std::string UnescapeQuotes(std::string s) {
   s.erase(
     std::remove(s.begin(), s.end(),'\"'),
     s.end()
   );
+
+  return s;
 }
 
 
@@ -35,5 +39,4 @@ inline const std::time_t to_unixtime(const char* datetime) {
 
   return mktime(&t);
 }
-
-#endif // __UTIL_HPP__
+} // namespace kbot
