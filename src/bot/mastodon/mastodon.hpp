@@ -100,9 +100,10 @@ bool HandleEvent(BotEvent event) {
   }
   else
   if (event.name == "livestream active")
+  {
     if (!PostStatus(kstodon::Status{event.data}, event.urls))
       error = true;
-
+  }
   else
   if (event.name == "platform:repost")
   {
