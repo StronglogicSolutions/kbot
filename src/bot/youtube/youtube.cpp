@@ -50,64 +50,24 @@ void YouTubeBot::loop() {
   using namespace korean;
 
   uint8_t no_hits{0};
+  static std::chrono::time_point<std::chrono::system_clock> initial_time = std::chrono::system_clock::now();
 
   while (m_is_running) {
     log("YouTubeBot alive");
 
+    const std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
+    const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - initial_time).count();
+
     if (!m_api.GetLiveDetails().id.empty())
     {
-      auto elapsed = ((clock() - m_time_value) / 1000);
-      if (elapsed > 720)
+      if (elapsed > 1800)
       {
         PostMessage("If you like this type of content, smash the LIKE and SHARE!! :)");
-        m_time_value = clock();
+        initial_time = now;
       }
     }
 
-    m_api.ParseTokens();
-
-    if (m_api.HasChats()) {
-      bool bot_was_mentioned = false;
-      LiveMessages messages = m_api.FindMentions();
-
-      if (!messages.empty()) {
-        bot_was_mentioned = true;
-        log("Bot was mentioned");
-      }
-      // else { // We are doing this for now
-      messages = m_api.GetCurrentChat();
-      m_api.ClearChat();
-      // }
-
-      for (const auto& message : messages) {
-        if (m_korean_api.MentionsKorean(message.text)) {
-          log("Message from " + message.author + " mentions Korean:\n" + message.text);
-        }
-      }
-
-      std::vector<std::string> reply_messages = CreateReplyMessages(messages, bot_was_mentioned);
-      int max = 5;
-      for (const auto& reply : reply_messages) {
-        m_posted_messages.push_back(reply);
-        // m_api.PostMessage(reply);
-        log(m_nlp.toString());
-        if (--max == 0)
-          break;
-      }
-    }
-    else {
-      no_hits++;
-    }
-
-    m_api.FetchChatMessages();
-
-    if (no_hits < 1000) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(30000));
-    } else {
-      // Not having much luck. Take a break.
-      no_hits = 0;
-      std::this_thread::sleep_for(std::chrono::seconds(100));
-    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
   }
 }
 
@@ -242,21 +202,22 @@ bool YouTubeBot::HandleEvent(BotEvent event) {
                          "livestream active" :
                          "livestream inactive";
     std::string payload{
-      video_info.channel_title +
-      " currently has a livestream RIGHT NOW!!\n" +
-      video_info.url + '\n' +
-      video_info.title + '\n'
+      video_info.channel_title + " currently has a livestream RIGHT NOW!!\n" +
+      video_info.url           + '\n' +
+      video_info.title         + '\n'
     };
 
-    BotEvent outbound_event{
-      .platform = Platform::youtube,
-      .name = name,
-      .data = payload
-    };
-
-    if (!video_info.thumbnail.empty()) outbound_event.urls.emplace_back(video_info.thumbnail);
-
-    m_send_event_fn(outbound_event);
+    for (const auto& platform : std::vector<Platform>{Platform::mastodon, Platform::discord})
+      m_send_event_fn(
+        BotEvent{
+          .platform = platform,
+          .name = name,
+          .data = payload,
+          .urls = (video_info.thumbnail.empty()) ?
+                    std::vector<std::string>{} :
+                    std::vector<std::string>{video_info.thumbnail}
+        }
+      );
   }
 
   return true;
