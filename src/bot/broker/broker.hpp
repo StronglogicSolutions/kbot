@@ -1,6 +1,8 @@
 #pragma once
 
 #include <deque>
+#include <mutex>
+#include <condition_variable>
 
 #include "bot/mastodon/mastodon.hpp"
 #include "bot/youtube/youtube.hpp"
@@ -149,8 +151,20 @@ virtual void loop() override
   MDBot().Start();
   DCBot().Start();
 
-  while (YTBot().IsRunning() || MDBot().IsRunning())
+  std::unique_lock<std::mutex> lock(m_mutex);
+
+  while (Worker::m_is_running)
   {
+    std::unique_lock<std::mutex> lock(m_mutex);
+      m_condition.wait(lock,
+        [this]()
+        {
+          return (YTBot().IsRunning() || MDBot().IsRunning());
+        }
+      );
+    lock.unlock();
+    m_condition.notify_one();
+
     if (!m_queue.empty())
     {
       BotEvent event = m_queue.front();
@@ -207,7 +221,8 @@ virtual void loop() override
 
       m_queue.pop_front();
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+
+    m_condition.wait_for(lock, std::chrono::milliseconds(300));
   }
 }
 
@@ -298,6 +313,8 @@ BotPool                    m_pool;
 EventQueue                 m_queue;
 std::deque<u_ipc_msg_ptr>  m_outbound_queue;
 bool                       m_bots_active;
+std::mutex                 m_mutex;
+std::condition_variable    m_condition;
 };
 
 } // namespace kbot
