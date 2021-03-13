@@ -1,4 +1,5 @@
 #include "youtube.hpp"
+#include "constants.hpp"
 
 namespace kbot {
 
@@ -9,12 +10,24 @@ const std::string DEFAULT_USERNAME{"@Emmanuel Buckshi"};
   * @constructor
  */
 
+
 YouTubeBot::YouTubeBot()
 : Bot("YouTubeBot"),
   m_has_promoted(false),
   m_is_own_livestream(false),
   m_time_value(clock()),
-  m_nlp(NLP{DEFAULT_USERNAME})
+  m_nlp(DEFAULT_USERNAME),
+  m_db(Database::PSQLORM{
+    DatabaseConfiguration{
+      DatabaseCredentials{
+        .user = ktube::GetConfigReader().GetString(constants::YOUTUBE_DB_SECTION, constants::YOUTUBE_DB_USER, ""),
+        .password = ktube::GetConfigReader().GetString(constants::YOUTUBE_DB_SECTION, constants::YOUTUBE_DB_PASS, ""),
+        .name = ktube::GetConfigReader().GetString(constants::YOUTUBE_DB_SECTION, constants::YOUTUBE_DB_NAME, "")
+      },
+      "127.0.0.1",
+      "5432"
+    }}
+  )
 {}
 
 void YouTubeBot::Init() {
@@ -75,6 +88,8 @@ void YouTubeBot::loop() {
    * CreateReplyMessages
    */
 std::vector<std::string> YouTubeBot::CreateReplyMessages(LiveMessages messages, bool bot_was_mentioned) {
+  using namespace conversation;
+  using namespace ktube;
   std::vector<std::string> reply_messages{};
   // if (bot_was_mentioned) {
   auto reply_number = (!m_has_promoted) ? messages.size() + 1 : messages.size();
@@ -194,6 +209,7 @@ void YouTubeBot::SetCallback(BrokerCallback cb_fn) {
 }
 
 bool YouTubeBot::HandleEvent(BotEvent event) {
+  using namespace ktube;
   if (event.name == "youtube:livestream")
   {
     VideoDetails video_info = m_api.GetLiveDetails();

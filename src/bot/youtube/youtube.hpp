@@ -12,12 +12,16 @@
 #include <api/korean/korean.hpp>
 
 #include <ktube/ktube.hpp>
+#include <psqlorm.hpp>
 
 namespace kbot {
 
-using namespace conversation;
-using namespace ktube;
-using namespace korean;
+// using namespace conversation;
+// using namespace ktube;
+// using namespace korean;
+using LiveMessages   = ktube::LiveMessages;
+using LiveChatMap    = ktube::LiveChatMap;
+using YouTubeDataAPI = ktube::YouTubeDataAPI;
 
 extern const std::string DEFAULT_API_NAME;
 extern const std::string DEFAULT_USERNAME;
@@ -50,13 +54,14 @@ public:
 
 private:
   YouTubeDataAPI           m_api;
-  KoreanAPI                m_korean_api;
+  korean::KoreanAPI        m_korean_api;
   bool                     m_is_own_livestream;
   bool                     m_has_promoted;
   clock_t                  m_time_value;
   std::vector<std::string> m_posted_messages;
-  NLP                      m_nlp;
+  conversation::NLP        m_nlp;
   BrokerCallback           m_send_event_fn;
+  Database::PSQLORM        m_db;
 };
 
 } // namespace kbot
