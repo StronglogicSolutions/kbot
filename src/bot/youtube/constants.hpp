@@ -5,8 +5,8 @@
 namespace kbot {
 namespace constants {
 static const std::string YOUTUBE_DB_SECTION{"youtube_database"};
-static const std::string YOUTUBE_DB_NAME{"youtube_bot"};
-static const std::string YOUTUBE_DB_USER{"youtube_bot_admin"};
-static const std::string YOUTUBE_DB_PASS{"youtube_bot_admin"};
+static const std::string YOUTUBE_DB_NAME{"name"};
+static const std::string YOUTUBE_DB_USER{"user"};
+static const std::string YOUTUBE_DB_PASS{"pass"};
 } // namespace constants
 } // namespace kbot

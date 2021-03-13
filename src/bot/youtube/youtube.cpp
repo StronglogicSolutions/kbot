@@ -20,9 +20,18 @@ YouTubeBot::YouTubeBot()
   m_db(Database::PSQLORM{
     DatabaseConfiguration{
       DatabaseCredentials{
-        .user = ktube::GetConfigReader().GetString(constants::YOUTUBE_DB_SECTION, constants::YOUTUBE_DB_USER, ""),
-        .password = ktube::GetConfigReader().GetString(constants::YOUTUBE_DB_SECTION, constants::YOUTUBE_DB_PASS, ""),
-        .name = ktube::GetConfigReader().GetString(constants::YOUTUBE_DB_SECTION, constants::YOUTUBE_DB_NAME, "")
+        .user = ktube::GetConfigReader().GetString(
+          constants::YOUTUBE_DB_SECTION,
+          constants::YOUTUBE_DB_USER,
+          ""),
+        .password = ktube::GetConfigReader().GetString(
+          constants::YOUTUBE_DB_SECTION,
+          constants::YOUTUBE_DB_PASS,
+          ""),
+        .name = ktube::GetConfigReader().GetString(
+          constants::YOUTUBE_DB_SECTION,
+          constants::YOUTUBE_DB_NAME,
+          "")
       },
       "127.0.0.1",
       "5432"
