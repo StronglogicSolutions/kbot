@@ -51,8 +51,11 @@ public:
  LiveChatMap                  GetChats();
  std::string                  GetResults();
  bool                         PostMessage(std::string message);
+ void                         UpdateChats();
+ bool                         HaveCommented(const std::string& vid);
 
 private:
+
   YouTubeDataAPI           m_api;
   korean::KoreanAPI        m_korean_api;
   bool                     m_is_own_livestream;
