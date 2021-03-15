@@ -1,7 +1,7 @@
 
 config("kstodon") {
   include_dirs = ["//third_party/kstodon/src", "//third_party/kstodon/third_party/kjson"]
-  libs = ["//third_party/libkstodon/libkstodon_lib.so"]
+  libs = ["//third_party/kstodon/out/libkstodon_lib.so"]
   visibility = [ ":kstodon_lib" ]
 }
 
