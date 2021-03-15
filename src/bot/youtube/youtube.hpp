@@ -37,25 +37,25 @@ extern const std::string DEFAULT_USERNAME;
  */
 class YouTubeBot : public Bot, public Worker {
 public:
- YouTubeBot();
- virtual void                 loop() override;
- bool                         init();
- std::vector<std::string>     CreateReplyMessages(LiveMessages messages, bool bot_was_mentioned = false);
- virtual std::unique_ptr<API> GetAPI(std::string name = "") override;
- virtual bool                 IsRunning() override;
- virtual void                 Init() override;
- virtual void                 Start() override;
- virtual void                 Shutdown() override;
- virtual void                 SetCallback(BrokerCallback cb_fn) override;
- virtual bool                 HandleEvent(BotEvent event) override;
- LiveChatMap                  GetChats();
- std::string                  GetResults();
- bool                         PostMessage(std::string message);
- void                         UpdateChats();
- bool                         HaveCommented(const std::string& vid);
+  YouTubeBot();
+  virtual void                 loop() override;
+  bool                         init();
+  std::vector<std::string>     CreateReplyMessages(LiveMessages messages, bool bot_was_mentioned = false);
+  virtual std::unique_ptr<API> GetAPI(std::string name = "") override;
+  virtual bool                 IsRunning() override;
+  virtual void                 Init() override;
+  virtual void                 Start() override;
+  virtual void                 Shutdown() override;
+  virtual void                 SetCallback(BrokerCallback cb_fn) override;
+  virtual bool                 HandleEvent(BotEvent event) override;
+  LiveChatMap                  GetChats();
+  std::string                  GetResults();
+  bool                         PostMessage(std::string message);
+  void                         UpdateChats();
+  bool                         HaveCommented(const std::string& vid);
+  bool                         HaveReplied(const std::string& cid);
 
 private:
-
   YouTubeDataAPI           m_api;
   korean::KoreanAPI        m_korean_api;
   bool                     m_is_own_livestream;
