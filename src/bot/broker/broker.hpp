@@ -151,8 +151,6 @@ virtual void loop() override
   MDBot().Start();
   DCBot().Start();
 
-  std::unique_lock<std::mutex> lock(m_mutex);
-
   while (Worker::m_is_running)
   {
     std::unique_lock<std::mutex> lock(m_mutex);
@@ -162,7 +160,6 @@ virtual void loop() override
           return (YTBot().IsRunning() || MDBot().IsRunning());
         }
       );
-    lock.unlock();
     m_condition.notify_one();
 
     if (!m_queue.empty())
