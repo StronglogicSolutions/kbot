@@ -18,7 +18,7 @@ static kbot::BotEvent ParseRuntimeArguments(int argc, char** argv) {
     }
     else
     if (argument.find("--event") == 0) {
-      event.name = argument.substr(7);
+      event.name = argument.substr(8);
       continue;
     }
   }
