@@ -54,6 +54,7 @@ public:
   void                         UpdateChats();
   bool                         HaveCommented(const std::string& vid);
   bool                         HaveReplied(const std::string& cid);
+  bool                         InsertComment(const ktube::Comment& comment);
 
 private:
   YouTubeDataAPI           m_api;
