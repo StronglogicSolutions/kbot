@@ -73,7 +73,7 @@ void YouTubeBot::loop() {
   uint8_t no_hits{0};
   static std::chrono::time_point<std::chrono::system_clock> initial_time = std::chrono::system_clock::now();
 
-  while (m_is_running) {
+  while (IsRunning()) {
     const std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
     const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - initial_time).count();
     log("YouTubeBot alive. Elapsed: " + std::to_string(elapsed));
@@ -223,8 +223,16 @@ void YouTubeBot::SetCallback(BrokerCallback cb_fn) {
   m_send_event_fn = cb_fn;
 }
 
+/**
+ * @brief HandleEvent
+ *
+ * @param   [in]  {BotEvent} event
+ * @returns [out] {bool}
+ */
 bool YouTubeBot::HandleEvent(BotEvent event) {
   using namespace ktube;
+  bool error{false};
+
   if (event.name == "youtube:livestream")
   {
     VideoDetails video_info = m_api.GetLiveDetails();
@@ -257,13 +265,15 @@ bool YouTubeBot::HandleEvent(BotEvent event) {
   if (event.name == "youtube:comment")
   {
     using namespace ktube;
-    std::string reply_text{"외국인과 언어교환하고 싶은 분은 여기로 방문해 주세요 👉 https://discord.gg/j5Rjhk96"};
+    // std::string reply_text{"외국인과 언어교환하고 싶은 분은 여기로 방문해 주세요 👉 https://discord.gg/j5Rjhk96"};
 
-    bool result{false};
+    const std::string& reply_text           = event.data;
+    const std::vector<std::string> keywords = event.urls; // TODO: rename `urls` to `args`
+
+    bool comment_result{false};
     bool reply_result{false};
 
-
-    for (const auto& video : m_api.fetch_rival_videos(ktube::Video::CreateFromTags("영어 공부", "영어 수업")))
+    for (const auto& video : m_api.fetch_rival_videos(ktube::Video::CreateFromTags(keywords)))
     {
       if (HaveCommented(video.channel_id))
         continue;
@@ -271,27 +281,38 @@ bool YouTubeBot::HandleEvent(BotEvent event) {
       Comment comment = Comment::Create(reply_text);
       ktube::log(comment);
 
-      result = m_api.PostComment(comment);
+      comment_result = m_api.PostComment(comment);
 
-      if (result)
+      if (comment_result)
       {
-        auto comments = m_api.FetchVideoComments(video.id);
-        if (!comments.empty())
+        for (const auto& comment : m_api.FetchVideoComments(video.id))
         {
+          if (HaveReplied(comment.id))
+            continue;
+
           Comment reply_comment   = Comment::Create(reply_text);
-          reply_comment.parent_id = comments.front().id;
+          reply_comment.parent_id = comment.id;
           reply_comment.video_id  = video.id;
 
           reply_result = m_api.PostCommentReply(reply_comment);
+
+          break;
         }
         break;
       }
     }
+    error = (comment_result && reply_result);
   }
 
-  return true;
+  return (!error);
 }
 
+/**
+ * @brief HaveCommented
+ *
+ * @param   [in] {std::string} vid  The video ID
+ * @returns [out] {bool}            Indicating whether a top-level comment has been posted
+ */
 bool YouTubeBot::HaveCommented(const std::string& vid)
 {
   return !m_db.selectSimpleJoin<CompJoinFilter>(
@@ -315,8 +336,36 @@ bool YouTubeBot::HaveCommented(const std::string& vid)
   ).empty();
 }
 
+/**
+ * @brief HaveReplied
+ *
+ * @param   [in] {std::string} cid The comment ID
+ * @returns [out] {bool}           Indicating whether a comment has been replied to
+ */
+bool YouTubeBot::HaveReplied(const std::string& cid)
+{
+  return !m_db.selectSimpleJoin(
+    "comment as c",
+    {
+      "comment.id"
+    },
+    {
+      QueryFilter{
+        { "comment.comment_id", cid},
+      }
+    },
+    Join{
+      .table      ="comment",
+      .field      ="id",
+      .join_table ="c",
+      .join_field ="parent_id",
+      .type       = JoinType::INNER
+    }
+  ).empty();
+}
+
 bool YouTubeBot::IsRunning() {
-  return m_is_running;
+  return Worker::m_is_running;
 }
 
 void YouTubeBot::Start()
