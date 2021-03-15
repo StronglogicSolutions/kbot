@@ -110,8 +110,8 @@ bool HandleEvent(BotEvent event) {
     kstodon::Status status{event.data};
     status.visibility = kstodon::constants::StatusVisibility::UNLISTED;
     std::vector<std::string> urls = (event.urls.empty()) ? std::vector<std::string>{} : std::vector<std::string>{event.urls.front()};
-    if (!PostStatus(status, urls))
-      error = true;
+
+    error = !PostStatus(status, urls);
   }
 
   if (error)

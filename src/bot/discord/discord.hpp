@@ -52,22 +52,15 @@ void SetCallback(BrokerCallback cb_fn) {
 bool HandleEvent(BotEvent event) {
   bool error{false};
 
-  if (event.name == "livestream active")
+  if (event.name == "livestream active" ||
+      event.name == "discord:messages"    )
   {
-    if (!kscord::Client::PostMessage(event.data))
-      error = true;
+    error = !kscord::Client::PostMessage(event.data);
   }
   else
   if (event.name == "platform:repost")
   {
-    if (!kscord::Client::PostMessage(event.data, event.urls))
-      error = true;
-  }
-  else
-  if (event.name == "discord:messages")
-  {
-    if (!kscord::Client::PostMessage(event.data))
-      error = true;
+    error = !kscord::Client::PostMessage(event.data, event.urls);
   }
 
   if (error)
