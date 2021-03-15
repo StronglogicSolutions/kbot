@@ -1,4 +1,5 @@
 #include "youtube.hpp"
+#include "constants.hpp"
 
 namespace kbot {
 
@@ -9,12 +10,32 @@ const std::string DEFAULT_USERNAME{"@Emmanuel Buckshi"};
   * @constructor
  */
 
+
 YouTubeBot::YouTubeBot()
 : Bot("YouTubeBot"),
   m_has_promoted(false),
   m_is_own_livestream(false),
   m_time_value(clock()),
-  m_nlp(NLP{DEFAULT_USERNAME})
+  m_nlp(DEFAULT_USERNAME),
+  m_db(DatabaseConfiguration{
+    DatabaseCredentials{
+      .user = ktube::GetConfigReader().GetString(
+        constants::YOUTUBE_DB_SECTION,
+        constants::YOUTUBE_DB_USER,
+        ""),
+      .password = ktube::GetConfigReader().GetString(
+        constants::YOUTUBE_DB_SECTION,
+        constants::YOUTUBE_DB_PASS,
+        ""),
+      .name = ktube::GetConfigReader().GetString(
+        constants::YOUTUBE_DB_SECTION,
+        constants::YOUTUBE_DB_NAME,
+        "")
+    },
+    "127.0.0.1",
+"5432"
+    }
+  )
 {}
 
 void YouTubeBot::Init() {
@@ -53,28 +74,37 @@ void YouTubeBot::loop() {
   static std::chrono::time_point<std::chrono::system_clock> initial_time = std::chrono::system_clock::now();
 
   while (m_is_running) {
-    log("YouTubeBot alive");
-
     const std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
     const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - initial_time).count();
+    log("YouTubeBot alive. Elapsed: " + std::to_string(elapsed));
 
-    if (!m_api.GetLiveDetails().id.empty())
+    if (m_api.HasChats() && elapsed > 1800)
     {
-      if (elapsed > 1800)
-      {
-        PostMessage("If you like this type of content, smash the LIKE and SHARE!! :)");
-        initial_time = now;
-      }
+      PostMessage("If you enjoy this content please SMASH the like and Share!");
+      initial_time = now;
     }
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
   }
 }
 
+void YouTubeBot::UpdateChats()
+{
+  m_api.ParseTokens();
+
+  for (const auto& reply : CreateReplyMessages(m_api.GetCurrentChat()))
+    PostMessage(reply);
+
+  kbot::log(m_nlp.toString());
+
+}
+
   /**
    * CreateReplyMessages
    */
 std::vector<std::string> YouTubeBot::CreateReplyMessages(LiveMessages messages, bool bot_was_mentioned) {
+  using namespace conversation;
+  using namespace ktube;
   std::vector<std::string> reply_messages{};
   // if (bot_was_mentioned) {
   auto reply_number = (!m_has_promoted) ? messages.size() + 1 : messages.size();
@@ -194,11 +224,14 @@ void YouTubeBot::SetCallback(BrokerCallback cb_fn) {
 }
 
 bool YouTubeBot::HandleEvent(BotEvent event) {
+  using namespace ktube;
   if (event.name == "youtube:livestream")
   {
     VideoDetails video_info = m_api.GetLiveDetails();
 
-    std::string name = (!video_info.id.empty()) ?
+    auto has_livestream = (!video_info.id.empty());
+
+    std::string name = (has_livestream) ?
                          "livestream active" :
                          "livestream inactive";
     std::string payload{
@@ -218,9 +251,68 @@ bool YouTubeBot::HandleEvent(BotEvent event) {
                     std::vector<std::string>{video_info.thumbnail}
         }
       );
+
+  }
+  else
+  if (event.name == "youtube:comment")
+  {
+    using namespace ktube;
+    std::string reply_text{"외국인과 언어교환하고 싶은 분은 여기로 방문해 주세요 👉 https://discord.gg/j5Rjhk96"};
+
+    bool result{false};
+    bool reply_result{false};
+
+
+    for (const auto& video : m_api.fetch_rival_videos(ktube::Video::CreateFromTags("영어 공부", "영어 수업")))
+    {
+      if (HaveCommented(video.channel_id))
+        continue;
+
+      Comment comment = Comment::Create(reply_text);
+      ktube::log(comment);
+
+      result = m_api.PostComment(comment);
+
+      if (result)
+      {
+        auto comments = m_api.FetchVideoComments(video.id);
+        if (!comments.empty())
+        {
+          Comment reply_comment   = Comment::Create(reply_text);
+          reply_comment.parent_id = comments.front().id;
+          reply_comment.video_id  = video.id;
+
+          reply_result = m_api.PostCommentReply(reply_comment);
+        }
+        break;
+      }
+    }
   }
 
   return true;
+}
+
+bool YouTubeBot::HaveCommented(const std::string& vid)
+{
+  return !m_db.selectSimpleJoin<CompJoinFilter>(
+    "video",
+    {
+      "comment.id"
+    },
+    {
+      CompJoinFilter{
+        { "comment.parent_id", "NULL", "is"},
+        { "comment.vid",       vid,     "="}
+      }
+    },
+    Join{
+      .table      ="comment",
+      .field      ="vid",
+      .join_table ="video",
+      .join_field ="vid",
+      .type       = JoinType::INNER
+    }
+  ).empty();
 }
 
 bool YouTubeBot::IsRunning() {

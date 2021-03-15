@@ -4,6 +4,17 @@ config("process_executor") {
   ]
 }
 
+config("psql_config") {
+  include_dirs = ["//third_party/psql_orm/src"]
+
+  libs = [
+    "//third_party/psql_orm/libpsqlorm.a",
+    "/usr/local/lib/libpqxx.a",
+    "pq",
+    "pqxx"
+  ]
+}
+
 source_set("korean") {
   public_configs = [
     ":inih",
@@ -86,7 +97,8 @@ source_set("youtube_bot_sources") {
     ":kjson",
     ":ktube",
     ":knlp",
-    ":process_executor"
+    ":process_executor",
+    ":psql_config"
   ]
   deps = [
     ":ini_reader",
