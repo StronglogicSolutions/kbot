@@ -224,10 +224,11 @@ void YouTubeBot::SetCallback(BrokerCallback cb_fn) {
 }
 
 /**
- * @brief HandleEvent
+ * @brief
  *
- * @param   [in]  {BotEvent} event
- * @returns [out] {bool}
+ * @param event
+ * @return true
+ * @return false
  */
 bool YouTubeBot::HandleEvent(BotEvent event) {
   using namespace ktube;
@@ -275,16 +276,18 @@ bool YouTubeBot::HandleEvent(BotEvent event) {
 
     for (const auto& video : m_api.fetch_rival_videos(ktube::Video::CreateFromTags(keywords)))
     {
-      if (HaveCommented(video.channel_id))
+      if (HaveCommented(video.channel_id) || video.id == "E0tuY6yV3CQ")
         continue;
 
       Comment comment = Comment::Create(reply_text);
+      comment.video_id = video.id;
       ktube::log(comment);
 
       comment_result = m_api.PostComment(comment);
 
       if (comment_result)
       {
+        InsertComment(comment);
         for (const auto& comment : m_api.FetchVideoComments(video.id))
         {
           if (HaveReplied(comment.id))
@@ -296,17 +299,46 @@ bool YouTubeBot::HandleEvent(BotEvent event) {
 
           reply_result = m_api.PostCommentReply(reply_comment);
 
+          if (reply_result)
+            InsertComment(reply_comment);
+
           break;
         }
         break;
       }
     }
-    error = (comment_result && reply_result);
+    error = comment_result;
   }
 
   return (!error);
 }
 
+bool YouTubeBot::InsertComment(const ktube::Comment& comment)
+{
+  std::string video_id{};
+  auto values = m_db.select("video", {"id"}, QueryFilter{{"vid", comment.video_id}});
+  for (const auto& value : values)
+  {
+    if (value.first == "id")
+      video_id = value.second;
+  }
+
+  if (video_id.empty())
+    video_id = m_db.insert("video", {"vid"}, {comment.video_id}, "id");
+
+  auto id = m_db.insert(
+    "comment",
+    {"vid", "comment_id", "parent_id"},
+    {
+      video_id,
+      comment.id,
+      comment.parent_id
+    },
+    "id"
+  );
+
+  return !id.empty();
+}
 /**
  * @brief HaveCommented
  *
