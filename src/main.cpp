@@ -31,6 +31,7 @@ int main(int argc, char** argv) {
   using namespace kbot;
   auto event = ParseRuntimeArguments(argc, argv);
   YouTubeBot bot{};
+  bot.Init();
 
   if (bot.HandleEvent(event))
   {
