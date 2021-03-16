@@ -224,10 +224,11 @@ void YouTubeBot::SetCallback(BrokerCallback cb_fn) {
 }
 
 /**
- * @brief HandleEvent
+ * @brief
  *
- * @param   [in]  {BotEvent} event
- * @returns [out] {bool}
+ * @param event
+ * @return true
+ * @return false
  */
 bool YouTubeBot::HandleEvent(BotEvent event) {
   using namespace ktube;
@@ -275,16 +276,17 @@ bool YouTubeBot::HandleEvent(BotEvent event) {
 
     for (const auto& video : m_api.fetch_rival_videos(ktube::Video::CreateFromTags(keywords)))
     {
-      if (HaveCommented(video.channel_id))
+      if (HaveCommented(video.id) || video.id == "E0tuY6yV3CQ" || video.id == "yFljsR5dEos")
         continue;
 
-      Comment comment = Comment::Create(reply_text);
-      ktube::log(comment);
+      Comment comment  = Comment::Create(reply_text);
+      comment.video_id = video.id;
+      comment.channel  = video.channel_id;
+      comment.id       = m_api.PostComment(comment);
 
-      comment_result = m_api.PostComment(comment);
-
-      if (comment_result)
+      if (!comment.id.empty())
       {
+        InsertComment(comment);
         for (const auto& comment : m_api.FetchVideoComments(video.id))
         {
           if (HaveReplied(comment.id))
@@ -293,20 +295,75 @@ bool YouTubeBot::HandleEvent(BotEvent event) {
           Comment reply_comment   = Comment::Create(reply_text);
           reply_comment.parent_id = comment.id;
           reply_comment.video_id  = video.id;
+          reply_comment.channel   = video.channel_id;
 
-          reply_result = m_api.PostCommentReply(reply_comment);
+          reply_comment.id = m_api.PostCommentReply(reply_comment);
+
+          if (!reply_comment.id.empty())
+            InsertComment(reply_comment);
 
           break;
         }
         break;
       }
     }
-    error = (comment_result && reply_result);
+    error = comment_result;
   }
 
   return (!error);
 }
 
+/**
+ * @brief InsertComment
+ *
+ * @param comment
+ * @return true
+ * @return false
+ */
+bool YouTubeBot::InsertComment(const ktube::Comment& comment)
+{
+  std::string channel_id{};
+  std::string video_id{};
+  Values      values{};
+  Fields      fields{};
+
+  for (const auto& value : m_db.select("channel", {"id"}, {{"cid", comment.channel}}))
+    if (value.first == "id")
+      channel_id = value.second;
+
+  channel_id = (channel_id.empty()) ?
+                 m_db.insert("channel", {"cid"}, {comment.channel}, "id") :
+                 channel_id;
+
+  if (m_db.select("video", {"id"}, {{"vid", comment.video_id}}).empty())
+    m_db.insert("video", {"vid", "chid"}, {comment.video_id, channel_id}, "id");
+
+  if (!comment.parent_id.empty())
+  {
+    std::string parent_comment_id{};
+    for (const auto& row : m_db.select("comment", {"id"}, {{"comment_id", comment.parent_id}}))
+    {
+      if (row.first == "id")
+      {
+        parent_comment_id = row.second;
+        break;
+      }
+    }
+    parent_comment_id = (parent_comment_id.empty()) ?
+                          m_db.insert("comment", {"vid", "comment_id"}, {comment.video_id, comment.parent_id}, "id") :
+                          parent_comment_id;
+    fields = Fields{"vid", "comment_id", "parent_id"};
+    values = Values{comment.video_id, comment.id, parent_comment_id};
+  }
+  else
+  {
+    fields = Fields{"vid", "comment_id"};
+    values = Values{comment.video_id, comment.id};
+  }
+
+  return (!m_db.insert("comment", fields, values, "id").empty());
+
+}
 /**
  * @brief HaveCommented
  *
