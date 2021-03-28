@@ -49,28 +49,30 @@ void SetCallback(BrokerCallback cb_fn) {
   m_send_event_fn = cb_fn;
 }
 
-bool HandleEvent(BotEvent event) {
+bool HandleEvent(BotRequest request) {
   bool error{false};
+  const auto event = request.event;
 
-  if (event.name == "livestream active" ||
-      event.name == "discord:messages"    )
+  if (event == "livestream active" ||
+      event == "discord:messages"    )
   {
-    error = !kscord::Client::PostMessage(event.data);
+    error = !kscord::Client::PostMessage(request.data);
   }
   else
-  if (event.name == "platform:repost")
+  if (event == "platform:repost")
   {
-    error = !kscord::Client::PostMessage(event.data, event.urls);
+    kbot::log("Would be posting: " + request.data);
+    // error = !kscord::Client::PostMessage(event.data, event.urls);
   }
 
   if (error)
   {
-    std::string error_message{"Failed to handle " + event.name + " event"};
+    std::string error_message{"Failed to handle " + request.event + " event"};
     kbot::log(error_message);
-    m_send_event_fn(CreateErrorEvent(error_message, event));
+    m_send_event_fn(CreateErrorEvent(error_message, request));
   }
   else
-    m_send_event_fn(CreateSuccessEvent(event));
+    m_send_event_fn(CreateSuccessEvent(request));
 
   return (!error);
 }

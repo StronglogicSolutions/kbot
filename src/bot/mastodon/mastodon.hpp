@@ -58,9 +58,10 @@ void SendPublicMessage(const std::string& message, const std::vector<std::string
 {
   PostStatus(kstodon::Status{message}, file_urls);
 
-  m_send_event_fn(BotEvent{
+  m_send_event_fn(BotRequest{
     .platform = Platform::mastodon,
-    .name = "platform:post",
+    .event = "platform:post",
+    .username = "DEFAULT_USER",
     .data = message,
     .urls = file_urls,
     .id = ""
@@ -79,10 +80,11 @@ void SetCallback(BrokerCallback cb_fn) {
   m_send_event_fn = cb_fn;
 }
 
-bool HandleEvent(BotEvent event) {
+bool HandleEvent(BotRequest request) {
   bool error{false};
+  const auto event = request.event;
 
-  if (event.name == "comments find")
+  if (event == "comments find")
   {
     std::stringstream ss{};
     for (const kstodon::Status& status : FindComments())
@@ -90,38 +92,40 @@ bool HandleEvent(BotEvent event) {
 
     std::string comment_string = ss.str();
     if (!comment_string.empty())
-      m_send_event_fn(BotEvent{
+      m_send_event_fn(BotRequest{
         .platform = Platform::mastodon,
-        .name     = "comment",
+        .event    = "comment",
+        .username = request.username,
         .data     = comment_string
       });
 
     return true;
   }
   else
-  if (event.name == "livestream active")
+  if (event == "livestream active")
   {
-    if (!PostStatus(kstodon::Status{event.data}, event.urls))
+    if (!PostStatus(kstodon::Status{request.data}, request.urls))
       error = true;
   }
   else
-  if (event.name == "platform:repost")
+  if (event == "platform:repost")
   {
-    kstodon::Status status{event.data};
+    kstodon::Status status{request.data};
     status.visibility = kstodon::constants::StatusVisibility::UNLISTED;
-    std::vector<std::string> urls = (event.urls.empty()) ? std::vector<std::string>{} : std::vector<std::string>{event.urls.front()};
-
-    error = !PostStatus(status, urls);
+    std::vector<std::string> urls = (request.urls.empty()) ? std::vector<std::string>{} : std::vector<std::string>{request.urls.front()};
+    kbot::log("Would be posting: " + request.data);
+    // error = !PostStatus(status, urls);
+    error = true;
   }
 
   if (error)
   {
-    std::string error_message{"Failed to handle " + event.name + " event"};
+    std::string error_message{"Failed to handle " + request.event + " event"};
     kbot::log(error_message);
-    m_send_event_fn(CreateErrorEvent(error_message, event));
+    m_send_event_fn(CreateErrorEvent(GetLastError(), request));
   }
   else
-    m_send_event_fn(CreateSuccessEvent(event));
+    m_send_event_fn(CreateSuccessEvent(request));
 
   return (!error);
 }

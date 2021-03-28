@@ -230,19 +230,20 @@ void YouTubeBot::SetCallback(BrokerCallback cb_fn) {
  * @return true
  * @return false
  */
-bool YouTubeBot::HandleEvent(BotEvent event) {
+bool YouTubeBot::HandleEvent(BotRequest request) {
   using namespace ktube;
   bool error{false};
+  const auto event = request.event;
 
-  if (event.name == "youtube:livestream")
+  if (event == "youtube:livestream")
   {
     VideoDetails video_info = m_api.GetLiveDetails();
 
-    auto has_livestream = (!video_info.id.empty());
+    auto has_livestream   = (!video_info.id.empty());
 
-    std::string name = (has_livestream) ?
-                         "livestream active" :
-                         "livestream inactive";
+    std::string new_event = (has_livestream) ?
+                              "livestream active" :
+                              "livestream inactive";
     std::string payload{
       video_info.channel_title + " currently has a livestream RIGHT NOW!!\n" +
       video_info.url           + '\n' +
@@ -251,9 +252,10 @@ bool YouTubeBot::HandleEvent(BotEvent event) {
 
     for (const auto& platform : std::vector<Platform>{Platform::mastodon, Platform::discord})
       m_send_event_fn(
-        BotEvent{
+        BotRequest{
           .platform = platform,
-          .name = name,
+          .event = new_event,
+          .username = request.username,
           .data = payload,
           .urls = (video_info.thumbnail.empty()) ?
                     std::vector<std::string>{} :
@@ -263,20 +265,27 @@ bool YouTubeBot::HandleEvent(BotEvent event) {
 
   }
   else
-  if (event.name == "youtube:comment")
+  if (event == "youtube:comment_on_video")
+  {
+    auto comment_id = m_api.PostComment(Comment{"", request.id, request.data, "Emmanuel", "UCK0xH_L9OBM0CVwC438bMGA"});
+    if (comment_id.empty())
+      error = true;
+  }
+  else
+  if (event == "youtube:comment")
   {
     using namespace ktube;
-    // std::string reply_text{"외국인과 언어교환하고 싶은 분은 여기로 방문해 주세요 👉 https://discord.gg/j5Rjhk96"};
-
-    const std::string& reply_text           = event.data;
-    const std::vector<std::string> keywords = event.urls; // TODO: rename `urls` to `args`
+    // std::string reply_text{"좋은 영상입니다 👏 외국인과 언어교환하고 싶은 분은 여기로 방문해 주세요 👉 https://discord.gg/j5Rjhk96"};
+    const uint8_t MAX_RESULTS{30};
+    const std::string& reply_text           = request.data;
+    const std::vector<std::string> keywords = request.urls; // TODO: rename `urls` to `args`
 
     bool comment_result{false};
     bool reply_result{false};
 
-    for (const auto& video : m_api.fetch_rival_videos(ktube::Video::CreateFromTags(keywords)))
+    for (const auto& video : m_api.fetch_rival_videos(ktube::Video::CreateFromTags(keywords), MAX_RESULTS))
     {
-      if (HaveCommented(video.id) || video.id == "E0tuY6yV3CQ" || video.id == "yFljsR5dEos")
+      if (HaveCommented(video.id) || video.id == "E0tuY6yV3CQ" || video.id == "yFljsR5dEos" || video.channel_id == "UCWbdX2OQlZkpXBw9M21pjzQ")
         continue;
 
       Comment comment  = Comment::Create(reply_text);
@@ -289,7 +298,7 @@ bool YouTubeBot::HandleEvent(BotEvent event) {
         InsertComment(comment);
         for (const auto& comment : m_api.FetchVideoComments(video.id))
         {
-          if (HaveReplied(comment.id))
+          if (IsOwnComment(comment.id) || HaveReplied(comment.id))
             continue;
 
           Comment reply_comment   = Comment::Create(reply_text);
@@ -393,6 +402,10 @@ bool YouTubeBot::HaveCommented(const std::string& vid)
   ).empty();
 }
 
+bool YouTubeBot::IsOwnComment(const std::string& cid)
+{
+  return !(m_db.select("comment", {"id"}, {{"comment_id", cid}}).empty());
+}
 /**
  * @brief HaveReplied
  *

@@ -12,7 +12,7 @@
 namespace kbot {
 using u_bot_ptr     = std::unique_ptr<Bot>;
 using BotPool       = std::vector<u_bot_ptr>;
-using EventQueue    = std::deque<BotEvent>;
+using EventQueue    = std::deque<BotRequest>;
 using u_ipc_msg_ptr = ipc_message::u_ipc_msg_ptr;
 
 inline std::vector<std::string> GetArgs(std::string s) {
@@ -25,13 +25,14 @@ inline std::vector<std::string> GetArgs(std::string s) {
   return {};
 }
 
-inline const BotEvent CreatePlatformEvent(platform_message* message)
+inline const BotRequest CreatePlatformEvent(platform_message* message)
 {
-  return BotEvent{
-    .platform = get_platform(message->name()),
-    .name     = "platform:repost",
+  return BotRequest{
+    .platform = get_platform(message->platform()),
+    .event    = "platform:repost",
+    .username = message->user(),
     .data     = UnescapeQuotes(message->content()),
-    .urls     = BotEvent::urls_from_string(message->urls()),
+    .urls     = BotRequest::urls_from_string(message->urls()),
     .id       = message->id()
   };
 }
@@ -81,21 +82,25 @@ void ProcessMessage(u_ipc_msg_ptr message) {
   if (message->type() == ::constants::IPC_KIQ_MESSAGE)
   {
     kiq_message* kiq_msg = static_cast<kiq_message*>(message.get());
-    const auto args = GetArgs(kiq_msg->payload());
+    const auto   args    = GetArgs(kiq_msg->payload());
 
     if (ValidIPCArguments(args));
     {
-      const auto& command = args.at(IPC_COMMAND_INDEX);
-      const auto& payload = args.at(IPC_PAYLOAD_INDEX);
+      const auto&       command = args.at(IPC_COMMAND_INDEX);
+      const auto&       payload = args.at(IPC_PAYLOAD_INDEX);
+      const std::string user    = "DEFAULT_USER";
+      Platform          platform{};
 
       if (command == "youtube:livestream")
-        SendEvent(BotEvent{.platform = Platform::youtube, .name = command, .data = payload});
+        platform = Platform::youtube;
       else
       if (command == "mastodon:comments")
-        SendEvent(BotEvent{.platform = Platform::mastodon, .name = "comments:find", .data = payload});
+          platform = Platform::mastodon;
       else
       if (command == "discord:messages")
-        SendEvent(BotEvent{.platform = Platform::discord, .name = command, .data = payload});
+        platform = Platform::discord;
+
+      SendEvent(BotRequest{platform, command, user, payload});
     }
   }
   else
@@ -112,7 +117,7 @@ void ProcessMessage(u_ipc_msg_ptr message) {
  * @return true
  * @return false
  */
-static bool ProcessEvent(BotEvent event)
+static bool ProcessEvent(BotRequest event)
 {
   if (g_broker != nullptr)
   {
@@ -127,7 +132,7 @@ static bool ProcessEvent(BotEvent event)
  *
  * @param event
  */
-void enqueue(BotEvent event)
+void enqueue(BotRequest event)
 {
   m_queue.emplace_back(event);
 }
@@ -164,57 +169,65 @@ virtual void loop() override
 
     if (!m_queue.empty())
     {
-      BotEvent event = m_queue.front();
-      if (event.name == "platform:post")                            // ALL Platforms
+      BotRequest  request = m_queue.front();
+      const auto& event   = request.event;
+      if (event == "platform:post")                          // ALL Platforms
       {
         m_outbound_queue.emplace_back(
           std::make_unique<platform_message>(
-            get_platform_name(event.platform),
-            event.id,
-            event.data,
-            event.url_string(),
+            get_platform_name(request.platform),
+            request.id,
+            request.username,
+            request.data,
+            request.url_string(),
             SHOULD_REPOST
           )
         );
       }
       else
-      if (event.name == "livestream inactive")
-          std::cout << "YouTube bot returned no livestreams" << std::endl;
+      if (event == "livestream inactive")
+          kbot::log("YouTube bot returned no livestreams");
       else
-      if (event.name == "comment")
-        std::cout << get_platform_name(event.platform) << " bot has new comments: " << event.data << std::endl;
+      if (event == "comment")
+        kbot::log(get_platform_name(request.platform) + " bot has new comments: " + request.data);
       else
-      if (event.name == "message")
-        std::cout << get_platform_name(event.platform) << " bot has new messages: " << event.data << std::endl;
+      if (event == "message")
+        kbot::log(get_platform_name(request.platform) + " bot has new messages: " + request.data);
       else
-      if (event.name == "bot:success")
+      if (event == "bot:success")
       {
-        kbot::log(get_platform_name(event.platform) + " successfully handled " + event.previous_name);
+        kbot::log(get_platform_name(request.platform) + " successfully handled " + request.previous_event);
 
-        if (event.previous_name == "platform:repost")                            // ALL Platforms
+        if (request.previous_event == "platform:repost") // ALL Platforms
         {
           m_outbound_queue.emplace_back(
             std::make_unique<platform_message>(
-              get_platform_name(event.platform),
-              event.id,
-              event.data,
-              event.url_string(),
+              get_platform_name(request.platform),
+              request.id,
+              request.username,
+              request.data,
+              request.url_string(),
               SHOULD_NOT_REPOST
             )
           );
         }
       }
       else
-      if (event.name == "bot:error")
+      if (event == "bot:error")
       {
-        kbot::log(get_platform_name(event.platform) + " failed to handle " + event.previous_name);
-        const std::string error_message = event.data;
-        const std::string id            = event.id;
-        // TODO: Create IPC error message and send
-        return;
+        kbot::log(get_platform_name(request.platform) + " failed to handle " + request.previous_event);
+        const std::string error_message = request.data;
+        const std::string id            = request.id;
+        m_outbound_queue.emplace_back(
+          std::make_unique<platform_error>(
+            get_platform_name(request.platform),
+            request.id,
+            "jigga"
+          )
+        );
       }
       else
-        SendEvent(event);
+        SendEvent(request);
 
       m_queue.pop_front();
     }
@@ -228,7 +241,7 @@ virtual void loop() override
  *
  * @param [in] {BotEvent}
  */
-void SendEvent(const BotEvent& event)
+void SendEvent(const BotRequest& event)
 {
   if (event.platform == Platform::discord)
     DCBot().HandleEvent(event);

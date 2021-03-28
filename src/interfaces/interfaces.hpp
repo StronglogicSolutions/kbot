@@ -49,14 +49,15 @@ static const std::string get_platform_name(Platform platform)
   return "";
 };
 
-struct BotEvent
+struct BotRequest
 {
 Platform    platform;
-std::string name;
+std::string event;
+std::string username;
 std::string data;
 std::vector<std::string> urls;
 std::string id;
-std::string previous_name;
+std::string previous_event;
 
 const std::string url_string() const
 {
@@ -99,30 +100,32 @@ static const bool SHOULD_REPOST{true};
 static const bool SHOULD_NOT_REPOST{false};
 static const std::string SUCCESS_EVENT{"bot:success"};
 
-static const BotEvent CreateSuccessEvent(const BotEvent& previous_event)
+static const BotRequest CreateSuccessEvent(const BotRequest& previous_event)
 {
-  return BotEvent{
-    .platform      = previous_event.platform,
-    .name          = SUCCESS_EVENT,
-    .data          = previous_event.data,
-    .urls          = previous_event.urls,
-    .id            = previous_event.id,
-    .previous_name = previous_event.name
+  return BotRequest{
+    .platform       = previous_event.platform,
+    .event          = SUCCESS_EVENT,
+    .username       = previous_event.username,
+    .data           = previous_event.data,
+    .urls           = previous_event.urls,
+    .id             = previous_event.id,
+    .previous_event = previous_event.event
   };
 }
 
-static const BotEvent CreateErrorEvent(const std::string& error_message, const BotEvent& previous_event)
+static const BotRequest CreateErrorEvent(const std::string& error_message, const BotRequest& previous_event)
 {
-  return BotEvent{
+  return BotRequest{
     .platform = previous_event.platform,
-    .name     = "bot:error",
+    .event    = "bot:error",
+    .username = previous_event.username,
     .data     = error_message,
     .urls     = previous_event.urls,
     .id       = previous_event.id
   };
 }
 
-using BrokerCallback = bool(*)(BotEvent event);
+using BrokerCallback = bool(*)(BotRequest event);
 
 class Bot {
  public:
@@ -134,7 +137,7 @@ class Bot {
 
   virtual std::unique_ptr<API> GetAPI(std::string name) = 0;
   virtual void                 SetCallback(BrokerCallback cb_fn_ptr) = 0;
-  virtual bool                 HandleEvent(BotEvent event) = 0;
+  virtual bool                 HandleEvent(BotRequest event) = 0;
   virtual bool                 IsRunning() = 0;
   virtual void                 Start() = 0;
   virtual void                 Shutdown() = 0;
