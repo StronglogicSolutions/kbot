@@ -53,21 +53,27 @@ bool HandleEvent(BotRequest request) {
   bool error{false};
   const auto event = request.event;
 
-  if (event == "livestream active" ||
-      event == "discord:messages"    )
-  {
-    error = !kscord::Client::PostMessage(request.data);
-  }
+  if (!request.username.empty()                        &&
+       kscord::Client::GetUsername() != request.username &&
+      !kscord::Client::SetUser(request.username))
+      error = true;
   else
-  if (event == "platform:repost")
   {
-    kbot::log("Would be posting: " + request.data);
-    // error = !kscord::Client::PostMessage(event.data, event.urls);
+    if (event == "livestream active" ||
+        event == "discord:messages"    )
+    {
+      error = !kscord::Client::PostMessage(request.data);
+    }
+    else
+    if (event == "platform:repost")
+    {
+      error = !kscord::Client::PostMessage(request.data, request.urls);
+    }
   }
 
   if (error)
   {
-    std::string error_message{"Failed to handle " + request.event + " event"};
+    std::string error_message{"Failed to handle " + request.event + "\nLast error: " + kscord::Client::GetLastError()};
     kbot::log(error_message);
     m_send_event_fn(CreateErrorEvent(error_message, request));
   }

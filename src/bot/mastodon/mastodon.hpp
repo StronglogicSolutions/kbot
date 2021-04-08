@@ -84,38 +84,45 @@ bool HandleEvent(BotRequest request) {
   bool error{false};
   const auto event = request.event;
 
-  if (event == "comments find")
-  {
-    std::stringstream ss{};
-    for (const kstodon::Status& status : FindComments())
-      ss << status;
-
-    std::string comment_string = ss.str();
-    if (!comment_string.empty())
-      m_send_event_fn(BotRequest{
-        .platform = Platform::mastodon,
-        .event    = "comment",
-        .username = request.username,
-        .data     = comment_string
-      });
-
-    return true;
-  }
-  else
-  if (event == "livestream active")
-  {
-    if (!PostStatus(kstodon::Status{request.data}, request.urls))
+  if (!request.username.empty()                        &&
+       kstodon::Bot::GetUsername() != request.username &&
+      !kstodon::Bot::SetUser(request.username))
       error = true;
-  }
   else
-  if (event == "platform:repost")
   {
-    kstodon::Status status{request.data};
-    status.visibility = kstodon::constants::StatusVisibility::UNLISTED;
-    std::vector<std::string> urls = (request.urls.empty()) ? std::vector<std::string>{} : std::vector<std::string>{request.urls.front()};
-    kbot::log("Would be posting: " + request.data);
-    // error = !PostStatus(status, urls);
-    error = true;
+    if (event == "comments find")
+    {
+      std::stringstream ss{};
+      for (const kstodon::Status& status : FindComments())
+        ss << status;
+
+      std::string comment_string = ss.str();
+      if (!comment_string.empty())
+        m_send_event_fn(BotRequest{
+          .platform = Platform::mastodon,
+          .event    = "comment",
+          .username = request.username,
+          .data     = comment_string
+        });
+
+      return true;
+    }
+    else
+    if (event == "livestream active")
+    {
+      if (!PostStatus(kstodon::Status{request.data}, request.urls))
+        error = true;
+    }
+    else
+    if (event == "platform:repost")
+    {
+      kstodon::Status status{request.data};
+      status.visibility = kstodon::constants::StatusVisibility::UNLISTED;
+      std::vector<std::string> urls = (request.urls.empty()) ? std::vector<std::string>{} : std::vector<std::string>{request.urls.front()};
+      kbot::log("Would be posting: " + request.data);
+      // error = !PostStatus(status, urls);
+      // error = true;
+    }
   }
 
   if (error)
