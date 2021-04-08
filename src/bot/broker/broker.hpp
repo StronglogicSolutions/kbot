@@ -95,7 +95,7 @@ void ProcessMessage(u_ipc_msg_ptr message) {
         platform = Platform::youtube;
       else
       if (command == "mastodon:comments")
-          platform = Platform::mastodon;
+        platform = Platform::mastodon;
       else
       if (command == "discord:messages")
         platform = Platform::discord;
