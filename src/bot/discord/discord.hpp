@@ -3,16 +3,14 @@
 #include "kscord/kscord.hpp"
 #include "interfaces/interfaces.hpp"
 
-
 namespace kbot {
 namespace constants {
-const std::string USER{"kstyleyo"};
+const std::string USER{""};
 } // namespace constants
 
-
-class DiscordBot : public  kbot::Worker,
-                    public kbot::Bot,
-                    public kscord::Client
+class DiscordBot : public kbot::Worker,
+                   public kbot::Bot,
+                   public kscord::Client
 {
 public:
 DiscordBot()
@@ -85,7 +83,7 @@ bool HandleEvent(BotRequest request) {
 
 virtual std::unique_ptr<API> GetAPI(std::string name) override
 {
-  // TODO: Determine if we really need this type of interface
+  // TODO: Add other APIs
   return nullptr;
 }
 

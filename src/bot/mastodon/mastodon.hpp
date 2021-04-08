@@ -3,15 +3,10 @@
 #include "kstodon/config.hpp"
 #include "interfaces/interfaces.hpp"
 
-/*
-using GenerateFunction = Status(*)();
-using ReplyFunction    = Status(*)(Status status);
-*/
-
 namespace kbot {
 namespace constants {
 const std::string USERNAME{
-  kstodon::GetConfigReader().GetString("kstodon", "user", "koreannews")
+  kstodon::GetConfigReader().GetString("kstodon", "user", "kstodonbot")
 };
 } // namespace constants
 /**
@@ -21,7 +16,7 @@ const std::string USERNAME{
  */
 kstodon::Status GenerateStatusMessage()
 {
-  return kstodon::Status{"Hello from KSTYLEYO!"};
+  return kstodon::Status{"Hello from " + constants::USERNAME};
 }
 
 kstodon::Status ReplyToMastodonMessage(kstodon::Status status)
@@ -120,8 +115,7 @@ bool HandleEvent(BotRequest request) {
       status.visibility = kstodon::constants::StatusVisibility::UNLISTED;
       std::vector<std::string> urls = (request.urls.empty()) ? std::vector<std::string>{} : std::vector<std::string>{request.urls.front()};
       kbot::log("Would be posting: " + request.data);
-      // error = !PostStatus(status, urls);
-      // error = true;
+      error = !PostStatus(status, urls);
     }
   }
 
@@ -139,7 +133,7 @@ bool HandleEvent(BotRequest request) {
 
 virtual std::unique_ptr<API> GetAPI(std::string name) override
 {
-  // TODO: Determine if we really need this type of interface
+  // TODO: Add other APIs
   return nullptr;
 }
 
