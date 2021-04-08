@@ -34,7 +34,10 @@ int main(int argc, char** argv)
     }
 
     if (broker.Poll() && channel_port.REQReady())
+    {
+      kbot::log("Sending IPC req");
       channel_port.SendIPCMessage(std::move(broker.DeQueue()), true);
+    }
 
     std::mutex                   mtx{};
     std::condition_variable      condition{};

@@ -47,13 +47,14 @@ public:
   virtual void                 Start() override;
   virtual void                 Shutdown() override;
   virtual void                 SetCallback(BrokerCallback cb_fn) override;
-  virtual bool                 HandleEvent(BotEvent event) override;
+  virtual bool                 HandleEvent(BotRequest event) override;
   LiveChatMap                  GetChats();
   std::string                  GetResults();
   bool                         PostMessage(std::string message);
   void                         UpdateChats();
   bool                         HaveCommented(const std::string& vid);
   bool                         HaveReplied(const std::string& cid);
+  bool                         IsOwnComment(const std::string& cid);
   bool                         InsertComment(const ktube::Comment& comment);
 
 private:

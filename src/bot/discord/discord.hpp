@@ -3,16 +3,14 @@
 #include "kscord/kscord.hpp"
 #include "interfaces/interfaces.hpp"
 
-
 namespace kbot {
 namespace constants {
-const std::string USER{"kstyleyo"};
+const std::string USER{""};
 } // namespace constants
 
-
-class DiscordBot : public  kbot::Worker,
-                    public kbot::Bot,
-                    public kscord::Client
+class DiscordBot : public kbot::Worker,
+                   public kbot::Bot,
+                   public kscord::Client
 {
 public:
 DiscordBot()
@@ -49,35 +47,43 @@ void SetCallback(BrokerCallback cb_fn) {
   m_send_event_fn = cb_fn;
 }
 
-bool HandleEvent(BotEvent event) {
+bool HandleEvent(BotRequest request) {
   bool error{false};
+  const auto event = request.event;
 
-  if (event.name == "livestream active" ||
-      event.name == "discord:messages"    )
-  {
-    error = !kscord::Client::PostMessage(event.data);
-  }
+  if (!request.username.empty()                        &&
+       kscord::Client::GetUsername() != request.username &&
+      !kscord::Client::SetUser(request.username))
+      error = true;
   else
-  if (event.name == "platform:repost")
   {
-    error = !kscord::Client::PostMessage(event.data, event.urls);
+    if (event == "livestream active" ||
+        event == "discord:messages"    )
+    {
+      error = !kscord::Client::PostMessage(request.data);
+    }
+    else
+    if (event == "platform:repost")
+    {
+      error = !kscord::Client::PostMessage(request.data, request.urls);
+    }
   }
 
   if (error)
   {
-    std::string error_message{"Failed to handle " + event.name + " event"};
+    std::string error_message{"Failed to handle " + request.event + "\nLast error: " + kscord::Client::GetLastError()};
     kbot::log(error_message);
-    m_send_event_fn(CreateErrorEvent(error_message, event));
+    m_send_event_fn(CreateErrorEvent(error_message, request));
   }
   else
-    m_send_event_fn(CreateSuccessEvent(event));
+    m_send_event_fn(CreateSuccessEvent(request));
 
   return (!error);
 }
 
 virtual std::unique_ptr<API> GetAPI(std::string name) override
 {
-  // TODO: Determine if we really need this type of interface
+  // TODO: Add other APIs
   return nullptr;
 }
 
