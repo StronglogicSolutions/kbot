@@ -39,4 +39,11 @@ inline const std::time_t to_unixtime(const char* datetime) {
 
   return mktime(&t);
 }
+
+static std::string RemoveSlashes(std::string s)
+{
+  s.erase(std::remove(s.begin(), s.end(), '\\'), s.end());
+
+  return s;
+}
 } // namespace kbot
