@@ -30,7 +30,7 @@ inline const BotRequest CreatePlatformEvent(platform_message* message)
   return BotRequest{
     .platform = get_platform(message->platform()),
     .event    = "platform:repost",
-    .username = message->user(),
+    .username = UnescapeQuotes(message->user()),
     .data     = UnescapeQuotes(message->content()),
     .urls     = BotRequest::urls_from_string(message->urls()),
     .id       = message->id()
@@ -70,7 +70,8 @@ Broker()
 
 const uint8_t IPC_COMMAND_INDEX{0x00};
 const uint8_t IPC_PAYLOAD_INDEX{0x01};
-const uint8_t IPC_PARAM_NUMBER{0x02};
+const uint8_t IPC_USER_INDEX   {0x02};
+const uint8_t IPC_PARAM_NUMBER{0x03};
 
 bool ValidIPCArguments(const std::vector<std::string>& arguments)
 {
@@ -82,14 +83,14 @@ void ProcessMessage(u_ipc_msg_ptr message) {
   if (message->type() == ::constants::IPC_KIQ_MESSAGE)
   {
     kiq_message* kiq_msg = static_cast<kiq_message*>(message.get());
-    const auto   args    = GetArgs(kiq_msg->payload());
+    auto         args    = GetArgs(kiq_msg->payload());
 
     if (ValidIPCArguments(args));
     {
-      const auto&       command = args.at(IPC_COMMAND_INDEX);
-      const auto&       payload = args.at(IPC_PAYLOAD_INDEX);
-      const std::string user    = "DEFAULT_USER";
-      Platform          platform{};
+      const auto& command = args.at(IPC_COMMAND_INDEX);
+      const auto& payload = args.at(IPC_PAYLOAD_INDEX);
+      const auto& user    = args.at(IPC_USER_INDEX);
+      Platform    platform{};
 
       if (command == "youtube:livestream")
         platform = Platform::youtube;
