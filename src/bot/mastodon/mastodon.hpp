@@ -121,9 +121,9 @@ bool HandleEvent(BotRequest request) {
 
   if (error)
   {
-    std::string error_message{"Failed to handle " + request.event + " event"};
+    std::string error_message{"Failed to handle " + request.event + " event\nLast error: " + GetLastError()};
     kbot::log(error_message);
-    m_send_event_fn(CreateErrorEvent(GetLastError(), request));
+    m_send_event_fn(CreateErrorEvent(error_message, request));
   }
   else
     m_send_event_fn(CreateSuccessEvent(request));
