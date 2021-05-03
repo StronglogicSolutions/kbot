@@ -223,6 +223,7 @@ virtual void loop() override
           std::make_unique<platform_error>(
             get_platform_name(request.platform),
             request.id,
+            request.username,
             request.data
           )
         );
