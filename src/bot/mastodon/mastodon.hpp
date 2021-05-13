@@ -111,10 +111,10 @@ bool HandleEvent(BotRequest request) {
     else
     if (event == "platform:repost")
     {
-      kstodon::Status status{request.data};
-      status.visibility = kstodon::constants::StatusVisibility::UNLISTED;
-      std::vector<std::string> urls = (request.urls.empty()) ? std::vector<std::string>{} : std::vector<std::string>{request.urls.front()};
-      kbot::log("Would be posting: " + request.data);
+      kstodon::Status          status{request.data};
+      std::vector<std::string> urls = (request.urls.empty()) ?
+                                        std::vector<std::string>{} :
+                                        std::vector<std::string>{request.urls.front()};
       error = !PostStatus(status, urls);
     }
   }
