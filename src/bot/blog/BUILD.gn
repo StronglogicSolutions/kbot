@@ -1,0 +1,15 @@
+
+executable("blog_bot") {
+  include_dirs = [
+    "//src/"
+  ]
+
+  libs = [
+    "pthread"
+  ]
+
+
+sources = [
+  "//src/bot/blog/main.cpp"
+  ]
+}
