@@ -4,6 +4,9 @@ executable("blog_bot") {
     "//src/bot/youtube:inih"
   ]
 
+  deps = [
+    "//src/bot/youtube:ini_reader",
+  ]
   include_dirs = [
     "//src/"
   ]
