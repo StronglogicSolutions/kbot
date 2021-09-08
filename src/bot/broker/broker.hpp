@@ -245,18 +245,24 @@ virtual void loop() override
  */
 void SendEvent(const BotRequest& event)
 {
-  if (event.platform == Platform::discord)
-    DCBot().HandleEvent(event);
-  else
-  if (event.platform == Platform::mastodon)
-    MDBot().HandleEvent(event);
-  else
-  if (event.platform == Platform::youtube)
+  try
   {
-    YTBot().HandleEvent(event);
+    if (event.platform == Platform::discord)
+      DCBot().HandleEvent(event);
+    else
+    if (event.platform == Platform::mastodon)
+      MDBot().HandleEvent(event);
+    else
+    if (event.platform == Platform::youtube)
+      YTBot().HandleEvent(event);
+    else
+      kbot::log("Unable to send event for unknown platform");
   }
-  else
-    kbot::log("Unable to send event for unknown platform");
+  catch (const std::exception& e)
+  {
+    kbot::log("Exception caught");
+    kbot::log(e.what());
+  }
 }
 
 /**
