@@ -1,6 +1,7 @@
 #pragma once
 
 #include "interfaces/interfaces.hpp"
+#include "util/util.hpp"
 #include "INIReader.h"
 #include <fstream>
 
@@ -9,7 +10,7 @@ namespace constants {
 const std::string USER{""};
 const uint8_t     APP_NAME_LENGTH{8};
 const std::string DEFAULT_CONFIG_PATH{"config/config.ini"};
-} // namespace constants
+} // ns constants
 
 static std::string get_executable_cwd()
 {
@@ -26,7 +27,15 @@ static std::string GetBlogPath()
 {
   const auto config_path = GetConfigPath();
   const auto        config = INIReader{"/data/stronglogic/kbot/config/config.ini"};
-  const std::string path   = config.GetString("blog_bot", "blog_path", "");
+  const std::string path   = config.GetString("blog_bot", "post_path", "");
+  return path;
+}
+
+static std::string GetBlogImagePath()
+{
+  const auto config_path = GetConfigPath();
+  const auto        config = INIReader{"/data/stronglogic/kbot/config/config.ini"};
+  const std::string path   = config.GetString("blog_bot", "image_path", "");
   return path;
 }
 
@@ -75,7 +84,7 @@ static std::string CreateBlogPost(const std::string&              text,
   std::string       delim = "";
   const auto        end_it= text.find_first_of('\n');
   const std::string title = (end_it != std::string::npos) ?
-                              text.substr(0, text.size() - end_it) :
+                              text.substr(0, (end_it - 1)) :
                               "Platform repost";
   std::string blog_post{};
   blog_post += "---\n";
@@ -86,7 +95,12 @@ static std::string CreateBlogPost(const std::string&              text,
   blog_post += "---\n";
   blog_post += text;
   blog_post += '\n';
-  for (const auto& url : urls) blog_post += CreateMarkdownImage(url);
+  for (const auto& url : urls)
+  {
+    const auto& filename = FetchFile(url, GetBlogImagePath());
+    if (!filename.empty())
+      blog_post += CreateMarkdownImage((GetBlogImagePath() + '/' + filename)) + '\n';
+  }
 
   return blog_post;
 }

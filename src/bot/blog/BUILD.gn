@@ -1,7 +1,8 @@
 
 executable("blog_bot") {
   public_configs = [
-    "//src/bot/youtube:inih"
+    "//src/bot/youtube:inih",
+    "//src/bot/discord:cpr"
   ]
 
   deps = [
@@ -12,6 +13,9 @@ executable("blog_bot") {
   ]
 
   libs = [
+    "crypto",
+    "cpr",
+    "curl",
     "pthread"
   ]
 
