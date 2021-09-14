@@ -58,9 +58,12 @@ static std::vector<std::string> FindTags(const std::string& s)
 
   for (auto start_it = t_s.find('#'); start_it != std::string::npos; start_it = t_s.find('#'))
   {
-    auto end_it = t_s.substr(start_it).find_first_of(' ');
-    tags.emplace_back(t_s.substr((start_it + 1), (end_it - 1)));
+    auto chunk  = t_s.substr(start_it + 1);
+    auto s_it   = chunk.find_first_of(' ');
+    auto l_it   = chunk.find_first_of('\n');
+    auto end_it = (s_it < l_it) ? s_it : l_it;
     t_s         = t_s.substr((start_it + end_it + 1));
+    tags.emplace_back(chunk.substr(0, end_it));
   }
 
   return tags;
