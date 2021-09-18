@@ -6,21 +6,21 @@
 #include <fstream>
 
 namespace kbot {
-namespace constants {
+namespace constants::blog {
 const std::string USER{""};
 const uint8_t     APP_NAME_LENGTH{8};
 const std::string DEFAULT_CONFIG_PATH{"config/config.ini"};
-} // ns constants
+} // ns constants::blog
 
 static std::string get_executable_cwd()
 {
   std::string full_path{realpath("/proc/self/exe", NULL)};
-  return full_path.substr(0, full_path.size() - (constants::APP_NAME_LENGTH  + 1));
+  return full_path.substr(0, full_path.size() - (constants::blog::APP_NAME_LENGTH  + 1));
 }
 
 static const std::string GetConfigPath()
 {
-  return get_executable_cwd() + "../" + constants::DEFAULT_CONFIG_PATH;
+  return get_executable_cwd() + "../" + constants::blog::DEFAULT_CONFIG_PATH;
 }
 
 static std::string GetBlogPath()
@@ -109,11 +109,11 @@ static std::string CreateBlogPost(const std::string&              text,
 }
 
 class BlogBot : public kbot::Worker,
-                   public kbot::Bot
+                public kbot::Bot
 {
 public:
 BlogBot()
-: kbot::Bot{constants::USER}
+: kbot::Bot{constants::blog::USER}
 {}
 
 virtual void Init() override
@@ -129,8 +129,6 @@ virtual void loop() override
     std::this_thread::sleep_for(std::chrono::milliseconds(10000));
   }
 }
-
-
 
 virtual void SetCallback(BrokerCallback cb_fn) override
 {
