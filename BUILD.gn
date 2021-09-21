@@ -38,7 +38,8 @@ all_executables = [
   ":youtube_bot",
   "//src/bot/mastodon:mastodon_bot",
   "//src/bot/discord:discord_bot",
-  "//src/bot/broker:broker"
+  "//src/bot/broker:broker",
+  "//src/bot/blog:blog_bot",
 ]
 
 group("executables") {
