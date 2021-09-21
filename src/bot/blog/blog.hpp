@@ -1,33 +1,51 @@
 #pragma once
 
 #include "interfaces/interfaces.hpp"
+#include "util/util.hpp"
 #include "INIReader.h"
 #include <fstream>
 
 namespace kbot {
-namespace constants {
+namespace constants::blog {
 const std::string USER{""};
-const uint8_t     APP_NAME_LENGTH{8};
+const uint8_t     APP_NAME_LENGTH{6};
 const std::string DEFAULT_CONFIG_PATH{"config/config.ini"};
-} // namespace constants
+} // ns constants::blog
 
 static std::string get_executable_cwd()
 {
   std::string full_path{realpath("/proc/self/exe", NULL)};
-  return full_path.substr(0, full_path.size() - (constants::APP_NAME_LENGTH  + 1));
+  return full_path.substr(0, full_path.size() - (constants::blog::APP_NAME_LENGTH  + 1));
 }
 
 static const std::string GetConfigPath()
 {
-  return get_executable_cwd() + "../" + constants::DEFAULT_CONFIG_PATH;
+  return get_executable_cwd() + "/../" + constants::blog::DEFAULT_CONFIG_PATH;
 }
 
 static std::string GetBlogPath()
 {
-  const auto config_path = GetConfigPath();
-  const auto        config = INIReader{"/data/stronglogic/kbot/config/config.ini"};
-  const std::string path   = config.GetString("blog_bot", "blog_path", "");
+  const auto        config_path = GetConfigPath();
+  const auto        config      = INIReader{config_path};
+  std::string       path        = config.GetString("blog_bot", "post_path", "");
+  if (!path.empty() && path.back() != '/')
+    path += '/';
   return path;
+}
+
+static std::string GetBlogImagePath()
+{
+  const auto config_path   = GetConfigPath();
+  const auto        config = INIReader{"/data/stronglogic/kbot/config/config.ini"};
+  const std::string path   = config.GetString("blog_bot", "image_path", "");
+  return path;
+}
+
+static std::string unixtime()
+{
+  return std::to_string(std::chrono::duration_cast<std::chrono::seconds>(
+    std::chrono::system_clock::now().time_since_epoch()
+  ).count());
 }
 
 static std::string get_simple_datetime()
@@ -49,9 +67,13 @@ static std::vector<std::string> FindTags(const std::string& s)
 
   for (auto start_it = t_s.find('#'); start_it != std::string::npos; start_it = t_s.find('#'))
   {
-    auto end_it = t_s.substr(start_it).find_first_of(' ');
-    tags.emplace_back(t_s.substr((start_it + 1), (end_it - 1)));
-    t_s         = t_s.substr((start_it + end_it + 1));
+    const auto chunk  = t_s.substr(start_it + 1);
+    const auto s_it   = chunk.find_first_of(' ');
+    const auto l_it   = chunk.find_first_of('\n');
+    const auto end_it = (s_it < l_it) ? s_it : l_it;
+    const bool done   = (end_it == std::string::npos);
+    t_s               = (done) ? "" : t_s.substr((start_it + end_it + 1));
+    tags.emplace_back((end_it == std::string::npos) ? chunk : chunk.substr(0, end_it));
   }
 
   return tags;
@@ -62,7 +84,13 @@ static std::string CreateMarkdownImage(const std::string& url)
   return "!['Blog Image'](" + url + " 'Blog image')\n";
 }
 
-static std::string CreateBlogPost(const std::string&              text,
+struct BlogPost
+{
+std::string title;
+std::string text;
+};
+
+static BlogPost CreateBlogPost(const std::string&              text,
                                   const std::vector<std::string>& tags,
                                   const std::vector<std::string>& urls)
 {
@@ -75,7 +103,7 @@ static std::string CreateBlogPost(const std::string&              text,
   std::string       delim = "";
   const auto        end_it= text.find_first_of('\n');
   const std::string title = (end_it != std::string::npos) ?
-                              text.substr(0, text.size() - end_it) :
+                              text.substr(0, (end_it - 1)) :
                               "Platform repost";
   std::string blog_post{};
   blog_post += "---\n";
@@ -86,17 +114,22 @@ static std::string CreateBlogPost(const std::string&              text,
   blog_post += "---\n";
   blog_post += text;
   blog_post += '\n';
-  for (const auto& url : urls) blog_post += CreateMarkdownImage(url);
+  for (const auto& url : urls)
+  {
+    const auto& filename = FetchFile(url, GetBlogImagePath());
+    if (!filename.empty())
+      blog_post += CreateMarkdownImage((GetBlogImagePath() + '/' + filename)) + '\n';
+  }
 
-  return blog_post;
+  return BlogPost{.title = title, .text = text};
 }
 
 class BlogBot : public kbot::Worker,
-                   public kbot::Bot
+                public kbot::Bot
 {
 public:
 BlogBot()
-: kbot::Bot{constants::USER}
+: kbot::Bot{constants::blog::USER}
 {}
 
 virtual void Init() override
@@ -113,62 +146,40 @@ virtual void loop() override
   }
 }
 
-
-
 virtual void SetCallback(BrokerCallback cb_fn) override
 {
   m_send_event_fn = cb_fn;
 }
 
-void BlogTest(const std::string& text, const std::string& urls = "")
-{
-  const auto PostBlog = [&](const std::string text, const std::vector<std::string> media_urls) -> bool
-  {
-    const std::vector<std::string> tags = FindTags(text);
-    const std::string blog_post         = CreateBlogPost(text, tags, media_urls);
-
-    log(blog_post);
-
-    std::ofstream out{GetBlogPath()};
-    out << blog_post;
-    return true;
-  };
-  auto result = PostBlog(text, {urls});
-}
-
-
 virtual bool HandleEvent(BotRequest request) override
 {
+  static const auto MAX_TITLE_SIZE{25};
+
   const auto PostBlog = [&](const std::string text, const std::vector<std::string> media_urls) -> bool
   {
-    const std::vector<std::string> tags = FindTags(text);
-    const std::string blog_post         = CreateBlogPost(text, tags, media_urls);
+    const auto     tags      = FindTags(text);
+    const BlogPost blog_post = CreateBlogPost(text, tags, media_urls);
+    const auto     title     = (blog_post.title.size() > MAX_TITLE_SIZE) ?
+                                blog_post.title.substr(0, MAX_TITLE_SIZE) : blog_post.title;
+    const auto     filename  = GetBlogPath() + title + '_' + unixtime();
 
-    std::ofstream out{};
-    out << blog_post;
+
+    std::ofstream                  out{filename};
+    if (out << blog_post.text)
+      return true;
     return false;
   };
-  const auto event = request.event;
 
-  (request.data); // text
-  (request.urls); // media
+  if (request.event == "platform:repost")
+    if (PostBlog(request.data, request.urls))
+    {
+      m_send_event_fn(CreateSuccessEvent(request));
+      return true;
+    }
+    else
+      m_send_event_fn(CreateErrorEvent("Failed to post blog", request));
 
-  /**
-   * TODO: HtmlBuilder?
-   *
-   */
-
-  const bool error = (!PostBlog(request.data, request.urls));
-  if (error)
-  {
-    std::string error_message{"Failed to handle " + request.event};
-    kbot::log(error_message);
-    m_send_event_fn(CreateErrorEvent(error_message, request));
-  }
-  else
-    m_send_event_fn(CreateSuccessEvent(request));
-
-  return (!error);
+  return false;
 }
 
 virtual std::unique_ptr<API> GetAPI(std::string name) override

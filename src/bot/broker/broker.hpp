@@ -7,6 +7,7 @@
 #include "bot/mastodon/mastodon.hpp"
 #include "bot/youtube/youtube.hpp"
 #include "bot/discord/discord.hpp"
+#include "bot/blog/blog.hpp"
 #include "ipc.hpp"
 
 namespace kbot {
@@ -40,7 +41,8 @@ inline const BotRequest CreatePlatformEvent(platform_message* message)
 namespace constants {
 const uint8_t YOUTUBE_BOT_INDEX {0x00};
 const uint8_t MASTODON_BOT_INDEX{0x01};
-const uint8_t DISCORD_BOT_INDEX{0x02};
+const uint8_t DISCORD_BOT_INDEX {0x02};
+const uint8_t BLOG_BOT_INDEX    {0x03};
 } // namespace constants
 
 Broker* g_broker;
@@ -53,25 +55,30 @@ Broker()
   u_bot_ptr u_yt_bot_ptr{new kbot::YouTubeBot{}};
   u_bot_ptr u_md_bot_ptr{new kbot::MastodonBot{}};
   u_bot_ptr u_dc_bot_ptr{new kbot::DiscordBot{}};
-  g_broker = this;
+  u_bot_ptr u_bg_bot_ptr{new kbot::BlogBot{}};
 
   m_pool.emplace_back(std::move(u_yt_bot_ptr));
   m_pool.emplace_back(std::move(u_md_bot_ptr));
   m_pool.emplace_back(std::move(u_dc_bot_ptr));
+  m_pool.emplace_back(std::move(u_bg_bot_ptr));
 
   YTBot().SetCallback(&ProcessEvent);
   MDBot().SetCallback(&ProcessEvent);
   DCBot().SetCallback(&ProcessEvent);
+  BLBot().SetCallback(&ProcessEvent);
+
   YTBot().Init();
   MDBot().Init();
   DCBot().Init();
+  BLBot().Init();
 
+  g_broker = this;
 }
 
-const uint8_t IPC_COMMAND_INDEX{0x00};
-const uint8_t IPC_PAYLOAD_INDEX{0x01};
-const uint8_t IPC_USER_INDEX   {0x02};
-const uint8_t IPC_PARAM_NUMBER{0x03};
+static const uint8_t IPC_COMMAND_INDEX{0x00};
+static const uint8_t IPC_PAYLOAD_INDEX{0x01};
+static const uint8_t IPC_USER_INDEX   {0x02};
+static const uint8_t IPC_PARAM_NUMBER {0x03};
 
 bool ValidIPCArguments(const std::vector<std::string>& arguments)
 {
@@ -156,6 +163,7 @@ virtual void loop() override
   YTBot().Start();
   MDBot().Start();
   DCBot().Start();
+  BLBot().Start();
 
   while (Worker::m_is_running)
   {
@@ -163,7 +171,7 @@ virtual void loop() override
       m_condition.wait(lock,
         [this]()
         {
-          return (YTBot().IsRunning() || MDBot().IsRunning());
+          return (YTBot().IsRunning() || MDBot().IsRunning() || DCBot().IsRunning() || BLBot().IsRunning());
         }
       );
     m_condition.notify_one();
@@ -173,18 +181,12 @@ virtual void loop() override
       BotRequest  request = m_queue.front();
       const auto& event   = request.event;
       if (event == "platform:post")                          // ALL Platforms
-      {
-        m_outbound_queue.emplace_back(
-          std::make_unique<platform_message>(
-            get_platform_name(request.platform),
-            request.id,
-            request.username,
-            request.data,
-            request.url_string(),
-            SHOULD_REPOST
-          )
-        );
-      }
+        m_outbound_queue.emplace_back(std::make_unique<platform_message>(get_platform_name(request.platform),
+                                                                         request.id,
+                                                                         request.username,
+                                                                         request.data,
+                                                                         request.url_string(),
+                                                                         SHOULD_REPOST));
       else
       if (event == "livestream inactive")
           kbot::log("YouTube bot returned no livestreams");
@@ -200,18 +202,13 @@ virtual void loop() override
         kbot::log(get_platform_name(request.platform) + " successfully handled " + request.previous_event);
 
         if (request.previous_event == "platform:repost") // ALL Platforms
-        {
-          m_outbound_queue.emplace_back(
-            std::make_unique<platform_message>(
-              get_platform_name(request.platform),
-              request.id,
-              request.username,
-              request.data,
-              request.url_string(),
-              SHOULD_NOT_REPOST
-            )
-          );
-        }
+          m_outbound_queue.emplace_back(std::make_unique<platform_message>(get_platform_name(request.platform),
+                                                                           request.id,
+                                                                           request.username,
+                                                                           request.data,
+                                                                           request.url_string(),
+                                                                           SHOULD_NOT_REPOST));
+
       }
       else
       if (event == "bot:error")
@@ -219,14 +216,10 @@ virtual void loop() override
         kbot::log(get_platform_name(request.platform) + " failed to handle " + request.previous_event);
         const std::string error_message = request.data;
         const std::string id            = request.id;
-        m_outbound_queue.emplace_back(
-          std::make_unique<platform_error>(
-            get_platform_name(request.platform),
-            request.id,
-            request.username,
-            request.data
-          )
-        );
+        m_outbound_queue.emplace_back(std::make_unique<platform_error>(get_platform_name(request.platform),
+                                                                       request.id,
+                                                                       request.username,
+                                                                       request.data));
       }
       else
         SendEvent(request);
@@ -245,23 +238,23 @@ virtual void loop() override
  */
 void SendEvent(const BotRequest& event)
 {
-  try
+  switch (event.platform)
   {
-    if (event.platform == Platform::discord)
+    case (Platform::discord):
       DCBot().HandleEvent(event);
-    else
-    if (event.platform == Platform::mastodon)
+    break;
+    case (Platform::mastodon):
       MDBot().HandleEvent(event);
-    else
-    if (event.platform == Platform::youtube)
+    break;
+    case (Platform::youtube):
       YTBot().HandleEvent(event);
-    else
+    break;
+    case (Platform::blog):
+      BLBot().HandleEvent(event);
+    break;
+    default:
       kbot::log("Unable to send event for unknown platform");
-  }
-  catch (const std::exception& e)
-  {
-    kbot::log("Exception caught");
-    kbot::log(e.what());
+    break;
   }
 }
 
@@ -278,12 +271,14 @@ bool Shutdown()
     Bot& youtube_bot  = YTBot();
     Bot& mastodon_bot = MDBot();
     Bot& discord_bot  = DCBot();
+    Bot& blog_bot     = BLBot();
 
-    youtube_bot.Shutdown();
+    youtube_bot .Shutdown();
     mastodon_bot.Shutdown();
-    discord_bot.Shutdown();
+    discord_bot .Shutdown();
+    blog_bot    .Shutdown();
 
-    while (youtube_bot.IsRunning() || mastodon_bot.IsRunning() || discord_bot.IsRunning())
+    while (youtube_bot.IsRunning() || mastodon_bot.IsRunning() || discord_bot.IsRunning() || blog_bot.IsRunning())
     ;
 
     Worker::stop();
@@ -314,17 +309,22 @@ private:
 
 Bot& YTBot()
 {
-  return *m_pool.at(constants::YOUTUBE_BOT_INDEX).get();
+  return *m_pool.at(constants::YOUTUBE_BOT_INDEX);
 }
 
 Bot& MDBot()
 {
-  return *m_pool.at(constants::MASTODON_BOT_INDEX).get();
+  return *m_pool.at(constants::MASTODON_BOT_INDEX);
 }
 
 Bot& DCBot()
 {
-  return *m_pool.at(constants::DISCORD_BOT_INDEX).get();
+  return *m_pool.at(constants::DISCORD_BOT_INDEX);
+}
+
+Bot& BLBot()
+{
+  return *m_pool.at(constants::BLOG_BOT_INDEX);
 }
 
 BotPool                    m_pool;
