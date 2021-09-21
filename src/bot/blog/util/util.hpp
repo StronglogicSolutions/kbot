@@ -32,7 +32,7 @@ static const std::string FetchFile(const std::string& full_url, const std::strin
     const cpr::Response r        = cpr::Get(cpr::Url{s_url}, cpr::VerifySsl(verify_ssl));
     if (r.error.code == cpr::ErrorCode::OK)
     {
-      SaveToFile(r.text, filename);
+      SaveToFile(r.text, (path + filename));
       return filename;
     }
   }

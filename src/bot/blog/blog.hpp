@@ -8,7 +8,7 @@
 namespace kbot {
 namespace constants::blog {
 const std::string USER{""};
-const uint8_t     APP_NAME_LENGTH{8};
+const uint8_t     APP_NAME_LENGTH{6};
 const std::string DEFAULT_CONFIG_PATH{"config/config.ini"};
 } // ns constants::blog
 
@@ -20,23 +20,32 @@ static std::string get_executable_cwd()
 
 static const std::string GetConfigPath()
 {
-  return get_executable_cwd() + "../" + constants::blog::DEFAULT_CONFIG_PATH;
+  return get_executable_cwd() + "/../" + constants::blog::DEFAULT_CONFIG_PATH;
 }
 
 static std::string GetBlogPath()
 {
-  const auto config_path = GetConfigPath();
-  const auto        config = INIReader{"/data/stronglogic/kbot/config/config.ini"};
-  const std::string path   = config.GetString("blog_bot", "post_path", "");
+  const auto        config_path = GetConfigPath();
+  const auto        config      = INIReader{config_path};
+  std::string       path        = config.GetString("blog_bot", "post_path", "");
+  if (!path.empty() && path.back() != '/')
+    path += '/';
   return path;
 }
 
 static std::string GetBlogImagePath()
 {
-  const auto config_path = GetConfigPath();
+  const auto config_path   = GetConfigPath();
   const auto        config = INIReader{"/data/stronglogic/kbot/config/config.ini"};
   const std::string path   = config.GetString("blog_bot", "image_path", "");
   return path;
+}
+
+static std::string unixtime()
+{
+  return std::to_string(std::chrono::duration_cast<std::chrono::seconds>(
+    std::chrono::system_clock::now().time_since_epoch()
+  ).count());
 }
 
 static std::string get_simple_datetime()
@@ -58,12 +67,13 @@ static std::vector<std::string> FindTags(const std::string& s)
 
   for (auto start_it = t_s.find('#'); start_it != std::string::npos; start_it = t_s.find('#'))
   {
-    auto chunk  = t_s.substr(start_it + 1);
-    auto s_it   = chunk.find_first_of(' ');
-    auto l_it   = chunk.find_first_of('\n');
-    auto end_it = (s_it < l_it) ? s_it : l_it;
-    t_s         = t_s.substr((start_it + end_it + 1));
-    tags.emplace_back(chunk.substr(0, end_it));
+    const auto chunk  = t_s.substr(start_it + 1);
+    const auto s_it   = chunk.find_first_of(' ');
+    const auto l_it   = chunk.find_first_of('\n');
+    const auto end_it = (s_it < l_it) ? s_it : l_it;
+    const bool done   = (end_it == std::string::npos);
+    t_s               = (done) ? "" : t_s.substr((start_it + end_it + 1));
+    tags.emplace_back((end_it == std::string::npos) ? chunk : chunk.substr(0, end_it));
   }
 
   return tags;
@@ -74,7 +84,13 @@ static std::string CreateMarkdownImage(const std::string& url)
   return "!['Blog Image'](" + url + " 'Blog image')\n";
 }
 
-static std::string CreateBlogPost(const std::string&              text,
+struct BlogPost
+{
+std::string title;
+std::string text;
+};
+
+static BlogPost CreateBlogPost(const std::string&              text,
                                   const std::vector<std::string>& tags,
                                   const std::vector<std::string>& urls)
 {
@@ -105,7 +121,7 @@ static std::string CreateBlogPost(const std::string&              text,
       blog_post += CreateMarkdownImage((GetBlogImagePath() + '/' + filename)) + '\n';
   }
 
-  return blog_post;
+  return BlogPost{.title = title, .text = text};
 }
 
 class BlogBot : public kbot::Worker,
@@ -135,31 +151,21 @@ virtual void SetCallback(BrokerCallback cb_fn) override
   m_send_event_fn = cb_fn;
 }
 
-void BlogTest(const std::string& text, const std::string& urls = "")
-{
-  const auto PostBlog = [&](const std::string text, const std::vector<std::string> media_urls) -> bool
-  {
-    const std::vector<std::string> tags = FindTags(text);
-    const std::string blog_post         = CreateBlogPost(text, tags, media_urls);
-
-    log(blog_post);
-
-    std::ofstream out{GetBlogPath()};
-    out << blog_post;
-    return true;
-  };
-  auto result = PostBlog(text, {urls});
-}
-
-
 virtual bool HandleEvent(BotRequest request) override
 {
+  static const auto MAX_TITLE_SIZE{25};
+
   const auto PostBlog = [&](const std::string text, const std::vector<std::string> media_urls) -> bool
   {
-    const std::vector<std::string> tags      = FindTags(text);
-    const std::string              blog_post = CreateBlogPost(text, tags, media_urls);
-    std::ofstream                  out{GetBlogPath()};
-    if (out << blog_post)
+    const auto     tags      = FindTags(text);
+    const BlogPost blog_post = CreateBlogPost(text, tags, media_urls);
+    const auto     title     = (blog_post.title.size() > MAX_TITLE_SIZE) ?
+                                blog_post.title.substr(0, MAX_TITLE_SIZE) : blog_post.title;
+    const auto     filename  = GetBlogPath() + title + '_' + unixtime();
+
+
+    std::ofstream                  out{filename};
+    if (out << blog_post.text)
       return true;
     return false;
   };
