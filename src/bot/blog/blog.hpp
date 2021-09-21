@@ -156,34 +156,24 @@ virtual bool HandleEvent(BotRequest request) override
 {
   const auto PostBlog = [&](const std::string text, const std::vector<std::string> media_urls) -> bool
   {
-    const std::vector<std::string> tags = FindTags(text);
-    const std::string blog_post         = CreateBlogPost(text, tags, media_urls);
-
-    std::ofstream out{};
-    out << blog_post;
+    const std::vector<std::string> tags      = FindTags(text);
+    const std::string              blog_post = CreateBlogPost(text, tags, media_urls);
+    std::ofstream                  out{GetBlogPath()};
+    if (out << blog_post)
+      return true;
     return false;
   };
-  const auto event = request.event;
 
-  (request.data); // text
-  (request.urls); // media
+  if (request.event == "platform:repost")
+    if (PostBlog(request.data, request.urls))
+    {
+      m_send_event_fn(CreateSuccessEvent(request));
+      return true;
+    }
+    else
+      m_send_event_fn(CreateErrorEvent("Failed to post blog", request));
 
-  /**
-   * TODO: HtmlBuilder?
-   *
-   */
-
-  const bool error = (!PostBlog(request.data, request.urls));
-  if (error)
-  {
-    std::string error_message{"Failed to handle " + request.event};
-    kbot::log(error_message);
-    m_send_event_fn(CreateErrorEvent(error_message, request));
-  }
-  else
-    m_send_event_fn(CreateSuccessEvent(request));
-
-  return (!error);
+  return false;
 }
 
 virtual std::unique_ptr<API> GetAPI(std::string name) override
