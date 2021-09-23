@@ -35,9 +35,9 @@ static std::string GetBlogPath()
 
 static std::string GetBlogImagePath()
 {
-  const auto config_path   = GetConfigPath();
-  const auto        config = INIReader{"/data/stronglogic/kbot/config/config.ini"};
-  const std::string path   = config.GetString("blog_bot", "image_path", "");
+  const auto        config_path = GetConfigPath();
+  const auto        config      = INIReader{config_path};
+  const std::string path        = config.GetString("blog_bot", "image_path", "");
   return path;
 }
 
