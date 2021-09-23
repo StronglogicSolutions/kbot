@@ -51,7 +51,7 @@ bool HandleEvent(BotRequest request) {
   bool error{false};
   const auto event = request.event;
 
-  if (!request.username.empty()                        &&
+  if (!request.username.empty()                          &&
        kscord::Client::GetUsername() != request.username &&
       !kscord::Client::SetUser(request.username))
       error = true;

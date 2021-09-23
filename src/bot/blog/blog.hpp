@@ -35,9 +35,9 @@ static std::string GetBlogPath()
 
 static std::string GetBlogImagePath()
 {
-  const auto config_path   = GetConfigPath();
-  const auto        config = INIReader{"/data/stronglogic/kbot/config/config.ini"};
-  const std::string path   = config.GetString("blog_bot", "image_path", "");
+  const auto        config_path = GetConfigPath();
+  const auto        config      = INIReader{config_path};
+  const std::string path        = config.GetString("blog_bot", "image_path", "");
   return path;
 }
 
@@ -121,7 +121,7 @@ static BlogPost CreateBlogPost(const std::string&              text,
       blog_post += CreateMarkdownImage((GetBlogImagePath() + '/' + filename)) + '\n';
   }
 
-  return BlogPost{.title = title, .text = text};
+  return BlogPost{.title = title, .text = blog_post};
 }
 
 class BlogBot : public kbot::Worker,
@@ -161,7 +161,7 @@ virtual bool HandleEvent(BotRequest request) override
     const BlogPost blog_post = CreateBlogPost(text, tags, media_urls);
     const auto     title     = (blog_post.title.size() > MAX_TITLE_SIZE) ?
                                 blog_post.title.substr(0, MAX_TITLE_SIZE) : blog_post.title;
-    const auto     filename  = GetBlogPath() + title + '_' + unixtime();
+    const auto     filename  = GetBlogPath() + title + '_' + unixtime() + ".md";
 
 
     std::ofstream                  out{filename};
