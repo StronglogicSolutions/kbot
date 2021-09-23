@@ -161,7 +161,7 @@ virtual bool HandleEvent(BotRequest request) override
     const BlogPost blog_post = CreateBlogPost(text, tags, media_urls);
     const auto     title     = (blog_post.title.size() > MAX_TITLE_SIZE) ?
                                 blog_post.title.substr(0, MAX_TITLE_SIZE) : blog_post.title;
-    const auto     filename  = GetBlogPath() + title + '_' + unixtime();
+    const auto     filename  = GetBlogPath() + title + '_' + unixtime() + ".md";
 
 
     std::ofstream                  out{filename};
