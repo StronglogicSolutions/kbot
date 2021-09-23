@@ -121,7 +121,7 @@ static BlogPost CreateBlogPost(const std::string&              text,
       blog_post += CreateMarkdownImage((GetBlogImagePath() + '/' + filename)) + '\n';
   }
 
-  return BlogPost{.title = title, .text = text};
+  return BlogPost{.title = title, .text = blog_post};
 }
 
 class BlogBot : public kbot::Worker,
