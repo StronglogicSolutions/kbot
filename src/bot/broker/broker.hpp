@@ -74,7 +74,7 @@ Broker()
   BLBot().SetCallback(&ProcessEvent);
   TGBot().SetCallback(&ProcessEvent);
 
-  YTBot().Init();
+  // YTBot().Init(); // TODO: Temporarily disabling until CPR module fixes an invalid pointer issue
   MDBot().Init();
   DCBot().Init();
   BLBot().Init();
