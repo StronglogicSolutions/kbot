@@ -24,7 +24,8 @@ enum Platform
   mastodon = 0x01,
   discord  = 0x02,
   blog     = 0x03,
-  unknown  = 0x04
+  telegram = 0x04,
+  unknown  = 0x05
 };
 
 static enum Platform get_platform(const std::string& name)
@@ -37,6 +38,8 @@ static enum Platform get_platform(const std::string& name)
     return Platform::youtube;
   if (name == "Blog")
     return Platform::blog;
+  if (name == "Telegram")
+    return Platform::telegram;
   return Platform::unknown;
 }
 
@@ -50,6 +53,8 @@ static const std::string get_platform_name(Platform platform)
     return "Discord";
   if (platform == Platform::blog)
     return "Blog";
+  if (platform == Platform::telegram)
+    return "Telegram";
 
   return "";
 };
