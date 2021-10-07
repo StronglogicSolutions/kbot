@@ -1,0 +1,59 @@
+
+config("keleqram") {
+  include_dirs = ["//third_party/keleqram/src", "//third_party/kstodon/third_party/kjson", "//third_party/keleqram/third_party/tgbot-cpp/include"]
+  libs = ["//third_party/keleqram/libkeleqram.a"]
+
+  visibility = [ ":keleqram_lib" ]
+}
+
+config("nlp") {
+  include_dirs = [
+    "//src/api/nlp",
+  ]
+}
+
+config("cpr") {
+  include_dirs = [
+    "//third_party/cpr/include"
+  ]
+}
+
+config("kbot_includes") {
+  include_dirs = [
+    "//src/"
+  ]
+}
+
+group("keleqram_lib") {
+  public_configs = [
+    ":keleqram",
+    ":cpr",
+    ":kbot_includes",
+  ]
+}
+
+executable("telegram_bot") {
+public_configs = [
+  ":nlp",
+  ":cpr",
+  "//src/bot/youtube:kjson",
+  "//src/bot/youtube:inih",
+]
+
+deps = [
+  ":keleqram_lib",
+  "//src/bot/youtube:inih_lib"
+]
+
+libs = [
+  "crypto",
+  "cpr",
+  "curl",
+  "pthread"
+]
+
+sources = [
+  "//src/bot/telegram/main.cpp"
+]
+
+}
