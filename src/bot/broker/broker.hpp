@@ -7,8 +7,11 @@
 #include "bot/mastodon/mastodon.hpp"
 #include "bot/youtube/youtube.hpp"
 #include "bot/discord/discord.hpp"
+#include "bot/telegram/telegram.hpp"
 #include "bot/blog/blog.hpp"
 #include "ipc.hpp"
+
+#define OPENSSL_API_COMPAT 0x0908
 
 namespace kbot {
 using u_bot_ptr     = std::unique_ptr<Bot>;
@@ -43,6 +46,7 @@ const uint8_t YOUTUBE_BOT_INDEX {0x00};
 const uint8_t MASTODON_BOT_INDEX{0x01};
 const uint8_t DISCORD_BOT_INDEX {0x02};
 const uint8_t BLOG_BOT_INDEX    {0x03};
+const uint8_t TELEGRAM_BOT_INDEX{0x04};
 } // namespace constants
 
 Broker* g_broker;
@@ -56,21 +60,25 @@ Broker()
   u_bot_ptr u_md_bot_ptr{new kbot::MastodonBot{}};
   u_bot_ptr u_dc_bot_ptr{new kbot::DiscordBot{}};
   u_bot_ptr u_bg_bot_ptr{new kbot::BlogBot{}};
+  u_bot_ptr u_tg_bot_ptr{new kbot::TelegramBot{}};
 
   m_pool.emplace_back(std::move(u_yt_bot_ptr));
   m_pool.emplace_back(std::move(u_md_bot_ptr));
   m_pool.emplace_back(std::move(u_dc_bot_ptr));
   m_pool.emplace_back(std::move(u_bg_bot_ptr));
+  m_pool.emplace_back(std::move(u_tg_bot_ptr));
 
   YTBot().SetCallback(&ProcessEvent);
   MDBot().SetCallback(&ProcessEvent);
   DCBot().SetCallback(&ProcessEvent);
   BLBot().SetCallback(&ProcessEvent);
+  TGBot().SetCallback(&ProcessEvent);
 
   YTBot().Init();
   MDBot().Init();
   DCBot().Init();
   BLBot().Init();
+  TGBot().Init();
 
   g_broker = this;
 }
@@ -164,6 +172,7 @@ virtual void loop() override
   MDBot().Start();
   DCBot().Start();
   BLBot().Start();
+  TGBot().Start();
 
   while (Worker::m_is_running)
   {
@@ -171,7 +180,8 @@ virtual void loop() override
       m_condition.wait(lock,
         [this]()
         {
-          return (YTBot().IsRunning() || MDBot().IsRunning() || DCBot().IsRunning() || BLBot().IsRunning());
+          return (YTBot().IsRunning() || MDBot().IsRunning() || DCBot().IsRunning() ||
+                  BLBot().IsRunning() || TGBot().IsRunning());
         }
       );
     m_condition.notify_one();
@@ -252,6 +262,9 @@ void SendEvent(const BotRequest& event)
     case (Platform::blog):
       BLBot().HandleEvent(event);
     break;
+    case (Platform::telegram):
+      TGBot().HandleEvent(event);
+    break;
     default:
       kbot::log("Unable to send event for unknown platform");
     break;
@@ -272,13 +285,16 @@ bool Shutdown()
     Bot& mastodon_bot = MDBot();
     Bot& discord_bot  = DCBot();
     Bot& blog_bot     = BLBot();
+    Bot& tg_bot       = TGBot();
 
     youtube_bot .Shutdown();
     mastodon_bot.Shutdown();
     discord_bot .Shutdown();
     blog_bot    .Shutdown();
+    tg_bot    .Shutdown();
 
-    while (youtube_bot.IsRunning() || mastodon_bot.IsRunning() || discord_bot.IsRunning() || blog_bot.IsRunning())
+    while (youtube_bot.IsRunning() || mastodon_bot.IsRunning() || discord_bot.IsRunning() ||
+           blog_bot.IsRunning()    || tg_bot.IsRunning())
     ;
 
     Worker::stop();
@@ -325,6 +341,11 @@ Bot& DCBot()
 Bot& BLBot()
 {
   return *m_pool.at(constants::BLOG_BOT_INDEX);
+}
+
+Bot& TGBot()
+{
+  return *m_pool.at(constants::TELEGRAM_BOT_INDEX);
 }
 
 BotPool                    m_pool;

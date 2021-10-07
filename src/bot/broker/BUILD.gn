@@ -12,12 +12,12 @@ public_configs = [
   "//src/bot/mastodon:kstodon",
   "//src/bot/mastodon:nlp",
   "//src/bot/discord:kscord",
+  "//src/bot/telegram:keleqram",
 ]
 
 libs = [
-  "cpr",
   "pthread",
-  "zmq"
+  "zmq",
 ]
 
 include_dirs = [
@@ -30,7 +30,9 @@ deps = [
   "//src/bot/mastodon:kstodon_lib",
   "//src/bot/youtube:ktube_lib",
   "//src/bot/discord:kscord_lib",
-  "//src/bot/youtube:youtube_bot_sources"
+  "//src/bot/telegram:keleqram_lib",
+  "//src/bot/youtube:youtube_bot_sources",
+
 ]
 
 sources = [

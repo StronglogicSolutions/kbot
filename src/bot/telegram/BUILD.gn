@@ -1,8 +1,10 @@
 
 config("keleqram") {
   include_dirs = ["//third_party/keleqram/src", "//third_party/kstodon/third_party/kjson", "//third_party/keleqram/third_party/tgbot-cpp/include"]
-  libs = ["//third_party/keleqram/libkeleqram.a"]
-
+  libs = [
+    "//third_party/keleqram/libkeleqram.a",
+    "//third_party/keleqram/third_party/tgbot-cpp/libTgBot.so"
+  ]
   visibility = [ ":keleqram_lib" ]
 }
 

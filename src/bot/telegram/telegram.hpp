@@ -5,8 +5,9 @@
 #include "INIReader.h"
 
 namespace kbot {
+namespace keleqram {
 namespace constants {
-static const std::string USER{""};
+static const std::string USER{};
 static const uint8_t     APP_NAME_LENGTH{12};
 static const std::string DEFAULT_CONFIG_PATH{"config/config.ini"};
 } // namespace constants
@@ -26,15 +27,15 @@ static std::string GetToken()
 {
   return GetConfig().GetString("telegram_bot", "token", "");
 }
-
+} // ns keleqram
 class TelegramBot : public kbot::Worker,
                     public kbot::Bot,
-                    public keleqram::KeleqramBot
+                    public ::keleqram::KeleqramBot
 {
 public:
 TelegramBot()
-: kbot::Bot{constants::USER},
-  keleqram::KeleqramBot{GetToken()}
+: kbot::Bot{keleqram::constants::USER},
+  ::keleqram::KeleqramBot{keleqram::GetToken()}
 {}
 
 virtual void Init() override
@@ -45,7 +46,7 @@ virtual void Init() override
 virtual void loop() override
 {
   while (m_is_running)
-    keleqram::KeleqramBot::Poll();
+    ::keleqram::KeleqramBot::Poll();
 }
 
 
@@ -67,8 +68,8 @@ bool HandleEvent(BotRequest request)
     try
     {
       for (const auto& url : request.urls)
-        keleqram::KeleqramBot::SendPhoto(url);
-      keleqram::KeleqramBot::SendMessage(post);
+        ::keleqram::KeleqramBot::SendPhoto(url);
+      ::keleqram::KeleqramBot::SendMessage(post);
     }
     catch (const std::exception& e)
     {
