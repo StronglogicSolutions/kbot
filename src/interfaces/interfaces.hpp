@@ -132,54 +132,66 @@ static const BotRequest CreateErrorEvent(const std::string& error_message, const
 
 using BrokerCallback = bool(*)(BotRequest event);
 
-class Bot {
- public:
-  Bot(std::string name)
-  : m_name(name) {}
+class Bot
+{
+public:
+Bot(std::string name)
+: m_name(name) {}
 
-  virtual ~Bot() {}
-  std::string GetName() { return m_name; }
+virtual ~Bot() {}
+std::string GetName() { return m_name; }
 
-  virtual std::unique_ptr<API> GetAPI(std::string name) = 0;
-  virtual void                 SetCallback(BrokerCallback cb_fn_ptr) = 0;
-  virtual bool                 HandleEvent(BotRequest event) = 0;
-  virtual bool                 IsRunning() = 0;
-  virtual void                 Start() = 0;
-  virtual void                 Shutdown() = 0;
-  virtual void                 Init() = 0;
+virtual std::unique_ptr<API> GetAPI(std::string name) = 0;
+virtual void                 SetCallback(BrokerCallback cb_fn_ptr) = 0;
+virtual bool                 HandleEvent(BotRequest event) = 0;
+virtual bool                 IsRunning() = 0;
+virtual void                 Start() = 0;
+virtual void                 Shutdown() = 0;
+virtual void                 Init() = 0;
 
- private:
-  std::string m_name;
+private:
+std::string m_name;
 };
 
-class Worker {
- public:
-  Worker()
-  : m_is_running(false) {}
+class Worker
+{
+public:
+Worker()
+: m_is_running(false) {}
 
-  virtual void start() {
-    m_is_running = true;
-    m_thread = std::thread(Worker::run, this);
+virtual void start() {
+  m_is_running = true;
+  m_thread = std::thread(Worker::run, this);
+}
+
+static void run(void* worker) {
+  static_cast<Worker*>(worker)->loop();
+}
+
+void stop() {
+  m_is_running = false;
+  if (m_thread.joinable()) {
+    m_thread.join();
   }
+}
 
-  static void run(void* worker) {
-    static_cast<Worker*>(worker)->loop();
-  }
+bool        m_is_running;
+uint32_t    m_loops;
 
-  void stop() {
-    m_is_running = false;
-    if (m_thread.joinable()) {
-      m_thread.join();
-    }
-  }
+protected:
+virtual void loop() = 0;
 
- bool        m_is_running;
- uint32_t    m_loops;
-
- protected:
-  virtual void loop() = 0;
- private:
-  std::thread m_thread;
+private:
+std::thread m_thread;
 };
+
+struct PlatformQuery
+{
+Platform                 platform;
+std::string              subject;
+std::string              text;
+std::vector<std::string> urls;
+};
+
 
 } // namespace kbot

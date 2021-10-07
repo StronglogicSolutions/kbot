@@ -40,6 +40,7 @@ all_executables = [
   "//src/bot/discord:discord_bot",
   "//src/bot/broker:broker",
   "//src/bot/blog:blog_bot",
+  "//src/bot/telegram:telegram_bot",
 ]
 
 group("executables") {
