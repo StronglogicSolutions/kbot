@@ -115,6 +115,9 @@ void ProcessMessage(u_ipc_msg_ptr message) {
       else
       if (command == "discord:messages")
         platform = Platform::discord;
+      else
+      if (command == "telegram:messages")
+        platform = Platform::telegram;
 
       SendEvent(BotRequest{platform, command, user, payload});
     }

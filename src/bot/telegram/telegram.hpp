@@ -63,7 +63,7 @@ bool HandleEvent(BotRequest request)
   const auto urls  = request.urls;
   std::string error_message;
 
-  if (event == "livestream active" || event == "platform:repost")
+  if (event == "livestream active" || event == "platform:repost" || event == "telegram:messages")
   {
     try
     {
