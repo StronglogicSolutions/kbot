@@ -57,7 +57,7 @@ void SetCallback(BrokerCallback cb_fn)
 
 bool HandleEvent(BotRequest request)
 {
-        bool error{false};
+        bool error  {false};
   const auto event = request.event;
   const auto post  = request.data;
   const auto urls  = request.urls;
@@ -68,7 +68,7 @@ bool HandleEvent(BotRequest request)
     try
     {
       for (const auto& url : request.urls)
-        ::keleqram::KeleqramBot::SendPhoto(url);
+        ::keleqram::KeleqramBot::SendMedia(url);
       ::keleqram::KeleqramBot::SendMessage(post);
     }
     catch (const std::exception& e)
