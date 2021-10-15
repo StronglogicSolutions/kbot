@@ -112,14 +112,14 @@ static BlogPost CreateBlogPost(const std::string&              text,
   blog_post += "tags: \n" + MakeTags(tags);
   blog_post += '\n';
   blog_post += "---\n";
-  blog_post += text;
-  blog_post += '\n';
   for (const auto& url : urls)
   {
     const auto& filename = FetchFile(url, GetBlogImagePath());
     if (!filename.empty())
       blog_post += CreateMarkdownImage((GetBlogImagePath() + '/' + filename)) + '\n';
   }
+  blog_post += text;
+  blog_post += '\n';
 
   return BlogPost{.title = title, .text = blog_post};
 }
