@@ -68,6 +68,7 @@ std::string data;
 std::vector<std::string> urls;
 std::string id;
 std::string previous_event;
+std::string args;
 
 const std::string url_string() const
 {
@@ -119,7 +120,8 @@ static const BotRequest CreateSuccessEvent(const BotRequest& previous_event)
     .data           = previous_event.data,
     .urls           = previous_event.urls,
     .id             = previous_event.id,
-    .previous_event = previous_event.event
+    .previous_event = previous_event.event,
+    .args           = previous_event.args
   };
 }
 

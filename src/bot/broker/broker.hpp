@@ -37,7 +37,8 @@ inline const BotRequest CreatePlatformEvent(platform_message* message)
     .username = UnescapeQuotes(message->user()),
     .data     = UnescapeQuotes(message->content()),
     .urls     = BotRequest::urls_from_string(message->urls()),
-    .id       = message->id()
+    .id       = message->id(),
+    .args     = message->args()
   };
 }
 
