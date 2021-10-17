@@ -171,9 +171,9 @@ platform_message(const std::string& platform, const std::string& id, const std::
     byte_buffer{id.data(), id.data() + id.size()},
     byte_buffer{user.data(), user.data() + user.size()},
     byte_buffer{content.data(), content.data() + content.size()},
-    byte_buffer{urls.data(), urls.data() + urls.size()},
+    byte_buffer{urls.data(),    urls.data() + urls.size()},
     byte_buffer{static_cast<uint8_t>(repost)},
-    byte_buffer{static_cast<uint8_t>(repost)}
+    byte_buffer{args.data(), args.data() + args.size()}
   };
 }
 
