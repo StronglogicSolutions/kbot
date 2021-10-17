@@ -57,10 +57,11 @@ void SetCallback(BrokerCallback cb_fn)
 
 bool HandleEvent(BotRequest request)
 {
-        bool error  {false};
-  const auto event = request.event;
-  const auto post  = request.data;
-  const auto urls  = request.urls;
+        bool  error  {false};
+  const auto  event = request.event;
+  const auto  post  = request.data;
+  const auto  urls  = request.urls;
+  const auto  dest  = request.args;
   std::string error_message;
 
   if (event == "livestream active" || event == "platform:repost" || event == "telegram:messages")
@@ -68,8 +69,8 @@ bool HandleEvent(BotRequest request)
     try
     {
       for (const auto& url : request.urls)
-        ::keleqram::KeleqramBot::SendMedia(url);
-      ::keleqram::KeleqramBot::SendMessage(post);
+        ::keleqram::KeleqramBot::SendMedia(url, dest);
+      ::keleqram::KeleqramBot::SendMessage(post, dest);
     }
     catch (const std::exception& e)
     {
@@ -79,15 +80,10 @@ bool HandleEvent(BotRequest request)
     }
   }
 
-  if (error)
-  {
-    log(error_message);
-    m_send_event_fn(CreateErrorEvent(error_message, request));
-  }
-  else
-    m_send_event_fn(CreateSuccessEvent(request));
+  m_send_event_fn((error) ? CreateErrorEvent(error_message, request) :
+                            CreateSuccessEvent(request));
 
-  return (!error);
+  return !error;
 }
 
 virtual std::unique_ptr<API> GetAPI(std::string name) override
