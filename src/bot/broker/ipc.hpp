@@ -15,24 +15,40 @@
  */
 
 namespace constants {
-const uint8_t IPC_OK_TYPE       {0x00};
-const uint8_t IPC_KIQ_MESSAGE   {0x01};
-const uint8_t IPC_PLATFORM_TYPE {0x02};
-const uint8_t IPC_PLATFORM_ERROR{0x03};
+static const uint8_t IPC_OK_TYPE       {0x00};
+static const uint8_t IPC_KIQ_MESSAGE   {0x01};
+static const uint8_t IPC_PLATFORM_TYPE {0x02};
+static const uint8_t IPC_PLATFORM_ERROR{0x03};
 
 namespace index {
-const uint8_t EMPTY    = 0x00;
-const uint8_t TYPE     = 0x01;
-const uint8_t PLATFORM = 0x02;
-const uint8_t ID       = 0x03;
-const uint8_t USER     = 0x04;
-const uint8_t DATA     = 0x05;
-const uint8_t URLS     = 0x06;
-const uint8_t REPOST   = 0x07;
-const uint8_t ARGS     = 0x08;
-const uint8_t KIQ_DATA = 0x02;
-const uint8_t ERROR    = 0x05;
+static const uint8_t EMPTY    = 0x00;
+static const uint8_t TYPE     = 0x01;
+static const uint8_t PLATFORM = 0x02;
+static const uint8_t ID       = 0x03;
+static const uint8_t USER     = 0x04;
+static const uint8_t DATA     = 0x05;
+static const uint8_t URLS     = 0x06;
+static const uint8_t REPOST   = 0x07;
+static const uint8_t ARGS     = 0x08;
+static const uint8_t CMD      = 0x09;
+static const uint8_t KIQ_DATA = 0x02;
+static const uint8_t ERROR    = 0x05;
 } // namespace index
+
+static const uint8_t TELEGRAM_COMMAND_INDEX = 0x00;
+static const uint8_t MASTODON_COMMAND_INDEX = 0x01;
+static const uint8_t DISCORD_COMMAND_INDEX  = 0x02;
+static const uint8_t YOUTUBE_COMMAND_INDEX  = 0x03;
+static const uint8_t NO_COMMAND_INDEX       = 0x04;
+
+static const char*   IPC_COMMANDS[]{
+"telegram:messages",
+"mastodon:comments",
+"discord:messages",
+"youtube:livestream",
+"no:command"
+};
+
 } // namespace constants
 
 class ipc_message
@@ -162,7 +178,7 @@ const std::string payload()
 class platform_message : public ipc_message
 {
 public:
-platform_message(const std::string& platform, const std::string& id, const std::string& user, const std::string& content, const std::string& urls, const bool repost = false, const std::string& args = "")
+platform_message(const std::string& platform, const std::string& id, const std::string& user, const std::string& content, const std::string& urls, const bool repost = false, uint32_t cmd = 0x00, const std::string& args = "")
 {
   m_frames = {
     byte_buffer{},
@@ -173,7 +189,11 @@ platform_message(const std::string& platform, const std::string& id, const std::
     byte_buffer{content.data(), content.data() + content.size()},
     byte_buffer{urls.data(),    urls.data() + urls.size()},
     byte_buffer{static_cast<uint8_t>(repost)},
-    byte_buffer{args.data(), args.data() + args.size()}
+    byte_buffer{args.data(), args.data() + args.size()},
+    byte_buffer{static_cast<unsigned char>((cmd >> 24) & 0xFF),
+                static_cast<unsigned char>((cmd >> 16) & 0xFF),
+                static_cast<unsigned char>((cmd >> 8 ) & 0xFF),
+                static_cast<unsigned char>((cmd      ) & 0xFF)}
   };
 }
 
@@ -188,7 +208,8 @@ platform_message(const std::vector<byte_buffer>& data)
     byte_buffer{data.at(constants::index::DATA)},
     byte_buffer{data.at(constants::index::URLS)},
     byte_buffer{data.at(constants::index::REPOST)},
-    byte_buffer{data.at(constants::index::ARGS)}
+    byte_buffer{data.at(constants::index::ARGS)},
+    byte_buffer{data.at(constants::index::CMD)}
   };
 }
 
@@ -246,6 +267,15 @@ const std::string args() const
     m_frames.at(constants::index::ARGS).size()
   };
 }
+
+const uint32_t cmd() const
+{
+  auto bytes = m_frames.at(constants::index::CMD).data();
+  auto cmd   = static_cast<uint32_t>(bytes[0] << 24 | bytes[1] << 16 | bytes[2] << 8 | bytes[3]);
+
+  return cmd;
+}
+
 };
 
 static ipc_message::u_ipc_msg_ptr DeserializeIPCMessage(std::vector<ipc_message::byte_buffer>&& data)

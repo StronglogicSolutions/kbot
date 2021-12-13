@@ -69,6 +69,7 @@ std::vector<std::string> urls;
 std::string id;
 std::string previous_event;
 std::string args;
+uint32_t    cmd{0x00};
 
 const std::string url_string() const
 {

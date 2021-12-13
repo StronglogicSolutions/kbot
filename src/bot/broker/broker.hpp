@@ -19,7 +19,7 @@ using BotPool       = std::vector<u_bot_ptr>;
 using EventQueue    = std::deque<BotRequest>;
 using u_ipc_msg_ptr = ipc_message::u_ipc_msg_ptr;
 
-inline std::vector<std::string> GetArgs(std::string s) {
+static std::vector<std::string> GetArgs(std::string s) {
   using json = nlohmann::json;
   json d = json::parse(s, nullptr, false);
 
@@ -29,7 +29,7 @@ inline std::vector<std::string> GetArgs(std::string s) {
   return {};
 }
 
-inline const BotRequest CreatePlatformEvent(platform_message* message)
+static const BotRequest CreatePlatformEvent(platform_message* message)
 {
   return BotRequest{
     .platform = get_platform(message->platform()),
@@ -38,7 +38,8 @@ inline const BotRequest CreatePlatformEvent(platform_message* message)
     .data     = UnescapeQuotes(message->content()),
     .urls     = BotRequest::urls_from_string(message->urls()),
     .id       = message->id(),
-    .args     = message->args()
+    .args     = message->args(),
+    .cmd      = message->cmd()
   };
 }
 
@@ -125,9 +126,8 @@ void ProcessMessage(u_ipc_msg_ptr message) {
   }
   else
   if (message->type() == ::constants::IPC_PLATFORM_TYPE)
-  {
     SendEvent(CreatePlatformEvent(static_cast<platform_message*>(message.get())));
-  }
+
 }
 
 /**
