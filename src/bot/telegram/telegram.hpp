@@ -39,6 +39,7 @@ static std::vector<std::string> GetArgs(const std::string& s)
   return {};
 }
 } // ns keleqram
+
 class TelegramBot : public kbot::Worker,
                     public kbot::Bot,
                     public ::keleqram::KeleqramBot

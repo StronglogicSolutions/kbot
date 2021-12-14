@@ -192,45 +192,40 @@ virtual void loop() override
 
     if (!m_queue.empty())
     {
-      BotRequest  request = m_queue.front();
-      const auto& event   = request.event;
-      if (event == "platform:post")                          // ALL Platforms
-        m_outbound_queue.emplace_back(std::make_unique<platform_message>(get_platform_name(request.platform),
+      BotRequest  request  = m_queue.front();
+      const auto  platform = get_platform_name(request.platform);
+      if (request.event == "platform:post")
+        m_outbound_queue.emplace_back(std::make_unique<platform_message>(platform,
                                                                          request.id,
                                                                          request.username,
                                                                          request.data,
                                                                          request.url_string(),
                                                                          SHOULD_REPOST));
       else
-      if (event == "livestream inactive")
+      if (request.event == "livestream inactive")
           kbot::log("YouTube bot returned no livestreams");
       else
-      if (event == "comment")
-        kbot::log(get_platform_name(request.platform) + " bot has new comments: " + request.data);
+      if (request.event == "comment")
+        kbot::log(platform + " bot has new comments: " + request.data);
       else
-      if (event == "message")
-        kbot::log(get_platform_name(request.platform) + " bot has new messages: " + request.data);
+      if (request.event == "message")
+        kbot::log(platform + " bot has new messages: " + request.data);
       else
-      if (event == "bot:success")
+      if (request.event == "bot:success")
       {
-        kbot::log(get_platform_name(request.platform) + " successfully handled " + request.previous_event);
-
-        if (request.previous_event == "platform:repost") // ALL Platforms
-          m_outbound_queue.emplace_back(std::make_unique<platform_message>(get_platform_name(request.platform),
-                                                                           request.id,
-                                                                           request.username,
-                                                                           request.data,
-                                                                           request.url_string(),
-                                                                           SHOULD_NOT_REPOST));
-
+        kbot::log(platform + " successfully handled " + request.previous_event);
+        m_outbound_queue.emplace_back(std::make_unique<platform_message>(platform,
+                                                                         request.id,
+                                                                         request.username,
+                                                                         request.data,
+                                                                         request.url_string(),
+                                                                         SHOULD_NOT_REPOST));
       }
       else
-      if (event == "bot:error")
+      if (request.event == "bot:error")
       {
-        kbot::log(get_platform_name(request.platform) + " failed to handle " + request.previous_event);
-        const std::string error_message = request.data;
-        const std::string id            = request.id;
-        m_outbound_queue.emplace_back(std::make_unique<platform_error>(get_platform_name(request.platform),
+        kbot::log(platform + " failed to handle " + request.previous_event);
+        m_outbound_queue.emplace_back(std::make_unique<platform_error>(platform,
                                                                        request.id,
                                                                        request.username,
                                                                        request.data));
@@ -295,7 +290,7 @@ bool Shutdown()
     mastodon_bot.Shutdown();
     discord_bot .Shutdown();
     blog_bot    .Shutdown();
-    tg_bot    .Shutdown();
+    tg_bot      .Shutdown();
 
     while (youtube_bot.IsRunning() || mastodon_bot.IsRunning() || discord_bot.IsRunning() ||
            blog_bot.IsRunning()    || tg_bot.IsRunning())
