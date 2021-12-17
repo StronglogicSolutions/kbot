@@ -126,6 +126,19 @@ static const BotRequest CreateSuccessEvent(const BotRequest& previous_event)
   };
 }
 
+static const BotRequest CreateRequest(const std::string& message, const std::string& args, const BotRequest& previous_event)
+{
+  return BotRequest{
+    .platform       = previous_event.platform,
+    .event          = "bot:request",
+    .username       = previous_event.username,
+    .data           = message,
+    .id             = previous_event.id,
+    .previous_event = previous_event.event,
+    .args           = args
+  };
+}
+
 static const BotRequest CreateErrorEvent(const std::string& error_message, const BotRequest& previous_event)
 {
   return BotRequest{

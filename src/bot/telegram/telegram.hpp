@@ -7,9 +7,10 @@
 namespace kbot {
 namespace keleqram {
 namespace constants {
-static const std::string USER{};
 static const uint8_t     APP_NAME_LENGTH{12};
-static const std::string DEFAULT_CONFIG_PATH{"config/config.ini"};
+static const std::string USER{};
+static const char*       DEFAULT_CONFIG_PATH{"config/config.ini"};
+static const char*       REQUEST_PollStop   {"poll stop"};
 } // namespace constants
 
 static std::string get_executable_cwd()
@@ -72,14 +73,17 @@ void SetCallback(BrokerCallback cb_fn)
 
 enum class TGCommand
 {
-message = 0x00,
-poll    = 0x01
+message   = 0x00,
+poll      = 0x01,
+poll_stop = 0x02
 };
 
 bool HandleEvent(BotRequest request)
 {
-  static const uint32_t msg_cmd  = 0x00;
-  static const uint32_t poll_cmd = 0x01;
+  using namespace kbot::keleqram::constants;
+  static const uint32_t msg_cmd   = static_cast<uint32_t>(TGCommand::message);
+  static const uint32_t poll_cmd  = static_cast<uint32_t>(TGCommand::poll);
+  static const uint32_t poll_stop = static_cast<uint32_t>(TGCommand::poll_stop);
 
   auto GetPollArgs = [](const std::vector<std::string>& v) { return std::vector<std::string>{v.begin() + 1, v.end()}; };
         bool  error = false;
@@ -89,7 +93,7 @@ bool HandleEvent(BotRequest request)
   const auto  cmd   = request.cmd;
   const auto  args  = kbot::keleqram::GetArgs(request.args);
   const auto  dest  = args.front();
-  std::string error_message;
+  std::string err_msg;
 
   if (event == "livestream active" || event == "platform:repost" || event == "telegram:messages")
   {
@@ -99,23 +103,27 @@ bool HandleEvent(BotRequest request)
       {
         case (msg_cmd):
           for (const auto& url : request.urls)
-            ::keleqram::KeleqramBot::SendMedia(url, dest);
-          ::keleqram::KeleqramBot::SendMessage(post, dest);
+            KeleqramBot::SendMedia(url, dest);
+          KeleqramBot::SendMessage(post, dest);
+        break;
+        case (poll_stop):
+          KeleqramBot::StopPoll(dest, GetPollArgs(args).front());
         break;
         case (poll_cmd):
-          ::keleqram::KeleqramBot::SendPoll(post, dest, GetPollArgs(args));
+          const auto id = KeleqramBot::SendPoll(post, dest, GetPollArgs(args));
+          m_send_event_fn(CreateRequest(REQUEST_PollStop, id, request));
         break;
       }
     }
     catch (const std::exception& e)
     {
-      error_message = "Exception caught:", e.what();
-      log(error_message);
+      err_msg += "Exception caught handling " + request.event + ": " + e.what();
+      log(err_msg);
       error = true;
     }
   }
 
-  m_send_event_fn((error) ? CreateErrorEvent(error_message, request) :
+  m_send_event_fn((error) ? CreateErrorEvent(err_msg, request) :
                             CreateSuccessEvent(request));
 
   return !error;
@@ -123,7 +131,6 @@ bool HandleEvent(BotRequest request)
 
 virtual std::unique_ptr<API> GetAPI(std::string name) override
 {
-  // TODO: Add other APIs
   return nullptr;
 }
 
