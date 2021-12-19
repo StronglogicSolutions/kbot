@@ -18,26 +18,26 @@ int main(int argc, char** argv)
 
     if (kbot::HasRequest(mask))
     {
-      kbot::log("Incoming IPC req");
+      kbot::log("In: REQUEST");
       channel_port.ReceiveIPCMessage(false);
-      for (auto&& message : channel_port.GetRXMessages())
-      {
-        broker.ProcessMessage(std::move(message));
-      }
       channel_port.SendIPCMessage(std::make_unique<okay_message>(), false);
     }
 
     if (kbot::HasReply(mask))
     {
-      kbot::log("Incoming IPC rep");
+      kbot::log("In: REPLY");
       channel_port.ReceiveIPCMessage(true);
     }
 
     if (broker.Poll() && channel_port.REQReady())
     {
-      kbot::log("Sending IPC req");
+      kbot::log("Out: REQUEST");
       channel_port.SendIPCMessage(std::move(broker.DeQueue()), true);
     }
+
+    for (auto&& message : channel_port.GetRXMessages())
+      broker.ProcessMessage(std::move(message));
+
 
     std::mutex                   mtx{};
     std::condition_variable      condition{};

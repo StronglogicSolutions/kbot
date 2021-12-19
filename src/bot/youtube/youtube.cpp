@@ -76,8 +76,6 @@ void YouTubeBot::loop() {
   while (IsRunning()) {
     const std::chrono::time_point<std::chrono::system_clock> now = std::chrono::system_clock::now();
     const auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - initial_time).count();
-    log("YouTubeBot alive. Elapsed: " + std::to_string(elapsed));
-
     if (m_api.HasChats() && elapsed > 1800)
     {
       PostMessage("If you enjoy this content please SMASH the like and Share!");

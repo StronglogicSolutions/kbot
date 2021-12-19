@@ -47,9 +47,8 @@ bool ReceiveIPCMessage(const bool use_req = true)
   zmq::message_t                        message;
   int                                   more_flag{1};
 
-  zmq::socket_t&                        socket = (use_req) ?
-                                                   m_req_socket :
-                                                   m_rep_socket;
+  zmq::socket_t&                        socket = (use_req) ? m_req_socket :
+                                                             m_rep_socket;
 
   while (more_flag)
   {

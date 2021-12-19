@@ -303,8 +303,7 @@ bool Shutdown()
     tg_bot      .Shutdown();
 
     while (youtube_bot.IsRunning() || mastodon_bot.IsRunning() || discord_bot.IsRunning() ||
-           blog_bot.IsRunning()    || tg_bot.IsRunning())
-    ;
+              blog_bot.IsRunning() ||       tg_bot.IsRunning())
 
     Worker::stop();
 
@@ -326,6 +325,7 @@ const bool Poll() const
 u_ipc_msg_ptr DeQueue()
 {
   u_ipc_msg_ptr message = std::move(m_outbound_queue.front());
+  kbot::log("Dequeuing message: ", ::constants::IPC_MESSAGE_NAMES.at(message->type()));
   m_outbound_queue.pop_front();
   return std::move(message);
 }
