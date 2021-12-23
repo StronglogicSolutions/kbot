@@ -90,7 +90,7 @@ bool HandleEvent(BotRequest request)
   const auto  urls  = request.urls;
   const auto  cmd   = request.cmd;
   const auto  args  = kbot::keleqram::GetArgs(request.args);
-  const auto  dest  = args.front();
+  const auto  dest  = (args.empty()) ? "" : args.front();
   std::string err_msg;
 
   if (event == "livestream active" || event == "platform:repost" || event == "telegram:messages")

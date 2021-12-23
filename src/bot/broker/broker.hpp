@@ -127,7 +127,9 @@ void ProcessMessage(u_ipc_msg_ptr message) {
   else
   if (message->type() == ::constants::IPC_PLATFORM_TYPE)
     SendEvent(CreatePlatformEvent(static_cast<platform_message*>(message.get())));
-
+  else
+  if (message->type() == ::constants::IPC_OK_TYPE)
+    kbot::log("Recv IPC OK");
 }
 
 /**
