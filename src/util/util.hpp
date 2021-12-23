@@ -9,9 +9,11 @@ namespace kbot {
 /**
  * Poor man's log
  */
-template<typename T>
-inline void log(T s) {
-  std::cout << s << std::endl;
+template<typename... Args>
+static void log(Args... args)
+{
+  for (const auto& s : { args... }) std::cout << s;
+  std::cout << std::endl;
 }
 
 /**

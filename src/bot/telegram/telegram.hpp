@@ -7,10 +7,11 @@
 namespace kbot {
 namespace keleqram {
 namespace constants {
-static const uint8_t     APP_NAME_LENGTH{12};
+static const uint8_t     APP_NAME_LENGTH{6};
 static const std::string USER{};
 static const char*       DEFAULT_CONFIG_PATH{"config/config.ini"};
 static const char*       REQUEST_PollStop   {"poll stop"};
+static const char*       REQUEST_PollResult {"poll result"};
 } // namespace constants
 
 static std::string get_executable_cwd()
@@ -59,10 +60,7 @@ virtual void Init() override
 virtual void loop() override
 {
   while (m_is_running)
-  {
     ::keleqram::KeleqramBot::Poll();
-    ::keleqram::log("TelegramBot alive");
-  }
 }
 
 
@@ -92,7 +90,7 @@ bool HandleEvent(BotRequest request)
   const auto  urls  = request.urls;
   const auto  cmd   = request.cmd;
   const auto  args  = kbot::keleqram::GetArgs(request.args);
-  const auto  dest  = args.front();
+  const auto  dest  = (args.empty()) ? "" : args.front();
   std::string err_msg;
 
   if (event == "livestream active" || event == "platform:repost" || event == "telegram:messages")
@@ -107,11 +105,16 @@ bool HandleEvent(BotRequest request)
           KeleqramBot::SendMessage(post, dest);
         break;
         case (poll_stop):
-          KeleqramBot::StopPoll(dest, GetPollArgs(args).front());
+          m_send_event_fn(CreateRequest(
+            REQUEST_PollResult,
+            KeleqramBot::StopPoll(dest, GetPollArgs(args).front()),
+            request));
         break;
         case (poll_cmd):
-          const auto id = KeleqramBot::SendPoll(post, dest, GetPollArgs(args));
-          m_send_event_fn(CreateRequest(REQUEST_PollStop, id, request));
+          m_send_event_fn(CreateRequest(
+            REQUEST_PollStop,
+            KeleqramBot::SendPoll(post, dest, GetPollArgs(args)),
+            request));
         break;
       }
     }
