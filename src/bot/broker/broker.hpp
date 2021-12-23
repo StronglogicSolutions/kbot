@@ -231,6 +231,16 @@ virtual void loop() override
                                                                        request.data));
       }
       else
+      if (request.event == "bot:request")
+      {
+        kbot::log(platform + " created a request in response to " + request.previous_event);
+        m_outbound_queue.emplace_back(std::make_unique<platform_request>(platform,
+                                                                         request.id,
+                                                                         request.username,
+                                                                         request.data,
+                                                                         request.args));
+      }
+      else
         SendEvent(request);
 
       m_queue.pop_front();
