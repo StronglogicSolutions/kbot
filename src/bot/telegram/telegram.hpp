@@ -83,6 +83,27 @@ bool HandleEvent(BotRequest request)
   static const uint32_t poll_cmd  = static_cast<uint32_t>(TGCommand::poll);
   static const uint32_t poll_stop = static_cast<uint32_t>(TGCommand::poll_stop);
 
+  auto GetURLS = [](const std::vector<std::string>& v)
+  {
+    bool found_image = false;
+    std::vector<std::string> urls;
+    for (const auto& url : v)
+    {
+      auto mime = ::keleqram::GetMimeType(url);
+      if (mime.IsPhoto())
+      {
+        if (!found_image)
+        {
+          urls.push_back(url);
+          found_image = true;
+        }
+      }
+      else
+        urls.push_back(url);
+    }
+    return urls;
+  };
+
   auto GetPollArgs = [](const std::vector<std::string>& v) { return std::vector<std::string>{v.begin() + 1, v.end()}; };
         bool  error = false;
   const auto  event = request.event;
@@ -100,7 +121,7 @@ bool HandleEvent(BotRequest request)
       switch (cmd)
       {
         case (msg_cmd):
-          for (const auto& url : request.urls)
+          for (const auto& url : GetURLS(request.urls))
             KeleqramBot::SendMedia(url, dest);
           KeleqramBot::SendMessage(post, dest);
         break;
