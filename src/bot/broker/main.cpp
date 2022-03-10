@@ -3,8 +3,6 @@
 #include <condition_variable>
 #include <mutex>
 
-const std::string OK{"OK"};
-
 int main(int argc, char** argv)
 {
   kbot::Broker      broker{};

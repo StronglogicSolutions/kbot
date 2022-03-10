@@ -328,6 +328,8 @@ u_ipc_msg_ptr DeQueue()
 {
   u_ipc_msg_ptr message = std::move(m_outbound_queue.front());
   kbot::log("Dequeuing message: ", ::constants::IPC_MESSAGE_NAMES.at(message->type()));
+  if (message->type() == ::constants::IPC_PLATFORM_TYPE)
+    kbot::log("Content: ", static_cast<platform_message*>(message.get())->content().c_str());
   m_outbound_queue.pop_front();
   return std::move(message);
 }
