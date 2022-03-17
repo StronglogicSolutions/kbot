@@ -103,8 +103,8 @@ bool HandleEvent(BotRequest request)
     }
     return urls;
   };
-  auto IsDest      = [](const std::vector<std::string>& v) { return ((v.empty()) && (v.front().size() > 2) && isdigit(v.front().at(1))); };
-  auto GetPollArgs = [](const std::vector<std::string>& v) { return std::vector<std::string>{v.begin() + 1, v.end()};                    };
+  auto IsDest      = [](const std::vector<std::string>& v) { return ((v.size()) && (v.front().size() > 2) && isdigit(v.front().at(1))); };
+  auto GetPollArgs = [](const std::vector<std::string>& v) { return std::vector<std::string>{v.begin() + 1, v.end()};                   };
         bool  error = false;
   const auto  event = request.event;
   const auto  post  = request.data;
