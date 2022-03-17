@@ -14,8 +14,8 @@
 #define OPENSSL_API_COMPAT 0x0908
 
 namespace kbot {
-using u_bot_ptr     = std::unique_ptr<Bot>;
-using BotPool       = std::vector<u_bot_ptr>;
+using bot_ptr       = Bot*;
+using BotPool       = std::vector<bot_ptr>;
 using EventQueue    = std::deque<BotRequest>;
 using u_ipc_msg_ptr = ipc_message::u_ipc_msg_ptr;
 
@@ -58,17 +58,11 @@ class Broker : public Worker
 public:
 Broker()
 {
-  u_bot_ptr u_yt_bot_ptr{new kbot::YouTubeBot{}};
-  u_bot_ptr u_md_bot_ptr{new kbot::MastodonBot{}};
-  u_bot_ptr u_dc_bot_ptr{new kbot::DiscordBot{}};
-  u_bot_ptr u_bg_bot_ptr{new kbot::BlogBot{}};
-  u_bot_ptr u_tg_bot_ptr{new kbot::TelegramBot{}};
-
-  m_pool.emplace_back(std::move(u_yt_bot_ptr));
-  m_pool.emplace_back(std::move(u_md_bot_ptr));
-  m_pool.emplace_back(std::move(u_dc_bot_ptr));
-  m_pool.emplace_back(std::move(u_bg_bot_ptr));
-  m_pool.emplace_back(std::move(u_tg_bot_ptr));
+  m_pool.emplace_back(&m_yt_bot);
+  m_pool.emplace_back(&m_md_bot);
+  m_pool.emplace_back(&m_dc_bot);
+  m_pool.emplace_back(&m_bg_bot);
+  m_pool.emplace_back(&m_tg_bot);
 
   YTBot().SetCallback(&ProcessEvent);
   MDBot().SetCallback(&ProcessEvent);
@@ -367,6 +361,11 @@ std::deque<u_ipc_msg_ptr>  m_outbound_queue;
 bool                       m_bots_active;
 std::mutex                 m_mutex;
 std::condition_variable    m_condition;
+kbot::YouTubeBot           m_yt_bot;
+kbot::MastodonBot          m_md_bot;
+kbot::DiscordBot           m_dc_bot;
+kbot::BlogBot              m_bg_bot;
+kbot::TelegramBot          m_tg_bot;
 };
 
 } // namespace kbot
