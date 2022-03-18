@@ -132,10 +132,14 @@ bool HandleEvent(BotRequest request)
             request));
         break;
         case (poll_cmd):
+        {
+          log("Sending Poll to Telegram");
           m_send_event_fn(CreateRequest(
             REQUEST_PollStop,
             KeleqramBot::SendPoll(post, dest, GetPollArgs(args)),
             request));
+          log("IPC Response should be request to schedule PollStop");
+      }
         break;
       }
     }
