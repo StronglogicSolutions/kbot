@@ -139,6 +139,7 @@ bool HandleEvent(BotRequest request)
             KeleqramBot::SendPoll(post, dest, GetPollArgs(args)),
             request));
           log("IPC Response should be request to schedule PollStop");
+          return; // TODO: Remove return after updating our messaging pattern
       }
         break;
       }
