@@ -8,6 +8,7 @@ namespace kbot {
 const std::string DATA_REQUEST{"Get Results"};
 const std::string REP_ADDRESS{"tcp://0.0.0.0:28473"};
 const std::string REQ_ADDRESS{"tcp://0.0.0.0:28474"};
+const uint8_t     MAX_RETRIES{10};
 
 static const bool HasReply(uint8_t mask)
 {
@@ -30,15 +31,17 @@ m_rep_socket{m_context, ZMQ_REP},
 m_req_socket{m_context, ZMQ_REQ},
 m_socket_num{2},
 m_timeout   {0},
-m_req_ready {true}
+m_retries   {0}
 {
+  m_rep_socket.bind(REP_ADDRESS);
   Reset();
 }
 
 void Reset()
 {
-  m_rep_socket.bind(REP_ADDRESS);
+  log("Resetting REQ socket");
   m_req_socket.connect(REQ_ADDRESS);
+  m_req_ready = true;
 }
 
 bool ReceiveIPCMessage(const bool use_req = true)
@@ -49,7 +52,6 @@ bool ReceiveIPCMessage(const bool use_req = true)
 
   zmq::socket_t&                        socket = (use_req) ? m_req_socket :
                                                              m_rep_socket;
-
   while (more_flag)
   {
     socket.recv(&message, static_cast<int>(zmq::recv_flags::none));
@@ -63,7 +65,7 @@ bool ReceiveIPCMessage(const bool use_req = true)
 
   ipc_message::u_ipc_msg_ptr ipc_message = DeserializeIPCMessage(std::move(received_message));
 
-  if (ipc_message != nullptr)
+  if (ipc_message)
   {
     m_rx_msgs.emplace_back(std::move(ipc_message));
     m_req_ready = (use_req) ? true : m_req_ready;
@@ -117,7 +119,8 @@ uint8_t Poll()
   return poll_mask;
 }
 
-static bool IsDataRequest(std::string s) {
+static bool IsDataRequest(std::string s)
+{
   return (FindDataRequest(s) == DATA_REQUEST);
 }
 
@@ -126,8 +129,10 @@ std::vector<u_ipc_msg_ptr> GetRXMessages()
   return std::move(m_rx_msgs);
 }
 
-bool REQReady() const
+bool REQReady()
 {
+  if (!m_req_ready && (++m_retries == MAX_RETRIES))
+    Reset();
   return m_req_ready;
 }
 
@@ -145,6 +150,7 @@ std::vector<u_ipc_msg_ptr>     m_tx_msgs;
 std::vector<u_ipc_msg_ptr>     m_rx_msgs;
 uint8_t        m_socket_num;
 uint8_t        m_timeout;
+uint8_t        m_retries;
 bool           m_req_ready;
 };
 } // namespace kbot

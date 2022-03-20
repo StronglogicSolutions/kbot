@@ -14,19 +14,15 @@
 #define OPENSSL_API_COMPAT 0x0908
 
 namespace kbot {
-using u_bot_ptr     = std::unique_ptr<Bot>;
-using BotPool       = std::vector<u_bot_ptr>;
+using bot_ptr       = Bot*;
+using BotPool       = std::vector<bot_ptr>;
 using EventQueue    = std::deque<BotRequest>;
 using u_ipc_msg_ptr = ipc_message::u_ipc_msg_ptr;
 
 static std::vector<std::string> GetArgs(std::string s) {
   using json = nlohmann::json;
   json d = json::parse(s, nullptr, false);
-
-  if (!d.is_null() && d.contains("args")) {
-    return d["args"].get<std::vector<std::string>>();
-  }
-  return {};
+  return (!d.is_null() && d.contains("args")) ? d["args"].get<std::vector<std::string>>() : std::vector<std::string>{};
 }
 
 static const BotRequest CreatePlatformEvent(platform_message* message)
@@ -58,17 +54,11 @@ class Broker : public Worker
 public:
 Broker()
 {
-  u_bot_ptr u_yt_bot_ptr{new kbot::YouTubeBot{}};
-  u_bot_ptr u_md_bot_ptr{new kbot::MastodonBot{}};
-  u_bot_ptr u_dc_bot_ptr{new kbot::DiscordBot{}};
-  u_bot_ptr u_bg_bot_ptr{new kbot::BlogBot{}};
-  u_bot_ptr u_tg_bot_ptr{new kbot::TelegramBot{}};
-
-  m_pool.emplace_back(std::move(u_yt_bot_ptr));
-  m_pool.emplace_back(std::move(u_md_bot_ptr));
-  m_pool.emplace_back(std::move(u_dc_bot_ptr));
-  m_pool.emplace_back(std::move(u_bg_bot_ptr));
-  m_pool.emplace_back(std::move(u_tg_bot_ptr));
+  m_pool.emplace_back(&m_yt_bot);
+  m_pool.emplace_back(&m_md_bot);
+  m_pool.emplace_back(&m_dc_bot);
+  m_pool.emplace_back(&m_bg_bot);
+  m_pool.emplace_back(&m_tg_bot);
 
   YTBot().SetCallback(&ProcessEvent);
   MDBot().SetCallback(&ProcessEvent);
@@ -76,7 +66,7 @@ Broker()
   BLBot().SetCallback(&ProcessEvent);
   TGBot().SetCallback(&ProcessEvent);
 
-  // YTBot().Init(); // TODO: Temporarily disabling until CPR module fixes an invalid pointer issue
+  YTBot().Init();
   MDBot().Init();
   DCBot().Init();
   BLBot().Init();
@@ -107,19 +97,15 @@ void ProcessMessage(u_ipc_msg_ptr message) {
       const auto& command = args.at(IPC_COMMAND_INDEX);
       const auto& payload = args.at(IPC_PAYLOAD_INDEX);
       const auto& user    = args.at(IPC_USER_INDEX);
-      Platform    platform{};
+      Platform    platform;
 
-      if (command == "youtube:livestream")
-        platform = Platform::youtube;
+      if (command == "youtube:livestream") platform = Platform::youtube;
       else
-      if (command == "mastodon:comments")
-        platform = Platform::mastodon;
+      if (command == "mastodon:comments")  platform = Platform::mastodon;
       else
-      if (command == "discord:messages")
-        platform = Platform::discord;
+      if (command == "discord:messages")   platform = Platform::discord;
       else
-      if (command == "telegram:messages")
-        platform = Platform::telegram;
+      if (command == "telegram:messages")  platform = Platform::telegram;
 
       SendEvent(BotRequest{platform, command, user, payload});
     }
@@ -129,7 +115,7 @@ void ProcessMessage(u_ipc_msg_ptr message) {
     SendEvent(CreatePlatformEvent(static_cast<platform_message*>(message.get())));
   else
   if (message->type() == ::constants::IPC_OK_TYPE)
-    kbot::log("Recv IPC OK");
+    log("Recv IPC OK");
 }
 
 /**
@@ -141,6 +127,7 @@ void ProcessMessage(u_ipc_msg_ptr message) {
  */
 static bool ProcessEvent(BotRequest event)
 {
+  log("Processing event to broker's queue\n", event.to_string().c_str());
   if (g_broker != nullptr)
   {
     g_broker->enqueue(event);
@@ -328,6 +315,8 @@ u_ipc_msg_ptr DeQueue()
 {
   u_ipc_msg_ptr message = std::move(m_outbound_queue.front());
   kbot::log("Dequeuing message: ", ::constants::IPC_MESSAGE_NAMES.at(message->type()));
+  if (message->type() == ::constants::IPC_PLATFORM_TYPE)
+    kbot::log("Content: ", static_cast<platform_message*>(message.get())->content().c_str());
   m_outbound_queue.pop_front();
   return std::move(message);
 }
@@ -365,6 +354,11 @@ std::deque<u_ipc_msg_ptr>  m_outbound_queue;
 bool                       m_bots_active;
 std::mutex                 m_mutex;
 std::condition_variable    m_condition;
+kbot::YouTubeBot           m_yt_bot;
+kbot::MastodonBot          m_md_bot;
+kbot::DiscordBot           m_dc_bot;
+kbot::BlogBot              m_bg_bot;
+kbot::TelegramBot          m_tg_bot;
 };
 
 } // namespace kbot

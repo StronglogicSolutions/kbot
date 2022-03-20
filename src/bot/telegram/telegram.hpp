@@ -83,14 +83,35 @@ bool HandleEvent(BotRequest request)
   static const uint32_t poll_cmd  = static_cast<uint32_t>(TGCommand::poll);
   static const uint32_t poll_stop = static_cast<uint32_t>(TGCommand::poll_stop);
 
-  auto GetPollArgs = [](const std::vector<std::string>& v) { return std::vector<std::string>{v.begin() + 1, v.end()}; };
+  auto GetURLS = [](const std::vector<std::string>& v)
+  {
+    bool found_image = false;
+    std::vector<std::string> urls;
+    for (const auto& url : v)
+    {
+      auto mime = ::keleqram::GetMimeType(url);
+      if (mime.IsPhoto())
+      {
+        if (!found_image)
+        {
+          urls.push_back(url);
+          found_image = true;
+        }
+      }
+      else
+        urls.push_back(url);
+    }
+    return urls;
+  };
+  auto IsDest      = [](const std::vector<std::string>& v) { return ((v.size()) && (v.front().size() > 2) && isdigit(v.front().at(1))); };
+  auto GetPollArgs = [](const std::vector<std::string>& v) { return std::vector<std::string>{v.begin() + 1, v.end()};                   };
         bool  error = false;
   const auto  event = request.event;
   const auto  post  = request.data;
   const auto  urls  = request.urls;
   const auto  cmd   = request.cmd;
   const auto  args  = kbot::keleqram::GetArgs(request.args);
-  const auto  dest  = (args.empty()) ? "" : args.front();
+  const auto  dest  = (IsDest(args)) ? args.front() : "";
   std::string err_msg;
 
   if (event == "livestream active" || event == "platform:repost" || event == "telegram:messages")
@@ -100,7 +121,7 @@ bool HandleEvent(BotRequest request)
       switch (cmd)
       {
         case (msg_cmd):
-          for (const auto& url : request.urls)
+          for (const auto& url : GetURLS(request.urls))
             KeleqramBot::SendMedia(url, dest);
           KeleqramBot::SendMessage(post, dest);
         break;
@@ -111,10 +132,14 @@ bool HandleEvent(BotRequest request)
             request));
         break;
         case (poll_cmd):
+        {
+          log("Sending Poll to Telegram");
           m_send_event_fn(CreateRequest(
             REQUEST_PollStop,
             KeleqramBot::SendPoll(post, dest, GetPollArgs(args)),
             request));
+          log("IPC Response should be request to schedule PollStop");
+        }
         break;
       }
     }

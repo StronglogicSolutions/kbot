@@ -61,15 +61,28 @@ static const std::string get_platform_name(Platform platform)
 
 struct BotRequest
 {
-Platform    platform;
-std::string event;
-std::string username;
-std::string data;
+Platform                 platform;
+std::string              event;
+std::string              username;
+std::string              data;
 std::vector<std::string> urls;
-std::string id;
-std::string previous_event;
-std::string args;
-uint32_t    cmd{0x00};
+std::string              id;
+std::string              previous_event;
+std::string              args;
+uint32_t                 cmd{0x00};
+
+const std::string to_string() const
+{
+  return "Platform:       " + get_platform_name(platform) + '\n' +
+         "Event:          " + event + '\n' +
+         "Username:       " + username + '\n' +
+         "Data:           " + data + '\n' +
+         "Urls:           " + url_string() + '\n' +
+         "Id:             " + id + '\n' +
+         "Previous_event: " + previous_event + '\n' +
+         "Args:           " + args + '\n' +
+         "Cmd:            " + std::to_string(cmd) + '\n';
+}
 
 const std::string url_string() const
 {
@@ -114,6 +127,7 @@ static const std::string SUCCESS_EVENT{"bot:success"};
 
 static const BotRequest CreateSuccessEvent(const BotRequest& previous_event)
 {
+  kbot::log("Creating success event");
   return BotRequest{
     .platform       = previous_event.platform,
     .event          = SUCCESS_EVENT,
@@ -128,6 +142,7 @@ static const BotRequest CreateSuccessEvent(const BotRequest& previous_event)
 
 static const BotRequest CreateRequest(const std::string& message, const std::string& args, const BotRequest& previous_event)
 {
+  kbot::log("Creating request with message ", message.c_str(), " and args ", args.c_str());
   return BotRequest{
     .platform       = previous_event.platform,
     .event          = "bot:request",
@@ -141,6 +156,7 @@ static const BotRequest CreateRequest(const std::string& message, const std::str
 
 static const BotRequest CreateErrorEvent(const std::string& error_message, const BotRequest& previous_event)
 {
+  kbot::log("Creating error event");
   return BotRequest{
     .platform = previous_event.platform,
     .event    = "bot:error",
