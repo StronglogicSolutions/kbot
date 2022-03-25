@@ -107,23 +107,22 @@ bool HandleEvent(BotRequest request)
   auto GetPollArgs = [](const std::vector<std::string>& v) { return std::vector<std::string>{v.begin() + 1, v.end()};                   };
         bool  error = false;
   const auto  event = request.event;
-  const auto  post  = request.data;
+  const auto  data  = request.data;
   const auto  urls  = request.urls;
   const auto  cmd   = request.cmd;
   const auto  args  = kbot::keleqram::GetArgs(request.args);
   const auto  dest  = (IsDest(args)) ? args.front() : "";
   std::string err_msg;
-
-  if (event == "livestream active" || event == "platform:repost" || event == "telegram:messages")
+  try
   {
-    try
+    if (event == "livestream active" || event == "platform:repost" || event == "telegram:messages")
     {
       switch (cmd)
       {
         case (msg_cmd):
           for (const auto& url : GetURLS(request.urls))
             KeleqramBot::SendMedia(url, dest);
-          KeleqramBot::SendMessage(post, dest);
+          KeleqramBot::SendMessage(data, dest);
         break;
         case (poll_stop):
           m_send_event_fn(CreateRequest(
@@ -136,23 +135,24 @@ bool HandleEvent(BotRequest request)
           log("Sending Poll to Telegram");
           m_send_event_fn(CreateRequest(
             REQUEST_PollStop,
-            KeleqramBot::SendPoll(post, dest, GetPollArgs(args)),
+            KeleqramBot::SendPoll(data, dest, GetPollArgs(args)),
             request));
           log("IPC Response should be request to schedule PollStop");
         }
         break;
       }
     }
-    catch (const std::exception& e)
-    {
-      err_msg += "Exception caught handling " + request.event + ": " + e.what();
-      log(err_msg);
-      error = true;
-    }
+    else
+    if (event == "telegram:delete")
+      KeleqramBot::DeleteMessages(dest, ::keleqram::DeleteAction{"/delete last " + data});
   }
-
-  m_send_event_fn((error) ? CreateErrorEvent(err_msg, request) :
-                            CreateSuccessEvent(request));
+  catch (const std::exception& e)
+  {
+    err_msg += "Exception caught handling " + request.event + ": " + e.what();
+    log(err_msg);
+    error = true;
+  }
+  m_send_event_fn((error) ? CreateErrorEvent(err_msg, request) : CreateSuccessEvent(request));
 
   return !error;
 }

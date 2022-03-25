@@ -25,6 +25,12 @@ static std::vector<std::string> GetArgs(std::string s) {
   return (!d.is_null() && d.contains("args")) ? d["args"].get<std::vector<std::string>>() : std::vector<std::string>{};
 }
 
+static std::string CreateArgs(const std::string& s)
+{
+  nlohmann::json json;
+  json["args"].push_back(s);
+  return json.dump();
+}
 static const BotRequest CreatePlatformEvent(platform_message* message)
 {
   return BotRequest{
@@ -32,9 +38,9 @@ static const BotRequest CreatePlatformEvent(platform_message* message)
     .event    = "platform:repost",
     .username = UnescapeQuotes(message->user()),
     .data     = UnescapeQuotes(message->content()),
+    .args     = message->args(),
     .urls     = BotRequest::urls_from_string(message->urls()),
     .id       = message->id(),
-    .args     = message->args(),
     .cmd      = message->cmd()
   };
 }
@@ -66,7 +72,7 @@ Broker()
   BLBot().SetCallback(&ProcessEvent);
   TGBot().SetCallback(&ProcessEvent);
 
-  YTBot().Init();
+  // YTBot().Init();
   MDBot().Init();
   DCBot().Init();
   BLBot().Init();
@@ -78,6 +84,7 @@ Broker()
 static const uint8_t IPC_COMMAND_INDEX{0x00};
 static const uint8_t IPC_PAYLOAD_INDEX{0x01};
 static const uint8_t IPC_USER_INDEX   {0x02};
+static const uint8_t IPC_OPTIONS_INDEX{0x03};
 static const uint8_t IPC_PARAM_NUMBER {0x03};
 
 bool ValidIPCArguments(const std::vector<std::string>& arguments)
@@ -85,8 +92,17 @@ bool ValidIPCArguments(const std::vector<std::string>& arguments)
   return arguments.size() >= IPC_PARAM_NUMBER;
 }
 
-void ProcessMessage(u_ipc_msg_ptr message) {
+bool HasOptions(const std::vector<std::string>& arguments)
+{
+  return arguments.size() >= IPC_PARAM_NUMBER + 1;
+}
 
+void ProcessMessage(u_ipc_msg_ptr message)
+{
+  auto TGMessage = [](auto msg) { return msg.find("telegram") != std::string::npos; };
+  auto YTMessage = [](auto msg) { return msg.find("youtube")  != std::string::npos; };
+  auto MDMessage = [](auto msg) { return msg.find("mastodon") != std::string::npos; };
+  auto DCMessage = [](auto msg) { return msg.find("discord")  != std::string::npos; };
   if (message->type() == ::constants::IPC_KIQ_MESSAGE)
   {
     kiq_message* kiq_msg = static_cast<kiq_message*>(message.get());
@@ -97,17 +113,18 @@ void ProcessMessage(u_ipc_msg_ptr message) {
       const auto& command = args.at(IPC_COMMAND_INDEX);
       const auto& payload = args.at(IPC_PAYLOAD_INDEX);
       const auto& user    = args.at(IPC_USER_INDEX);
+      const auto& options = CreateArgs(HasOptions(args) ? args.at(IPC_OPTIONS_INDEX) : "");
       Platform    platform;
 
-      if (command == "youtube:livestream") platform = Platform::youtube;
+      if (YTMessage(command)) platform = Platform::youtube;
       else
-      if (command == "mastodon:comments")  platform = Platform::mastodon;
+      if (MDMessage(command)) platform = Platform::mastodon;
       else
-      if (command == "discord:messages")   platform = Platform::discord;
+      if (DCMessage(command)) platform = Platform::discord;
       else
-      if (command == "telegram:messages")  platform = Platform::telegram;
+      if (TGMessage(command)) platform = Platform::telegram;
 
-      SendEvent(BotRequest{platform, command, user, payload});
+      SendEvent(BotRequest{platform, command, user, payload, options});
     }
   }
   else
