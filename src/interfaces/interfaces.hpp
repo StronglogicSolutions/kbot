@@ -65,10 +65,10 @@ Platform                 platform;
 std::string              event;
 std::string              username;
 std::string              data;
+std::string              args;
 std::vector<std::string> urls;
 std::string              id;
 std::string              previous_event;
-std::string              args;
 uint32_t                 cmd{0x00};
 
 const std::string to_string() const
@@ -124,6 +124,7 @@ static const std::vector<std::string> urls_from_string(std::string input_string)
 static const bool SHOULD_REPOST{true};
 static const bool SHOULD_NOT_REPOST{false};
 static const std::string SUCCESS_EVENT{"bot:success"};
+static const std::string INFO_EVENT   {"bot:info"};
 
 static const BotRequest CreateSuccessEvent(const BotRequest& previous_event)
 {
@@ -133,10 +134,25 @@ static const BotRequest CreateSuccessEvent(const BotRequest& previous_event)
     .event          = SUCCESS_EVENT,
     .username       = previous_event.username,
     .data           = previous_event.data,
+    .args           = previous_event.args,
     .urls           = previous_event.urls,
     .id             = previous_event.id,
-    .previous_event = previous_event.event,
-    .args           = previous_event.args
+    .previous_event = previous_event.event
+  };
+}
+
+static const BotRequest CreateInfo(const std::string& info, const BotRequest& previous_event)
+{
+  kbot::log("Creating info event");
+  return BotRequest{
+    .platform       = previous_event.platform,
+    .event          = INFO_EVENT,
+    .username       = previous_event.username,
+    .data           = info,
+    .args           = previous_event.args,
+    .urls           = previous_event.urls,
+    .id             = previous_event.id,
+    .previous_event = previous_event.event
   };
 }
 
@@ -148,9 +164,9 @@ static const BotRequest CreateRequest(const std::string& message, const std::str
     .event          = "bot:request",
     .username       = previous_event.username,
     .data           = message,
+    .args           = args,
     .id             = previous_event.id,
-    .previous_event = previous_event.event,
-    .args           = args
+    .previous_event = previous_event.event
   };
 }
 

@@ -12,6 +12,7 @@ static const std::string USER{};
 static const char*       DEFAULT_CONFIG_PATH{"config/config.ini"};
 static const char*       REQUEST_PollStop   {"poll stop"};
 static const char*       REQUEST_PollResult {"poll result"};
+static const char*       REQUEST_Rooms      {"process rooms"};
 } // namespace constants
 
 static std::string get_executable_cwd()
@@ -103,27 +104,38 @@ bool HandleEvent(BotRequest request)
     }
     return urls;
   };
-  auto IsDest      = [](const std::vector<std::string>& v) { return ((v.size()) && (v.front().size() > 2) && isdigit(v.front().at(1))); };
+  auto GetDest     = [](const std::vector<std::string>& v) -> std::string
+  {
+    auto FindEnd = [](const std::string& s) { for (size_t i = 1; i < s.size(); i++) if (!std::isdigit(s[i])) return i; return s.size(); };
+
+    if ((v.size()) && (v.front().size() > 2) && isdigit(v.front().at(1)))
+    {
+      auto s = v.front();
+      auto i = FindEnd(s);
+      return s.substr(0, i);
+    }
+    return "";
+  };
   auto GetPollArgs = [](const std::vector<std::string>& v) { return std::vector<std::string>{v.begin() + 1, v.end()};                   };
         bool  error = false;
+        bool  reply = true;
   const auto  event = request.event;
-  const auto  post  = request.data;
+  const auto  data  = request.data;
   const auto  urls  = request.urls;
   const auto  cmd   = request.cmd;
   const auto  args  = kbot::keleqram::GetArgs(request.args);
-  const auto  dest  = (IsDest(args)) ? args.front() : "";
+  const auto  dest  = GetDest(args);
   std::string err_msg;
-
-  if (event == "livestream active" || event == "platform:repost" || event == "telegram:messages")
+  try
   {
-    try
+    if (event == "livestream active" || event == "platform:repost" || event == "telegram:messages")
     {
       switch (cmd)
       {
         case (msg_cmd):
           for (const auto& url : GetURLS(request.urls))
             KeleqramBot::SendMedia(url, dest);
-          KeleqramBot::SendMessage(post, dest);
+          KeleqramBot::SendMessage(data, dest);
         break;
         case (poll_stop):
           m_send_event_fn(CreateRequest(
@@ -136,23 +148,34 @@ bool HandleEvent(BotRequest request)
           log("Sending Poll to Telegram");
           m_send_event_fn(CreateRequest(
             REQUEST_PollStop,
-            KeleqramBot::SendPoll(post, dest, GetPollArgs(args)),
+            KeleqramBot::SendPoll(data, dest, GetPollArgs(args)),
             request));
           log("IPC Response should be request to schedule PollStop");
         }
         break;
       }
     }
-    catch (const std::exception& e)
+    else
+    if (event == "telegram:delete")
     {
-      err_msg += "Exception caught handling " + request.event + ": " + e.what();
-      log(err_msg);
-      error = true;
+      reply = false;
+      KeleqramBot::DeleteMessages(dest, ::keleqram::DeleteAction{"/delete last " + args.at(1)});
+    }
+    else
+    if (event == "telegram:rooms")
+    {
+      reply = false;
+      m_send_event_fn(CreateInfo(KeleqramBot::GetRooms(), request));
     }
   }
-
-  m_send_event_fn((error) ? CreateErrorEvent(err_msg, request) :
-                            CreateSuccessEvent(request));
+  catch (const std::exception& e)
+  {
+    err_msg += "Exception caught handling " + request.event + ": " + e.what();
+    log(err_msg);
+    error = true;
+  }
+  if (reply)
+    m_send_event_fn((error) ? CreateErrorEvent(err_msg, request) : CreateSuccessEvent(request));
 
   return !error;
 }
