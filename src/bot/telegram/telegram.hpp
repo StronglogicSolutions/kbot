@@ -104,7 +104,18 @@ bool HandleEvent(BotRequest request)
     }
     return urls;
   };
-  auto IsDest      = [](const std::vector<std::string>& v) { return ((v.size()) && (v.front().size() > 2) && isdigit(v.front().at(1))); };
+  auto GetDest     = [](const std::vector<std::string>& v) -> std::string
+  {
+    auto FindEnd = [](const std::string& s) { for (size_t i = 1; i < s.size(); i++) if (!std::isdigit(s[i])) return i; return s.size(); };
+
+    if ((v.size()) && (v.front().size() > 2) && isdigit(v.front().at(1)))
+    {
+      auto s = v.front();
+      auto i = FindEnd(s);
+      return s.substr(0, i);
+    }
+    return "";
+  };
   auto GetPollArgs = [](const std::vector<std::string>& v) { return std::vector<std::string>{v.begin() + 1, v.end()};                   };
         bool  error = false;
         bool  reply = true;
@@ -113,7 +124,7 @@ bool HandleEvent(BotRequest request)
   const auto  urls  = request.urls;
   const auto  cmd   = request.cmd;
   const auto  args  = kbot::keleqram::GetArgs(request.args);
-  const auto  dest  = (IsDest(args)) ? args.front() : "";
+  const auto  dest  = GetDest(args);
   std::string err_msg;
   try
   {
@@ -146,9 +157,11 @@ bool HandleEvent(BotRequest request)
     }
     else
     if (event == "telegram:delete")
-      KeleqramBot::DeleteMessages(dest.empty() ?
-        ::keleqram::Room::deserialize(args.front()).id : std::stol(dest),
-        ::keleqram::DeleteAction{"/delete last " + data});
+    {
+      reply = false;
+      KeleqramBot::DeleteMessages(dest, ::keleqram::DeleteAction{"/delete last " + args.at(1)});
+    }
+    else
     if (event == "telegram:rooms")
     {
       reply = false;
