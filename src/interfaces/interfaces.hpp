@@ -124,6 +124,7 @@ static const std::vector<std::string> urls_from_string(std::string input_string)
 static const bool SHOULD_REPOST{true};
 static const bool SHOULD_NOT_REPOST{false};
 static const std::string SUCCESS_EVENT{"bot:success"};
+static const std::string INFO_EVENT   {"bot:info"};
 
 static const BotRequest CreateSuccessEvent(const BotRequest& previous_event)
 {
@@ -133,6 +134,21 @@ static const BotRequest CreateSuccessEvent(const BotRequest& previous_event)
     .event          = SUCCESS_EVENT,
     .username       = previous_event.username,
     .data           = previous_event.data,
+    .args           = previous_event.args,
+    .urls           = previous_event.urls,
+    .id             = previous_event.id,
+    .previous_event = previous_event.event
+  };
+}
+
+static const BotRequest CreateInfo(const std::string& info, const BotRequest& previous_event)
+{
+  kbot::log("Creating info event");
+  return BotRequest{
+    .platform       = previous_event.platform,
+    .event          = INFO_EVENT,
+    .username       = previous_event.username,
+    .data           = info,
     .args           = previous_event.args,
     .urls           = previous_event.urls,
     .id             = previous_event.id,

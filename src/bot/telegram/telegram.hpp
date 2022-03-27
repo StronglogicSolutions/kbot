@@ -12,6 +12,7 @@ static const std::string USER{};
 static const char*       DEFAULT_CONFIG_PATH{"config/config.ini"};
 static const char*       REQUEST_PollStop   {"poll stop"};
 static const char*       REQUEST_PollResult {"poll result"};
+static const char*       REQUEST_Rooms      {"process rooms"};
 } // namespace constants
 
 static std::string get_executable_cwd()
@@ -106,6 +107,7 @@ bool HandleEvent(BotRequest request)
   auto IsDest      = [](const std::vector<std::string>& v) { return ((v.size()) && (v.front().size() > 2) && isdigit(v.front().at(1))); };
   auto GetPollArgs = [](const std::vector<std::string>& v) { return std::vector<std::string>{v.begin() + 1, v.end()};                   };
         bool  error = false;
+        bool  reply = true;
   const auto  event = request.event;
   const auto  data  = request.data;
   const auto  urls  = request.urls;
@@ -144,7 +146,14 @@ bool HandleEvent(BotRequest request)
     }
     else
     if (event == "telegram:delete")
-      KeleqramBot::DeleteMessages(dest, ::keleqram::DeleteAction{"/delete last " + data});
+      KeleqramBot::DeleteMessages(dest.empty() ?
+        ::keleqram::Room::deserialize(args.front()).id : std::stol(dest),
+        ::keleqram::DeleteAction{"/delete last " + data});
+    if (event == "telegram:rooms")
+    {
+      reply = false;
+      m_send_event_fn(CreateInfo(KeleqramBot::GetRooms(), request));
+    }
   }
   catch (const std::exception& e)
   {
@@ -152,7 +161,8 @@ bool HandleEvent(BotRequest request)
     log(err_msg);
     error = true;
   }
-  m_send_event_fn((error) ? CreateErrorEvent(err_msg, request) : CreateSuccessEvent(request));
+  if (reply)
+    m_send_event_fn((error) ? CreateErrorEvent(err_msg, request) : CreateSuccessEvent(request));
 
   return !error;
 }

@@ -19,6 +19,12 @@ using BotPool       = std::vector<bot_ptr>;
 using EventQueue    = std::deque<BotRequest>;
 using u_ipc_msg_ptr = ipc_message::u_ipc_msg_ptr;
 
+static const uint8_t IPC_COMMAND_INDEX{0x00};
+static const uint8_t IPC_PAYLOAD_INDEX{0x01};
+static const uint8_t IPC_USER_INDEX   {0x02};
+static const uint8_t IPC_OPTIONS_INDEX{0x03};
+static const uint8_t IPC_PARAM_NUMBER {0x03};
+
 static std::vector<std::string> GetArgs(std::string s) {
   using json = nlohmann::json;
   json d = json::parse(s, nullptr, false);
@@ -31,6 +37,33 @@ static std::string CreateArgs(const std::string& s)
   json["args"].push_back(s);
   return json.dump();
 }
+
+static std::string CreateArgs(const std::vector<std::string>& v)
+{
+  nlohmann::json json;
+  if (v.empty()) json["args"].push_back("");
+  for (const auto& s : v) json["args"].push_back(s);
+  return json.dump();
+}
+
+bool ValidIPCArguments(const std::vector<std::string>& arguments)
+{
+  return arguments.size() >= IPC_PARAM_NUMBER;
+}
+
+bool HasOptions(const std::vector<std::string>& arguments)
+{
+  return arguments.size() >= IPC_PARAM_NUMBER + 1;
+}
+
+static std::string GetOptions(const std::vector<std::string>& data)
+{
+  std::vector<std::string> options;
+  if (HasOptions(data))
+    options = std::vector<std::string>{data.begin() + IPC_OPTIONS_INDEX, data.end()};
+  return CreateArgs(options);
+}
+
 static const BotRequest CreatePlatformEvent(platform_message* message)
 {
   return BotRequest{
@@ -81,22 +114,6 @@ Broker()
   g_broker = this;
 }
 
-static const uint8_t IPC_COMMAND_INDEX{0x00};
-static const uint8_t IPC_PAYLOAD_INDEX{0x01};
-static const uint8_t IPC_USER_INDEX   {0x02};
-static const uint8_t IPC_OPTIONS_INDEX{0x03};
-static const uint8_t IPC_PARAM_NUMBER {0x03};
-
-bool ValidIPCArguments(const std::vector<std::string>& arguments)
-{
-  return arguments.size() >= IPC_PARAM_NUMBER;
-}
-
-bool HasOptions(const std::vector<std::string>& arguments)
-{
-  return arguments.size() >= IPC_PARAM_NUMBER + 1;
-}
-
 void ProcessMessage(u_ipc_msg_ptr message)
 {
   auto TGMessage = [](auto msg) { return msg.find("telegram") != std::string::npos; };
@@ -113,7 +130,7 @@ void ProcessMessage(u_ipc_msg_ptr message)
       const auto& command = args.at(IPC_COMMAND_INDEX);
       const auto& payload = args.at(IPC_PAYLOAD_INDEX);
       const auto& user    = args.at(IPC_USER_INDEX);
-      const auto& options = CreateArgs(HasOptions(args) ? args.at(IPC_OPTIONS_INDEX) : "");
+      const auto& options = GetOptions(args);
       Platform    platform;
 
       if (YTMessage(command)) platform = Platform::youtube;
@@ -217,7 +234,7 @@ virtual void loop() override
       if (request.event == "message")
         kbot::log(platform + " bot has new messages: " + request.data);
       else
-      if (request.event == "bot:success")
+      if (request.event == SUCCESS_EVENT)
       {
         kbot::log(platform + " successfully handled " + request.previous_event);
         m_outbound_queue.emplace_back(std::make_unique<platform_message>(platform,
@@ -245,6 +262,12 @@ virtual void loop() override
                                                                          request.username,
                                                                          request.data,
                                                                          request.args));
+      }
+      else
+      if (request.event == INFO_EVENT)
+      {
+        kbot::log(platform + " sending info in respones to " + request.previous_event);
+        m_outbound_queue.emplace_back(std::make_unique<platform_info>(platform, request.data));
       }
       else
         SendEvent(request);
