@@ -1,0 +1,42 @@
+
+config("katrix") {
+  include_dirs = [
+    "//third_party/katrix/src",
+    "//third_party/katrix/third_party/mtxclient/include",
+    "//third_party/katrix/build/_deps/coeurl-src/include"
+  ]
+
+  libs = [
+    "//third_party/katrix/build/libkatrixd.a",
+    "//third_party/katrix/build/third_party/mtxclient/libmatrix_client.so"
+  ]
+
+  visibility = [ ":katrix_lib" ]
+}
+
+
+config("kbot_includes") {
+  include_dirs = [
+    "//src/"
+  ]
+}
+
+group("katrix_lib") {
+  public_configs = [
+    ":katrix",
+    # ":cpr",
+    ":kbot_includes",
+  ]
+}
+
+executable("matrix_bot") {
+
+deps = [
+  ":katrix_lib",
+]
+
+sources = [
+  "//src/bot/matrix/main.cpp"
+]
+
+}

@@ -8,6 +8,7 @@
 #include "bot/youtube/youtube.hpp"
 #include "bot/discord/discord.hpp"
 #include "bot/telegram/telegram.hpp"
+#include "bot/matrix/matrix.hpp"
 #include "bot/blog/blog.hpp"
 #include "ipc.hpp"
 
@@ -120,6 +121,7 @@ void ProcessMessage(u_ipc_msg_ptr message)
   auto YTMessage = [](auto msg) { return msg.find("youtube")  != std::string::npos; };
   auto MDMessage = [](auto msg) { return msg.find("mastodon") != std::string::npos; };
   auto DCMessage = [](auto msg) { return msg.find("discord")  != std::string::npos; };
+  auto MXMessage = [](auto msg) { return msg.find("matrix")  != std::string::npos; };
   if (message->type() == ::constants::IPC_KIQ_MESSAGE)
   {
     kiq_message* kiq_msg = static_cast<kiq_message*>(message.get());
@@ -399,6 +401,7 @@ kbot::MastodonBot          m_md_bot;
 kbot::DiscordBot           m_dc_bot;
 kbot::BlogBot              m_bg_bot;
 kbot::TelegramBot          m_tg_bot;
+kbot::MatrixBot            m_mx_bot;
 };
 
 } // namespace kbot
