@@ -85,6 +85,7 @@ const uint8_t MASTODON_BOT_INDEX{0x01};
 const uint8_t DISCORD_BOT_INDEX {0x02};
 const uint8_t BLOG_BOT_INDEX    {0x03};
 const uint8_t TELEGRAM_BOT_INDEX{0x04};
+const uint8_t MATRIX_BOT_INDEX  {0x05};
 } // namespace constants
 
 Broker* g_broker;
@@ -99,18 +100,21 @@ Broker()
   m_pool.emplace_back(&m_dc_bot);
   m_pool.emplace_back(&m_bg_bot);
   m_pool.emplace_back(&m_tg_bot);
+  m_pool.emplace_back(&m_mx_bot);
 
   YTBot().SetCallback(&ProcessEvent);
   MDBot().SetCallback(&ProcessEvent);
   DCBot().SetCallback(&ProcessEvent);
   BLBot().SetCallback(&ProcessEvent);
   TGBot().SetCallback(&ProcessEvent);
+  MXBot().SetCallback(&ProcessEvent);
 
   // YTBot().Init();
   MDBot().Init();
   DCBot().Init();
   BLBot().Init();
   TGBot().Init();
+  MXBot().Init();
 
   g_broker = this;
 }
@@ -121,7 +125,7 @@ void ProcessMessage(u_ipc_msg_ptr message)
   auto YTMessage = [](auto msg) { return msg.find("youtube")  != std::string::npos; };
   auto MDMessage = [](auto msg) { return msg.find("mastodon") != std::string::npos; };
   auto DCMessage = [](auto msg) { return msg.find("discord")  != std::string::npos; };
-  auto MXMessage = [](auto msg) { return msg.find("matrix")  != std::string::npos; };
+  auto MXMessage = [](auto msg) { return msg.find("matrix")   != std::string::npos; };
   if (message->type() == ::constants::IPC_KIQ_MESSAGE)
   {
     kiq_message* kiq_msg = static_cast<kiq_message*>(message.get());
@@ -142,6 +146,8 @@ void ProcessMessage(u_ipc_msg_ptr message)
       if (DCMessage(command)) platform = Platform::discord;
       else
       if (TGMessage(command)) platform = Platform::telegram;
+      else
+      if (MXMessage(command)) platform = Platform::matrix;
 
       SendEvent(BotRequest{platform, command, user, payload, options});
     }
@@ -304,6 +310,8 @@ void SendEvent(const BotRequest& event)
     break;
     case (Platform::telegram):
       TGBot().HandleEvent(event);
+    case (Platform::matrix):
+      MXBot().HandleEvent(event);
     break;
     default:
       kbot::log("Unable to send event for unknown platform");
@@ -326,15 +334,17 @@ bool Shutdown()
     Bot& discord_bot  = DCBot();
     Bot& blog_bot     = BLBot();
     Bot& tg_bot       = TGBot();
+    Bot& mx_bot       = MXBot();
 
     youtube_bot .Shutdown();
     mastodon_bot.Shutdown();
     discord_bot .Shutdown();
     blog_bot    .Shutdown();
     tg_bot      .Shutdown();
+    mx_bot      .Shutdown();
 
     while (youtube_bot.IsRunning() || mastodon_bot.IsRunning() || discord_bot.IsRunning() ||
-              blog_bot.IsRunning() ||       tg_bot.IsRunning())
+              blog_bot.IsRunning() ||       tg_bot.IsRunning() || mx_bot.IsRunning())
 
     Worker::stop();
 
@@ -388,6 +398,11 @@ Bot& BLBot()
 Bot& TGBot()
 {
   return *m_pool.at(constants::TELEGRAM_BOT_INDEX);
+}
+
+Bot& MXBot()
+{
+  return *m_pool.at(constants::MATRIX_BOT_INDEX);
 }
 
 BotPool                    m_pool;
