@@ -15,17 +15,17 @@ config("katrix") {
 }
 
 
-config("kbot_includes") {
-  include_dirs = [
-    "//src/"
-  ]
-}
+# config("kbot_includes") {
+# }
 
 group("katrix_lib") {
   public_configs = [
     ":katrix",
-    # ":cpr",
-    ":kbot_includes",
+    "//src/bot/youtube:inih",
+  ]
+
+  deps = [
+    "//src/bot/youtube:inih_lib"
   ]
 }
 
@@ -33,6 +33,10 @@ executable("matrix_bot") {
 
 deps = [
   ":katrix_lib",
+]
+
+include_dirs = [
+    "//src/"
 ]
 
 sources = [
