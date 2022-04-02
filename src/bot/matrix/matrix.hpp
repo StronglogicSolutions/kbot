@@ -50,12 +50,23 @@ public:
       "matrix.org",
       katrix::GetUsername(),
       katrix::GetPassword(),
-      [this](const katrix::EventID&, katrix::RequestError e)
+      [this](auto res, katrix::ResponseType type, katrix::RequestError e)
       {
-        m_send_event_fn((e) ? CreateErrorEvent  (katrix::error_to_string(e), m_last_request) :
-                              CreateSuccessEvent(m_last_request));
-      }
-    },
+        switch (type)
+        {
+          case (katrix::ResponseType::created):
+            m_send_event_fn((e) ? CreateErrorEvent(katrix::error_to_string(e), m_last_request) :
+                                  CreateSuccessEvent(m_last_request));
+          break;
+          case (katrix::ResponseType::info):
+            m_send_event_fn((e) ? CreateErrorEvent(katrix::error_to_string(e), m_last_request) :
+                                  CreateInfo(res, m_last_request));
+          break;
+          default:
+            katrix::log("Unknown response");
+          break;
+        }
+      }},
     m_room_id(katrix::GetRoomID())
   {}
 
@@ -82,17 +93,20 @@ public:
   {
     using Message = katrix::MessageType;
 
+    m_last_request = request;
     try
     {
-      katrix::KatrixBot::send_message(m_room_id, Message{request.data});
-      m_last_request = request;
-      return true;
+      if (request.event == "matrix:info")
+        katrix::KatrixBot::get_info();
+      else
+        katrix::KatrixBot::send_message(m_room_id, Message{request.data});
     }
     catch(const std::exception& e)
     {
       log("Exception thrown: ", e.what());
       return false;
     }
+    return true;
   }
 
   virtual std::unique_ptr<API> GetAPI(std::string name) override
