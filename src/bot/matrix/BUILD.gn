@@ -18,6 +18,7 @@ config("katrix") {
 group("katrix_lib") {
   public_configs = [
     ":katrix",
+    "//src/bot/telegram:cpr",
     "//src/bot/youtube:inih",
   ]
 
@@ -34,6 +35,13 @@ deps = [
 
 include_dirs = [
     "//src/"
+]
+
+libs = [
+  "crypto",
+  "cpr",
+  "curl",
+  "pthread"
 ]
 
 sources = [

@@ -49,7 +49,7 @@ static std::string RemoveSlashes(std::string s)
   return s;
 }
 
-static void SaveToFile(const std::string& data, const std::string& path)
+static void save_as_file(const std::string& data, const std::string& path)
 {
   std::ofstream o{path};
   o << data;
@@ -76,7 +76,7 @@ static std::string FetchTemporaryFile(const std::string& full_url, const bool ve
 {
   const auto filename   = ExtractTempFilename(full_url);
   const cpr::Response r = cpr::Get(cpr::Url{full_url}, cpr::VerifySsl(verify_ssl));
-  SaveToFile(r.text, filename);
+  save_as_file(r.text, filename);
 
   return filename;
 }
