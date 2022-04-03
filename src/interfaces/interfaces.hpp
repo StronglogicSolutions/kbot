@@ -25,7 +25,8 @@ enum Platform
   discord  = 0x02,
   blog     = 0x03,
   telegram = 0x04,
-  unknown  = 0x05
+  matrix   = 0x05,
+  unknown  = 0x06
 };
 
 static enum Platform get_platform(const std::string& name)
@@ -40,6 +41,8 @@ static enum Platform get_platform(const std::string& name)
     return Platform::blog;
   if (name == "Telegram")
     return Platform::telegram;
+  if (name == "Matrix")
+    return Platform::matrix;
   return Platform::unknown;
 }
 
@@ -55,6 +58,8 @@ static const std::string get_platform_name(Platform platform)
     return "Blog";
   if (platform == Platform::telegram)
     return "Telegram";
+  if (platform == Platform::matrix)
+    return "Matrix";
 
   return "";
 };
@@ -141,7 +146,7 @@ static const BotRequest CreateSuccessEvent(const BotRequest& previous_event)
   };
 }
 
-static const BotRequest CreateInfo(const std::string& info, const BotRequest& previous_event)
+static const BotRequest CreateInfo(const std::string& info, const std::string& type, const BotRequest& previous_event)
 {
   kbot::log("Creating info event");
   return BotRequest{
@@ -149,7 +154,7 @@ static const BotRequest CreateInfo(const std::string& info, const BotRequest& pr
     .event          = INFO_EVENT,
     .username       = previous_event.username,
     .data           = info,
-    .args           = previous_event.args,
+    .args           = type,
     .urls           = previous_event.urls,
     .id             = previous_event.id,
     .previous_event = previous_event.event

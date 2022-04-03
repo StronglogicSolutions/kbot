@@ -165,7 +165,7 @@ bool HandleEvent(BotRequest request)
     if (event == "telegram:rooms")
     {
       reply = false;
-      m_send_event_fn(CreateInfo(KeleqramBot::GetRooms(), request));
+      m_send_event_fn(CreateInfo(KeleqramBot::GetRooms(), "rooms", request));
     }
   }
   catch (const std::exception& e)
