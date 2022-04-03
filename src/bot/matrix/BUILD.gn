@@ -3,8 +3,8 @@ config("katrix") {
   include_dirs = [
     "//third_party/katrix/src",
     "//third_party/katrix/third_party/mtxclient/include",
-    "//third_party/katrix/build/_deps/coeurl-src/include"
-    "//third_party/json/include",
+    "//third_party/katrix/build/_deps/coeurl-src/include",
+    "//third_party/json/include"
   ]
 
   libs = [
