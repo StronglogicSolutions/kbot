@@ -146,7 +146,7 @@ static const BotRequest CreateSuccessEvent(const BotRequest& previous_event)
   };
 }
 
-static const BotRequest CreateInfo(const std::string& info, const BotRequest& previous_event)
+static const BotRequest CreateInfo(const std::string& info, const std::string& type, const BotRequest& previous_event)
 {
   kbot::log("Creating info event");
   return BotRequest{
@@ -154,7 +154,7 @@ static const BotRequest CreateInfo(const std::string& info, const BotRequest& pr
     .event          = INFO_EVENT,
     .username       = previous_event.username,
     .data           = info,
-    .args           = previous_event.args,
+    .args           = type,
     .urls           = previous_event.urls,
     .id             = previous_event.id,
     .previous_event = previous_event.event

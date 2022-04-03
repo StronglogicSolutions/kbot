@@ -58,9 +58,13 @@ public:
             m_send_event_fn((e) ? CreateErrorEvent(katrix::error_to_string(e), m_last_request) :
                                   CreateSuccessEvent(m_last_request));
           break;
-          case (katrix::ResponseType::info):
+          case (katrix::ResponseType::user_info):
             m_send_event_fn((e) ? CreateErrorEvent(katrix::error_to_string(e), m_last_request) :
-                                  CreateInfo(res, m_last_request));
+                                  CreateInfo(res, "presence", m_last_request));
+          break;
+          case (katrix::ResponseType::rooms):
+            m_send_event_fn((e) ? CreateErrorEvent(katrix::error_to_string(e), m_last_request) :
+                                  CreateInfo(res, "rooms", m_last_request));
           break;
           default:
             katrix::log("Unknown response");
@@ -97,7 +101,10 @@ public:
     try
     {
       if (request.event == "matrix:info")
-        katrix::KatrixBot::get_info();
+        katrix::KatrixBot::get_user_info();
+      else
+      if (request.event == "matrix:rooms")
+        katrix::KatrixBot::get_rooms();
       else
         katrix::KatrixBot::send_message(m_room_id, Message{request.data});
     }

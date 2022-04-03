@@ -275,7 +275,7 @@ virtual void loop() override
       if (request.event == INFO_EVENT)
       {
         kbot::log(platform + " sending info in respones to " + request.previous_event);
-        m_outbound_queue.emplace_back(std::make_unique<platform_info>(platform, request.data));
+        m_outbound_queue.emplace_back(std::make_unique<platform_info>(platform, request.data, request.args));
       }
       else
         SendEvent(request);
