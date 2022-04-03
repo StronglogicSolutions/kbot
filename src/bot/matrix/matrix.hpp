@@ -3,6 +3,7 @@
 #include <INIReader.h>
 #include "katrix.hpp"
 #include "interfaces/interfaces.hpp"
+#include "util/util.hpp"
 
 namespace katrix
 {
@@ -66,6 +67,14 @@ public:
             m_send_event_fn((e) ? CreateErrorEvent(katrix::error_to_string(e), m_last_request) :
                                   CreateInfo(res, "rooms", m_last_request));
           break;
+          case (katrix::ResponseType::file_created):
+            m_files.push_back(res);
+            if (m_files.size() == m_files_to_send)
+            {
+              m_files_to_send = 0;
+              HandleEvent(m_last_request);
+            }
+          break;
           default:
             katrix::log("Unknown response");
           break;
@@ -106,7 +115,21 @@ public:
       if (request.event == "matrix:rooms")
         katrix::KatrixBot::get_rooms();
       else
-        katrix::KatrixBot::send_message(m_room_id, Message{request.data});
+      {
+        if (m_files_to_send = request.urls.size())
+        {
+          for (const auto& url : request.urls)
+          {
+            auto filename = FetchTemporaryFile(url);
+            katrix::KatrixBot::upload(filename);
+          }
+        }
+        else
+        {
+          katrix::KatrixBot::send_message(m_room_id, Message{request.data}, m_files);
+          m_files.clear();
+        }
+      }
     }
     catch(const std::exception& e)
     {
@@ -139,8 +162,12 @@ public:
   }
 
 private:
+  using files_t = std::vector<std::string>;
+
   BrokerCallback m_send_event_fn;
   BotRequest     m_last_request;
   std::string    m_room_id;
+  files_t        m_files;
+  uint32_t       m_files_to_send;
 };
 } // namespace kbot
