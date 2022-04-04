@@ -80,7 +80,8 @@ public:
           break;
         }
       }},
-    m_room_id(katrix::GetRoomID())
+    m_room_id(katrix::GetRoomID()),
+    m_files_to_send(0)
   {}
 
   virtual void Init() override
