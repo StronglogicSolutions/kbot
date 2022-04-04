@@ -67,14 +67,12 @@ public:
             m_send_event_fn((e) ? CreateErrorEvent(katrix::error_to_string(e), m_last_request) :
                                   CreateInfo(res, "rooms", m_last_request));
           break;
-          // case (katrix::ResponseType::file_created):
-          //   m_files.push_back(res);
-          //   if (m_files.size() == m_files_to_send)
-          //   {
-          //     m_files_to_send = 0;
-          //     HandleEvent(m_last_request);
-          //   }
-          // break;
+          case (katrix::ResponseType::file_created):
+            katrix::log("File created");
+          break;
+          case (katrix::ResponseType::file_uploaded):
+            katrix::log("File uploaded");
+          break;
           default:
             katrix::log("Unknown response");
           break;
@@ -115,6 +113,8 @@ public:
     };
 
     m_last_request = request;
+
+    if (!katrix::KatrixBot::logged_in()) std::this_thread::sleep_for(std::chrono::milliseconds(300));
     try
     {
       if (request.event == "matrix:info")
