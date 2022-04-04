@@ -110,7 +110,7 @@ public:
     auto FetchFiles = [](auto urls)
     {
       std::vector<std::string> fetched_uris;
-      for (const auto& url : urls) fetched_uris.push_back(FetchTemporaryFile(url));
+      for (const auto& url : urls) if (!url.empty()) fetched_uris.push_back(FetchTemporaryFile(url));
       return fetched_uris;
     };
 
