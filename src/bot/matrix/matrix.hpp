@@ -67,14 +67,14 @@ public:
             m_send_event_fn((e) ? CreateErrorEvent(katrix::error_to_string(e), m_last_request) :
                                   CreateInfo(res, "rooms", m_last_request));
           break;
-          case (katrix::ResponseType::file_created):
-            m_files.push_back(res);
-            if (m_files.size() == m_files_to_send)
-            {
-              m_files_to_send = 0;
-              HandleEvent(m_last_request);
-            }
-          break;
+          // case (katrix::ResponseType::file_created):
+          //   m_files.push_back(res);
+          //   if (m_files.size() == m_files_to_send)
+          //   {
+          //     m_files_to_send = 0;
+          //     HandleEvent(m_last_request);
+          //   }
+          // break;
           default:
             katrix::log("Unknown response");
           break;
@@ -117,21 +117,10 @@ public:
         katrix::KatrixBot::get_rooms();
       else
       {
-        if (!request.urls.empty() && !m_files_to_send)
-          for (const auto& url : request.urls)
-          {
-            katrix::KatrixBot::upload(FetchTemporaryFile(url));
-            m_files_to_send++;
-          }
+        if (!request.urls.empty())
+          katrix::KatrixBot::send_media_message(m_room_id, {request.data}, request.urls);
         else
-        if (request.urls.size() == m_files.size())
-        {
-          katrix::KatrixBot::send_message(m_room_id, Message{request.data}, m_files);
-          m_files.clear();
-        }
-        else
-          log(std::string{"Was unable to run with " + std::to_string(request.urls.size()) +
-                          " request URLs and "      + std::to_string(m_files.size()) + " class files"});
+          katrix::KatrixBot::send_message(m_room_id, Message{request.data});
       }
     }
     catch(const std::exception& e)
