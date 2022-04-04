@@ -117,13 +117,8 @@ public:
       else
       {
         if (m_files_to_send = request.urls.size())
-        {
           for (const auto& url : request.urls)
-          {
-            auto filename = FetchTemporaryFile(url);
-            katrix::KatrixBot::upload(filename);
-          }
-        }
+            katrix::KatrixBot::upload(FetchTemporaryFile(url));
         else
         {
           katrix::KatrixBot::send_message(m_room_id, Message{request.data}, m_files);
