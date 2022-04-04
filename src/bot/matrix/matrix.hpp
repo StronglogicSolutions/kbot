@@ -107,6 +107,13 @@ public:
   {
     using Message = katrix::MessageType;
 
+    auto FetchFiles = [](auto urls)
+    {
+      std::vector<std::string> fetched_uris;
+      for (const auto& url : urls) fetched_uris.push_back(FetchTemporaryFile(url));
+      return fetched_uris;
+    };
+
     m_last_request = request;
     try
     {
@@ -118,7 +125,7 @@ public:
       else
       {
         if (!request.urls.empty())
-          katrix::KatrixBot::send_media_message(m_room_id, {request.data}, request.urls);
+          katrix::KatrixBot::send_media_message(m_room_id, {request.data}, FetchFiles(request.urls));
         else
           katrix::KatrixBot::send_message(m_room_id, Message{request.data});
       }
