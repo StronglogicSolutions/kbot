@@ -118,7 +118,10 @@ public:
       {
         if (!request.urls.empty() && !m_files_to_send)
           for (const auto& url : request.urls)
+          {
             katrix::KatrixBot::upload(FetchTemporaryFile(url));
+            m_files_to_send++;
+          }
         else
         if (request.urls.size() == m_files.size())
         {
