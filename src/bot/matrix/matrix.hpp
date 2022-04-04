@@ -116,14 +116,18 @@ public:
         katrix::KatrixBot::get_rooms();
       else
       {
-        if (m_files_to_send = request.urls.size())
+        if (!request.urls.empty() && !m_files_to_send)
           for (const auto& url : request.urls)
             katrix::KatrixBot::upload(FetchTemporaryFile(url));
         else
+        if (request.urls.size() == m_files.size())
         {
           katrix::KatrixBot::send_message(m_room_id, Message{request.data}, m_files);
           m_files.clear();
         }
+        else
+          log(std::string{"Was unable to run with " + std::to_string(request.urls.size()) +
+                          " request URLs and "      + std::to_string(m_files.size()) + " class files"});
       }
     }
     catch(const std::exception& e)
