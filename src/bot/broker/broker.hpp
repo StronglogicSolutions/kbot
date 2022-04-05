@@ -310,6 +310,7 @@ void SendEvent(const BotRequest& event)
     break;
     case (Platform::telegram):
       TGBot().HandleEvent(event);
+    break;
     case (Platform::matrix):
       MXBot().HandleEvent(event);
     break;

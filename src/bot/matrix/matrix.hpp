@@ -68,19 +68,18 @@ public:
                                   CreateInfo(res, "rooms", m_last_request));
           break;
           case (katrix::ResponseType::file_created):
-            m_files.push_back(res);
-            if (m_files.size() == m_files_to_send)
-            {
-              m_files_to_send = 0;
-              HandleEvent(m_last_request);
-            }
+            katrix::log("File created");
+          break;
+          case (katrix::ResponseType::file_uploaded):
+            katrix::log("File uploaded");
           break;
           default:
             katrix::log("Unknown response");
           break;
         }
       }},
-    m_room_id(katrix::GetRoomID())
+    m_room_id(katrix::GetRoomID()),
+    m_files_to_send(0)
   {}
 
   virtual void Init() override
@@ -106,7 +105,16 @@ public:
   {
     using Message = katrix::MessageType;
 
+    auto FetchFiles = [](auto urls)
+    {
+      std::vector<std::string> fetched_uris;
+      for (const auto& url : urls) if (!url.empty()) fetched_uris.push_back(FetchTemporaryFile(url));
+      return fetched_uris;
+    };
+
     m_last_request = request;
+
+    if (!katrix::KatrixBot::logged_in()) std::this_thread::sleep_for(std::chrono::milliseconds(300));
     try
     {
       if (request.event == "matrix:info")
@@ -116,14 +124,10 @@ public:
         katrix::KatrixBot::get_rooms();
       else
       {
-        if (m_files_to_send = request.urls.size())
-          for (const auto& url : request.urls)
-            katrix::KatrixBot::upload(FetchTemporaryFile(url));
+        if (!request.urls.empty())
+          katrix::KatrixBot::send_media_message(m_room_id, {request.data}, FetchFiles(request.urls));
         else
-        {
-          katrix::KatrixBot::send_message(m_room_id, Message{request.data}, m_files);
-          m_files.clear();
-        }
+          katrix::KatrixBot::send_message(m_room_id, Message{request.data});
       }
     }
     catch(const std::exception& e)
