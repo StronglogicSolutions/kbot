@@ -58,17 +58,22 @@ static void save_as_file(const std::string& data, const std::string& path)
 [[ maybe_unused ]]
 static std::string ExtractTempFilename(const std::string& full_url)
 {
-  static const char* TEMP_FILE{"temp_file"};
-  auto pos   = full_url.find_last_of("/");
-  std::string name = (pos == std::string::npos) ? full_url : full_url.substr(pos + 1);
+  auto FindProt  = [](auto s) { auto i = s.find_last_of("://"); return (i != s.npos) ? i + 1 : 0; };
+  auto FindQuery = [](auto s) { auto i = s.find_first_of('?');  return (i != s.npos) ? i : 0; };
+  auto FindExt   = [](auto s) { auto i = s.find_last_of('.');   return (i != s.npos) ? i : 0; };
+  auto SimpleURL = [FindQuery](auto s) {                                 return s.substr(0, FindQuery(s)); };
+  auto Filename  = [SimpleURL, FindProt, FindExt](auto full_url)
+  {
+    auto url       = SimpleURL(full_url);
+    auto uri       = url.substr(FindProt(url));
+    auto ext       = FindExt(uri);
+    auto sub_uri   = (ext) ? uri.substr(0, ext) : uri;
+    auto extension = uri.substr(ext);
+    auto sub_ext   = FindExt(sub_uri);
+    return (sub_ext) ? sub_uri.substr(sub_ext) + extension : sub_uri + extension;
+  };
 
-        auto ext_end  = full_url.find_first_of('?');
-             ext_end  = ext_end == std::string::npos ? full_url.size() : ext_end;
-  const auto url      = full_url.substr(0, ext_end);
-  const auto ext_beg  = url.find_last_of('.');
-  const auto ext_len  = (ext_beg != url.npos) ? (url.size() - ext_beg) : 0;
-  const auto filename = (ext_len > 0) ? name + url.substr(ext_beg, ext_len) : name;
-  return filename;
+  return Filename(full_url);
 }
 
 [[ maybe_unused ]]
