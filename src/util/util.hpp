@@ -58,9 +58,9 @@ static void save_as_file(const std::string& data, const std::string& path)
 [[ maybe_unused ]]
 static std::string ExtractTempFilename(const std::string& full_url)
 {
-  auto FindProt  = [](auto s) { auto i = s.find_last_of("://"); return (i != s.npos) ? i + 1 : 0; };
-  auto FindQuery = [](auto s) { auto i = s.find_first_of('?');  return (i != s.npos) ? i : 0; };
-  auto FindExt   = [](auto s) { auto i = s.find_last_of('.');   return (i != s.npos) ? i : 0; };
+  auto FindProt  = []         (auto s) { auto i = s.find_last_of("://"); return (i != s.npos) ? i + 1 : 0; };
+  auto FindQuery = []         (auto s) { auto i = s.find_first_of('?');  return (i != s.npos) ? i : 0;     };
+  auto FindExt   = []         (auto s) { auto i = s.find_last_of('.');   return (i != s.npos) ? i : 0;     };
   auto SimpleURL = [FindQuery](auto s) {                                 return s.substr(0, FindQuery(s)); };
   auto Filename  = [SimpleURL, FindProt, FindExt](auto full_url)
   {
