@@ -103,7 +103,7 @@ public:
 
   bool HandleEvent(BotRequest request)
   {
-    using Message = katrix::MessageType;
+    using Message = katrix::Msg_t;
 
     auto FetchFiles = [](auto urls)
     {
