@@ -56,25 +56,30 @@ static void save_as_file(const std::string& data, const std::string& path)
 }
 
 [[ maybe_unused ]]
-static std::string ExtractTempFilename(const std::string& full_url)
+static std::string ExtractFilename(const std::string& full_url)
 {
-  static const char* TEMP_FILE{"temp_file"};
-  auto pos   = full_url.find_last_of("/");
-  std::string name = (pos == std::string::npos) ? full_url : full_url.substr(pos + 1);
+  auto FindProt  = []         (const auto& s) { auto i = s.find_last_of("://"); return (i != s.npos) ? i + 1 : 0; };
+  auto FindQuery = []         (const auto& s) { auto i = s.find_first_of('?');  return (i != s.npos) ? i : 0;     };
+  auto FindExt   = []         (const auto& s) { auto i = s.find_last_of('.');   return (i != s.npos) ? i : 0;     };
+  auto SimpleURL = [FindQuery](const auto& s) {                                 return s.substr(0, FindQuery(s)); };
+  auto Filename  = [SimpleURL, FindProt, FindExt](const auto& full_url)
+  {
+    const auto url       = SimpleURL(full_url);
+    const auto uri       = url.substr(FindProt(url));
+    const auto ext       = FindExt(uri);
+    const auto sub_uri   = (ext) ? uri.substr(0, ext) : uri;
+    const auto extension = uri.substr(ext);
+    const auto sub_ext   = FindExt(sub_uri);
+    return (sub_ext) ? sub_uri.substr(sub_ext) + extension : sub_uri + extension;
+  };
 
-        auto ext_end  = full_url.find_first_of('?');
-             ext_end  = ext_end == std::string::npos ? full_url.size() : ext_end;
-  const auto url      = full_url.substr(0, ext_end);
-  const auto ext_beg  = url.find_last_of('.');
-  const auto ext_len  = (ext_beg != url.npos) ? (url.size() - ext_beg) : 0;
-  const auto filename = (ext_len > 0) ? name + url.substr(ext_beg, ext_len) : name;
-  return filename;
+  return Filename(full_url);
 }
 
 [[ maybe_unused ]]
 static std::string FetchTemporaryFile(const std::string& full_url, const bool verify_ssl = true)
 {
-  const auto filename   = ExtractTempFilename(full_url);
+  const auto filename   = ExtractFilename(full_url);
   const cpr::Response r = cpr::Get(cpr::Url{full_url}, cpr::VerifySsl(verify_ssl));
   save_as_file(r.text, filename);
 
