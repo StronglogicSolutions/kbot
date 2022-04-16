@@ -50,7 +50,8 @@ class TelegramBot : public kbot::Worker,
 public:
 TelegramBot()
 : kbot::Bot{keleqram::constants::USER},
-  ::keleqram::KeleqramBot{keleqram::GetToken()}
+  ::keleqram::KeleqramBot{keleqram::GetToken()},
+  m_retries(3)
 {}
 
 virtual void Init() override
@@ -60,8 +61,20 @@ virtual void Init() override
 
 virtual void loop() override
 {
-  while (m_is_running)
-    ::keleqram::KeleqramBot::Poll();
+  try
+  {
+    while (m_is_running)
+      ::keleqram::KeleqramBot::Poll();
+  }
+  catch(const std::exception& e)
+  {
+    log("Exception caught while polling for updates", e.what());
+    if (--m_retries)
+    {
+      std::cerr << "Telegram has reached maximum retries" << std::endl;
+      throw;
+    }
+  }
 }
 
 
@@ -203,6 +216,6 @@ virtual void Shutdown() override
 
 private:
 BrokerCallback m_send_event_fn;
-
+unsigned int   m_retries;
 };
 } // namespace kbot
