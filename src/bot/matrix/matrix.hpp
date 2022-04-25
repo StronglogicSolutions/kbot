@@ -79,7 +79,8 @@ public:
         }
       }},
     m_room_id(katrix::GetRoomID()),
-    m_files_to_send(0)
+    m_files_to_send(0),
+    m_retries(50)
   {}
 
   virtual void Init() override
@@ -114,7 +115,14 @@ public:
 
     m_last_request = request;
 
-    if (!katrix::KatrixBot::logged_in()) std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    if (!katrix::KatrixBot::logged_in())
+    {
+      log("Matrix still authenticating");
+      std::this_thread::sleep_for(std::chrono::milliseconds(300));
+      m_retries--;
+      HandleEvent(request);
+    }
+
     try
     {
       if (request.event == "matrix:info")
@@ -168,5 +176,6 @@ private:
   std::string    m_room_id;
   files_t        m_files;
   uint32_t       m_files_to_send;
+  uint32_t       m_retries;
 };
 } // namespace kbot
