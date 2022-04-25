@@ -33,15 +33,20 @@ m_socket_num{2},
 m_timeout   {0},
 m_retries   {0}
 {
-  m_rep_socket.bind(REP_ADDRESS);
-  Reset();
+  Reset(true);
 }
 
-void Reset()
+void Reset(bool rep = false)
 {
   log("Resetting REQ socket");
+  m_req_socket = zmq::socket_t{m_context, ZMQ_REQ};
   m_req_socket.connect(REQ_ADDRESS);
   m_req_ready = true;
+  if (rep)
+  {
+    m_rep_socket = zmq::socket_t{m_context, ZMQ_REP};
+    m_rep_socket.bind(REP_ADDRESS);
+  }
 }
 
 bool ReceiveIPCMessage(const bool use_req = true)
@@ -131,8 +136,6 @@ std::vector<u_ipc_msg_ptr> GetRXMessages()
 
 bool REQReady()
 {
-  if (!m_req_ready && (++m_retries == MAX_RETRIES))
-    Reset();
   return m_req_ready;
 }
 
