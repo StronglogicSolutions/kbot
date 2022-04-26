@@ -64,7 +64,8 @@ static std::string ExtractFilename(const std::string& full_url)
   auto SimpleURL = [FindQuery](const auto& s) {                                 return s.substr(0, FindQuery(s)); };
   auto Filename  = [SimpleURL, FindProt, FindExt](const auto& full_url)
   {
-    const auto url       = SimpleURL(full_url);
+    const auto s_url     = SimpleURL(full_url);
+    const auto url       = (s_url.empty()) ? full_url : s_url;
     const auto uri       = url.substr(FindProt(url));
     const auto ext       = FindExt(uri);
     const auto sub_uri   = (ext) ? uri.substr(0, ext) : uri;

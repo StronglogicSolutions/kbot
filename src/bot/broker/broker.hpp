@@ -19,6 +19,7 @@ using bot_ptr       = Bot*;
 using BotPool       = std::vector<bot_ptr>;
 using EventQueue    = std::deque<BotRequest>;
 using u_ipc_msg_ptr = ipc_message::u_ipc_msg_ptr;
+using ipc_fail_fn   = std::function<void()>;
 
 static const uint8_t IPC_COMMAND_INDEX{0x00};
 static const uint8_t IPC_PAYLOAD_INDEX{0x01};
@@ -93,7 +94,8 @@ Broker* g_broker;
 class Broker : public Worker
 {
 public:
-Broker()
+Broker(ipc_fail_fn _cb)
+: m_on_ipc_fail(_cb)
 {
   m_pool.emplace_back(&m_yt_bot);
   m_pool.emplace_back(&m_md_bot);
@@ -109,7 +111,7 @@ Broker()
   TGBot().SetCallback(&ProcessEvent);
   MXBot().SetCallback(&ProcessEvent);
 
-  // YTBot().Init();
+  YTBot().Init();
   MDBot().Init();
   DCBot().Init();
   BLBot().Init();
@@ -156,8 +158,17 @@ void ProcessMessage(u_ipc_msg_ptr message)
   if (message->type() == ::constants::IPC_PLATFORM_TYPE)
     SendEvent(CreatePlatformEvent(static_cast<platform_message*>(message.get())));
   else
-  if (message->type() == ::constants::IPC_OK_TYPE)
-    log("Recv IPC OK");
+  if (message->type() == ::constants::IPC_KEEPALIVE_TYPE)
+  {
+    m_daemon.reset();
+    if (m_daemon.validate())
+      m_outbound_queue.emplace_back(std::make_unique<keepalive>());
+    else
+    {
+      m_daemon.stop();
+      m_on_ipc_fail();
+    }
+  }
 }
 
 /**
@@ -366,10 +377,11 @@ const bool Poll() const
 
 u_ipc_msg_ptr DeQueue()
 {
+  auto is_keepalive = [](auto type) { return type == ::constants::IPC_KEEPALIVE_TYPE; };
+
   u_ipc_msg_ptr message = std::move(m_outbound_queue.front());
-  kbot::log("Dequeuing message: ", ::constants::IPC_MESSAGE_NAMES.at(message->type()));
-  if (message->type() == ::constants::IPC_PLATFORM_TYPE)
-    kbot::log("Content: ", static_cast<platform_message*>(message.get())->content().c_str());
+  if (!is_keepalive(message->type()))
+    kbot::log("Dequeuing =>", message->to_string().c_str());
   m_outbound_queue.pop_front();
   return std::move(message);
 }
@@ -418,6 +430,8 @@ kbot::DiscordBot           m_dc_bot;
 kbot::BlogBot              m_bg_bot;
 kbot::TelegramBot          m_tg_bot;
 kbot::MatrixBot            m_mx_bot;
+session_daemon             m_daemon;
+ipc_fail_fn                m_on_ipc_fail;
 };
 
 } // namespace kbot

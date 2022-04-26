@@ -78,10 +78,11 @@ uint32_t                 cmd{0x00};
 
 const std::string to_string() const
 {
+  auto text = (data.size() > 30) ? data.substr(0, 30) : data;
   return "Platform:       " + get_platform_name(platform) + '\n' +
          "Event:          " + event + '\n' +
          "Username:       " + username + '\n' +
-         "Data:           " + data + '\n' +
+         "Data:           " + text + '\n' +
          "Urls:           " + url_string() + '\n' +
          "Id:             " + id + '\n' +
          "Previous_event: " + previous_event + '\n' +

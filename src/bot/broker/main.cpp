@@ -15,33 +15,25 @@ int main(int argc, char** argv)
 
   signal(SIGPIPE, sig_pipe_handler);
 
-  kbot::Broker      broker{};
   kbot::ChannelPort channel_port;
+  kbot::Broker      broker{[&channel_port]() { channel_port.Reset(true); }};
 
   broker.run();
 
   for (;;)
   {
     const uint8_t mask = channel_port.Poll();
-
     if (kbot::HasRequest(mask))
     {
-      kbot::log("In: REQUEST");
       channel_port.ReceiveIPCMessage(false);
       channel_port.SendIPCMessage(std::make_unique<okay_message>(), false);
     }
 
     if (kbot::HasReply(mask))
-    {
-      kbot::log("In: REPLY");
       channel_port.ReceiveIPCMessage(true);
-    }
 
     if (broker.Poll() && channel_port.REQReady())
-    {
-      kbot::log("Out: REQUEST");
       channel_port.SendIPCMessage(std::move(broker.DeQueue()), true);
-    }
 
     for (auto&& message : channel_port.GetRXMessages())
       broker.ProcessMessage(std::move(message));
