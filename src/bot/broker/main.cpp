@@ -80,6 +80,7 @@ void Transmit()
     {
       log("TX misses exceeded");
       ResetChannel();
+      tx_misses = 0;
     }
   }
 }
