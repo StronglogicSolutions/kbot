@@ -44,6 +44,7 @@ void Reset(bool rep = false)
   m_req_ready = true;
   if (rep)
   {
+    log("Resetting REP socket");
     m_rep_socket = zmq::socket_t{m_context, ZMQ_REP};
     m_rep_socket.bind(REP_ADDRESS);
   }

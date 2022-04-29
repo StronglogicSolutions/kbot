@@ -111,7 +111,7 @@ Broker(ipc_fail_fn _cb)
   TGBot().SetCallback(&ProcessEvent);
   MXBot().SetCallback(&ProcessEvent);
 
-  YTBot().Init();
+  // YTBot().Init();
   MDBot().Init();
   DCBot().Init();
   BLBot().Init();
