@@ -12,7 +12,7 @@ static void sig_pipe_handler(int signal)
 namespace kbot {
 struct SocketState
 {
-static const uint32_t TX_MAX_MISSES = 20;
+static const uint32_t TX_MAX_MISSES = 100;
 
 SocketState()
 : broker([this]() { ResetChannel(true); })
@@ -112,7 +112,7 @@ int main(int argc, char** argv)
     std::mutex                   mtx;
     std::condition_variable      condition;
     std::unique_lock<std::mutex> lock{mtx};
-    condition.wait_for(lock, std::chrono::milliseconds(300));
+    condition.wait_for(lock, std::chrono::milliseconds(50));
   }
 
   state.Shutdown();
