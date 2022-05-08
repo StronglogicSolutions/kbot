@@ -54,6 +54,12 @@ TelegramBot()
   m_retries(3)
 {}
 
+TelegramBot& operator=(const TelegramBot& bot)
+{
+  m_retries = bot.m_retries;
+  return *this;
+}
+
 virtual void Init() override
 {
   return;
@@ -61,8 +67,12 @@ virtual void Init() override
 
 virtual void loop() override
 {
+  // static int32_t i = 0;
   try
   {
+    // if (++i % 10)
+    //   m_send_event_fn(BotRequest{Platform::telegram, kbot::RESTART_EVENT});
+    // else
     while (m_is_running)
       ::keleqram::KeleqramBot::Poll();
   }
@@ -71,8 +81,7 @@ virtual void loop() override
     log("Exception caught while polling for updates", e.what());
     if (--m_retries)
     {
-      std::cerr << "Telegram has reached maximum retries" << std::endl;
-      throw;
+      m_send_event_fn(BotRequest{Platform::telegram, kbot::RESTART_EVENT});
     }
   }
 }

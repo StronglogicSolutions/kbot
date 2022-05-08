@@ -97,12 +97,13 @@ public:
 Broker(ipc_fail_fn _cb)
 : m_on_ipc_fail(_cb)
 {
-  m_pool.emplace_back(&m_yt_bot);
-  m_pool.emplace_back(&m_md_bot);
-  m_pool.emplace_back(&m_dc_bot);
-  m_pool.emplace_back(&m_bg_bot);
-  m_pool.emplace_back(&m_tg_bot);
-  m_pool.emplace_back(&m_mx_bot);
+  m_pool.resize(6);
+  m_pool.at(constants::YOUTUBE_BOT_INDEX)  = &m_yt_bot;
+  m_pool.at(constants::MASTODON_BOT_INDEX) = &m_md_bot;
+  m_pool.at(constants::DISCORD_BOT_INDEX)  = &m_dc_bot;
+  m_pool.at(constants::BLOG_BOT_INDEX)     = &m_bg_bot;
+  m_pool.at(constants::TELEGRAM_BOT_INDEX) = &m_tg_bot;
+  m_pool.at(constants::MATRIX_BOT_INDEX)   = &m_mx_bot;
 
   YTBot().SetCallback(&ProcessEvent);
   MDBot().SetCallback(&ProcessEvent);
@@ -111,7 +112,7 @@ Broker(ipc_fail_fn _cb)
   TGBot().SetCallback(&ProcessEvent);
   MXBot().SetCallback(&ProcessEvent);
 
-  YTBot().Init();
+  // YTBot().Init();
   MDBot().Init();
   DCBot().Init();
   BLBot().Init();
@@ -208,6 +209,55 @@ void run()
   Worker::start();
 }
 
+void restart_bot(Platform platform)
+{
+  switch (platform)
+  {
+    case Platform::youtube:
+      m_yt_bot = kbot::YouTubeBot{};
+      m_pool.at(constants::YOUTUBE_BOT_INDEX)  = &m_yt_bot;
+      YTBot().SetCallback(&ProcessEvent);
+      YTBot().Init();
+      YTBot().Start();
+    break;
+    case Platform::mastodon:
+      m_md_bot = kbot::MastodonBot{};
+      m_pool.at(constants::MASTODON_BOT_INDEX)  = &m_md_bot;
+      MDBot().SetCallback(&ProcessEvent);
+      MDBot().Init();
+      MDBot().Start();
+    break;
+    case Platform::discord:
+      m_dc_bot = kbot::DiscordBot{};
+      m_pool.at(constants::DISCORD_BOT_INDEX)  = &m_dc_bot;
+      DCBot().SetCallback(&ProcessEvent);
+      DCBot().Init();
+      DCBot().Start();
+    break;
+    case Platform::blog:
+      m_bg_bot = kbot::BlogBot{};
+      m_pool.at(constants::BLOG_BOT_INDEX)  = &m_bg_bot;
+      BLBot().SetCallback(&ProcessEvent);
+      BLBot().Init();
+      BLBot().Start();
+    break;
+    case Platform::telegram:
+      m_tg_bot = kbot::TelegramBot{};
+      m_pool.at(constants::TELEGRAM_BOT_INDEX) = &m_tg_bot;
+      MXBot().SetCallback(&ProcessEvent);
+      MXBot().Init();
+      MXBot().Start();
+    break;
+    case Platform::matrix:
+      m_mx_bot = kbot::MatrixBot{};
+      m_pool.at(constants::MATRIX_BOT_INDEX) = &m_mx_bot;
+      MXBot().SetCallback(&ProcessEvent);
+      MXBot().Init();
+      MXBot().Start();
+    break;
+  }
+}
+
 /**
  * @brief
  *
@@ -271,6 +321,15 @@ virtual void loop() override
                                                                        request.id,
                                                                        request.username,
                                                                        request.data));
+      }
+      else
+      if (request.event == "bot:restart")
+      {
+        kbot::log(platform + " will be restarted");
+        m_outbound_queue.emplace_back(std::make_unique<platform_info>(platform,
+                                                                      "restart",
+                                                                       "info"));
+        restart_bot(request.platform);
       }
       else
       if (request.event == "bot:request")

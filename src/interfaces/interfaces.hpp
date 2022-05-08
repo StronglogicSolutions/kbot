@@ -131,6 +131,7 @@ static const bool SHOULD_REPOST{true};
 static const bool SHOULD_NOT_REPOST{false};
 static const std::string SUCCESS_EVENT{"bot:success"};
 static const std::string INFO_EVENT   {"bot:info"};
+static const std::string RESTART_EVENT{"bot:restart"};
 
 static const BotRequest CreateSuccessEvent(const BotRequest& previous_event)
 {
