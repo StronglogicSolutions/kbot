@@ -27,7 +27,14 @@ void ResetChannel(bool both_sockets = false)
 
 void Poll()
 {
-  const uint8_t mask  = channel.Poll();
+  uint8_t mask;
+
+  {
+    std::mutex                   mtx;
+    std::unique_lock<std::mutex> lock{mtx};
+    mask = channel.Poll();
+  }
+
   broker_has_messages = broker.Poll();
   has_req             = HasRequest(mask);
   has_rep             = HasReply(mask);
@@ -108,11 +115,6 @@ int main(int argc, char** argv)
     state.ProcessChannel();
     state.Transmit();
     state.ProcessRX();
-
-    std::mutex                   mtx;
-    std::condition_variable      condition;
-    std::unique_lock<std::mutex> lock{mtx};
-    condition.wait_for(lock, std::chrono::milliseconds(50));
   }
 
   state.Shutdown();
