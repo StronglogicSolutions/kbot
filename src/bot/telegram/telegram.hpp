@@ -67,19 +67,21 @@ virtual void Init() override
 
 virtual void loop() override
 {
-  // static int32_t i = 0;
+  static int32_t i = 0;
   try
   {
-    // if (++i % 10)
-    //   m_send_event_fn(BotRequest{Platform::telegram, kbot::RESTART_EVENT});
-    // else
     while (m_is_running)
-      ::keleqram::KeleqramBot::Poll();
+    {
+      if (++i % 10 == 0)
+        m_send_event_fn(BotRequest{Platform::telegram, kbot::RESTART_EVENT});
+      else
+        ::keleqram::KeleqramBot::Poll();
+    }
   }
   catch(const std::exception& e)
   {
     log("Exception caught while polling for updates", e.what());
-    if (--m_retries)
+    if (!--m_retries)
     {
       m_send_event_fn(BotRequest{Platform::telegram, kbot::RESTART_EVENT});
     }
