@@ -1,4 +1,3 @@
-
 executable("blog_bot") {
   public_configs = [
     "//src/bot/youtube:inih",
@@ -13,10 +12,7 @@ executable("blog_bot") {
   ]
 
   libs = [
-    "crypto",
-    "cpr",
-    "curl",
-    "pthread"
+    "cpr"
   ]
 
   sources = [

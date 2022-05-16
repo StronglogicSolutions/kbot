@@ -85,6 +85,7 @@ public:
 
   virtual void Init() override
   {
+    kbot::log("Katrix logging in");
     katrix::KatrixBot::login();
   }
 
@@ -92,6 +93,7 @@ public:
   {
     if (katrix::KatrixBot::logged_in())
     {
+      kbot::log("Katrix not logged in yet");
       while (IsRunning())
         katrix::KatrixBot::run();
     }

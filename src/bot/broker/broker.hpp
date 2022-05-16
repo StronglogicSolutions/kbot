@@ -5,7 +5,7 @@
 #include <condition_variable>
 
 #include "bot/mastodon/mastodon.hpp"
-#include "bot/youtube/youtube.hpp"
+// #include "bot/youtube/youtube.hpp"
 #include "bot/discord/discord.hpp"
 #include "bot/telegram/telegram.hpp"
 #include "bot/matrix/matrix.hpp"
@@ -97,21 +97,21 @@ public:
 Broker(ipc_fail_fn _cb)
 : m_on_ipc_fail(_cb)
 {
-  m_pool.emplace_back(&m_yt_bot);
+  m_pool.emplace_back(nullptr);
   m_pool.emplace_back(&m_md_bot);
   m_pool.emplace_back(&m_dc_bot);
   m_pool.emplace_back(&m_bg_bot);
   m_pool.emplace_back(&m_tg_bot);
   m_pool.emplace_back(&m_mx_bot);
 
-  YTBot().SetCallback(&ProcessEvent);
+  // YTBot().SetCallback(&ProcessEvent);
   MDBot().SetCallback(&ProcessEvent);
   DCBot().SetCallback(&ProcessEvent);
   BLBot().SetCallback(&ProcessEvent);
   TGBot().SetCallback(&ProcessEvent);
   MXBot().SetCallback(&ProcessEvent);
 
-  YTBot().Init();
+  // YTBot().Init();
   MDBot().Init();
   DCBot().Init();
   BLBot().Init();
@@ -214,11 +214,12 @@ void run()
  */
 virtual void loop() override
 {
-  YTBot().Start();
+  // YTBot().Start();
   MDBot().Start();
   DCBot().Start();
   BLBot().Start();
   TGBot().Start();
+  MXBot().Start();
 
   while (Worker::m_is_running)
   {
@@ -226,8 +227,9 @@ virtual void loop() override
       m_condition.wait(lock,
         [this]()
         {
-          return (YTBot().IsRunning() || MDBot().IsRunning() || DCBot().IsRunning() ||
-                  BLBot().IsRunning() || TGBot().IsRunning());
+          return (//YTBot().IsRunning() ||
+                  MDBot().IsRunning() || DCBot().IsRunning() ||
+                  BLBot().IsRunning() || TGBot().IsRunning() || MXBot().IsRunning());
         }
       );
     m_condition.notify_one();
@@ -348,14 +350,15 @@ bool Shutdown()
     Bot& tg_bot       = TGBot();
     Bot& mx_bot       = MXBot();
 
-    youtube_bot .Shutdown();
+    // youtube_bot .Shutdown();
     mastodon_bot.Shutdown();
     discord_bot .Shutdown();
     blog_bot    .Shutdown();
     tg_bot      .Shutdown();
     mx_bot      .Shutdown();
 
-    while (youtube_bot.IsRunning() || mastodon_bot.IsRunning() || discord_bot.IsRunning() ||
+    while (//youtube_bot.IsRunning() ||
+              mastodon_bot.IsRunning() || discord_bot.IsRunning() ||
               blog_bot.IsRunning() ||       tg_bot.IsRunning() || mx_bot.IsRunning())
 
     Worker::stop();
@@ -424,7 +427,7 @@ std::deque<u_ipc_msg_ptr>  m_outbound_queue;
 bool                       m_bots_active;
 std::mutex                 m_mutex;
 std::condition_variable    m_condition;
-kbot::YouTubeBot           m_yt_bot;
+// kbot::YouTubeBot           m_yt_bot;
 kbot::MastodonBot          m_md_bot;
 kbot::DiscordBot           m_dc_bot;
 kbot::BlogBot              m_bg_bot;

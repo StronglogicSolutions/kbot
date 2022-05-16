@@ -15,6 +15,13 @@ config("psql_config") {
   ]
 }
 
+config("customcpr") {
+  include_dirs = [
+    "/usr/local/include/cpr"
+  ]
+  libs = ["/usr/local/lib/libcpr.so"]
+}
+
 source_set("korean") {
   public_configs = [
     ":inih",
@@ -67,8 +74,11 @@ config("html") {
 }
 
 config("ktube") {
-  include_dirs = ["//third_party/ktube/src", "//third_party/kjson",
-   "//third_party/ktube/third_party/kjson"]
+  include_dirs = [
+    "//third_party/ktube/src",
+    "//third_party/ktube/third_party/kjson"
+  ]
+
   libs = ["//third_party/ktube/out/libktube_lib.so"]
 }
 
@@ -90,7 +100,6 @@ group("knlp_lib") {
 }
 
 source_set("youtube_bot_sources") {
-
   public_configs = [
     ":html",
     ":inih",
@@ -98,7 +107,8 @@ source_set("youtube_bot_sources") {
     ":ktube",
     ":knlp",
     ":process_executor",
-    ":psql_config"
+    ":psql_config",
+    # ":customcpr"
   ]
   deps = [
     ":ini_reader",
@@ -111,13 +121,25 @@ source_set("youtube_bot_sources") {
     "//third_party/",
   ]
   libs = [
-    "pthread",
-    "crypto",
-    "cpr",
-    "curl",
+    "cpr"
   ]
   sources = [
     "youtube.cpp",
   ]
 }
 
+
+executable("youtube_bot") {
+  public_deps = [
+    ":youtube_bot_sources"
+  ]
+
+  include_dirs = [
+    "//src",
+    "//third_party/json/include",
+  ]
+
+  sources = [
+    "main.cpp"
+  ]
+}

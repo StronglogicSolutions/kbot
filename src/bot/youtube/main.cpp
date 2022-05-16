@@ -1,5 +1,4 @@
-#include <iostream>
-#include "bot/youtube/youtube.hpp"
+#include "youtube.hpp"
 
 static void StripWrappingQuotes(std::string& s)
 {
