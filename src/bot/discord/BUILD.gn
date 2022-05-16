@@ -46,10 +46,7 @@ deps = [
 ]
 
 libs = [
-  "crypto",
-  "cpr",
-  "curl",
-  "pthread"
+  "cpr"
 ]
 
 sources = [

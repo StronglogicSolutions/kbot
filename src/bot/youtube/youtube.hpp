@@ -9,7 +9,7 @@
 
 #include <interfaces/interfaces.hpp>
 #include <api/api.hpp>
-#include <api/korean/korean.hpp>
+// #include <api/korean/korean.hpp>
 
 #include <ktube/ktube.hpp>
 #include <psqlorm.hpp>
@@ -59,7 +59,7 @@ public:
 
 private:
   YouTubeDataAPI           m_api;
-  korean::KoreanAPI        m_korean_api;
+  // korean::KoreanAPI        m_korean_api;
   bool                     m_is_own_livestream;
   bool                     m_has_promoted;
   clock_t                  m_time_value;

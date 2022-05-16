@@ -112,7 +112,7 @@ Broker(ipc_fail_fn _cb)
   TGBot().SetCallback(&ProcessEvent);
   MXBot().SetCallback(&ProcessEvent);
 
-  // YTBot().Init();
+  YTBot().Init();
   MDBot().Init();
   DCBot().Init();
   BLBot().Init();
@@ -244,9 +244,9 @@ void restart_bot(Platform platform)
     case Platform::telegram:
       m_tg_bot = kbot::TelegramBot{};
       m_pool.at(constants::TELEGRAM_BOT_INDEX) = &m_tg_bot;
-      MXBot().SetCallback(&ProcessEvent);
-      MXBot().Init();
-      MXBot().Start();
+      TGBot().SetCallback(&ProcessEvent);
+      TGBot().Init();
+      TGBot().Start();
     break;
     case Platform::matrix:
       m_mx_bot = kbot::MatrixBot{};
@@ -269,6 +269,7 @@ virtual void loop() override
   DCBot().Start();
   BLBot().Start();
   TGBot().Start();
+  MXBot().Start();
 
   while (Worker::m_is_running)
   {
@@ -277,7 +278,7 @@ virtual void loop() override
         [this]()
         {
           return (YTBot().IsRunning() || MDBot().IsRunning() || DCBot().IsRunning() ||
-                  BLBot().IsRunning() || TGBot().IsRunning());
+                  BLBot().IsRunning() || TGBot().IsRunning() || MXBot().IsRunning());
         }
       );
     m_condition.notify_one();
