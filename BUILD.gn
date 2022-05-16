@@ -8,34 +8,8 @@ config("cppzmq") {
   ]
 }
 
-executable("youtube_bot") {
-  public_configs = [ ":cppzmq" ]
-
-  public_deps = [
-    "//src/bot/youtube:youtube_bot_sources"
-  ]
-
-  include_dirs = [
-    "//src",
-    "//third_party/json/include",
-  ]
-
-  libs = [
-    "pthread",
-    "crypto",
-    "cpr",
-    "curl",
-    "zmq"
-  ]
-
-
-  sources = [
-    "//src/main.cpp",
-  ]
-}
-
 all_executables = [
-  ":youtube_bot",
+  "//src/bot/youtube:youtube_bot",
   "//src/bot/mastodon:mastodon_bot",
   "//src/bot/discord:discord_bot",
   "//src/bot/broker:broker",

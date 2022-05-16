@@ -29,12 +29,12 @@ include_dirs = [
 ]
 
 deps = [
-  "//src/bot/mastodon:kstodon_lib",
+  "//src/bot/matrix:katrix_lib",
   "//src/bot/youtube:ktube_lib",
   "//src/bot/discord:kscord_lib",
+  "//src/bot/mastodon:kstodon_lib",
   "//src/bot/telegram:keleqram_lib",
   "//src/bot/youtube:youtube_bot_sources",
-  "//src/bot/matrix:katrix_lib"
 ]
 
 sources = [
