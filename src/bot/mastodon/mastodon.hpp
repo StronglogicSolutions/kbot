@@ -108,12 +108,10 @@ bool HandleEvent(BotRequest request) {
     else
     if (event == "platform:repost")
     {
-      // kstodon::Status          status{request.data};
-      // std::vector<std::string> urls = (request.urls.empty()) ?
-      //                                   std::vector<std::string>{} :
-      //                                   std::vector<std::string>{request.urls.front()};
-      // error = !PostStatus(status, urls);
-      (void)(0);
+      kstodon::Status          status{request.data};
+      std::vector<std::string> urls = (request.urls.empty()) ? std::vector<std::string>{} :
+                                                               std::vector<std::string>{request.urls.front()};
+      error = !PostStatus(status, urls);
     }
   }
 
