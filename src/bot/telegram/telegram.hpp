@@ -71,12 +71,7 @@ virtual void loop() override
   try
   {
     while (m_is_running)
-    {
-      if (++i % 10 == 0)
-        m_send_event_fn(BotRequest{Platform::telegram, kbot::RESTART_EVENT});
-      else
-        ::keleqram::KeleqramBot::Poll();
-    }
+      ::keleqram::KeleqramBot::Poll();
   }
   catch(const std::exception& e)
   {
