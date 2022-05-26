@@ -188,6 +188,12 @@ bool HandleEvent(BotRequest request)
       reply = false;
       m_send_event_fn(CreateInfo(KeleqramBot::GetRooms(), "rooms", request));
     }
+    else
+    if (event == "telegram:restart")
+    {
+      reply = false;
+      m_send_event_fn(BotRequest{Platform::telegram, kbot::RESTART_EVENT});
+    }
   }
   catch (const std::exception& e)
   {
