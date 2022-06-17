@@ -82,6 +82,8 @@ virtual void loop() override
       m_send_event_fn(BotRequest{Platform::telegram, kbot::RESTART_EVENT});
       m_retries = keleqram::constants::MAX_FAILURE_LIMIT;
     }
+    else
+     loop();
   }
 }
 
