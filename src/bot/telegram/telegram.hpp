@@ -68,15 +68,18 @@ virtual void Init() override
 
 virtual void loop() override
 {
+  Worker::m_is_running = true;
   static int32_t i = 0;
   try
   {
     while (m_is_running)
       ::keleqram::KeleqramBot::Poll();
+    log("Telegram worker is no longer running");
   }
   catch(const std::exception& e)
   {
     log("Exception caught while polling for updates", e.what());
+
     if (!--m_retries)
     {
       m_send_event_fn(BotRequest{Platform::telegram, kbot::RESTART_EVENT});
