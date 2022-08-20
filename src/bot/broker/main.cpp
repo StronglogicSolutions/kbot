@@ -32,8 +32,7 @@ void Poll()
   {
     std::mutex                   mtx;
     std::unique_lock<std::mutex> lock{mtx};
-    if (mask = channel.Poll())
-      log("Channel port can receive");
+    mask = channel.Poll();
   }
 
   broker_has_messages = broker.Poll();
@@ -55,15 +54,9 @@ void ChannelSend()
 void ProcessChannel()
 {
   if (has_response)
-  {
-    log("Receiving response");
     ReceiveResponse();
-  }
   if (has_request)
-  {
-    log("Receiving request");
     ReceiveRequest();
-  }
 }
 
 void ProcessRX()

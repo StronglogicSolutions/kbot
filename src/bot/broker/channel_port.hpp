@@ -49,8 +49,6 @@ bool ReceiveIPCMessage(const bool is_request = true)
 
   if (identity.empty())
     return false;
-  std::string id_message{"Received message from " + identity.to_string()};
-  log(id_message);
 
   std::vector<ipc_message::byte_buffer> received_message{};
   zmq::message_t                        message;
