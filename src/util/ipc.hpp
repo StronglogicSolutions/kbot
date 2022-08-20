@@ -1,741 +1,592 @@
 #pragma once
+
 #include <string>
-#include <nlohmann/json.hpp>
-static const std::string_view APP_NAME         = "kserver";
-static       int              APP_NAME_LENGTH  = 7;
-
-std::string get_cwd() {
-  char *working_dir_path = realpath(".", NULL);
-  return std::string{working_dir_path};
-}
-
-std::string get_executable_cwd() {
-  std::string full_path{realpath("/proc/self/exe", NULL)};
-  return full_path.substr(0, full_path.size() - (APP_NAME_LENGTH  + 1));
-}
-
-int findIndexAfter(std::string s, int pos, char c) {
-  for (uint8_t i = pos; i < s.size(); i++) {
-    if (s.at(i) == c) {
-      return i;
-    }
-  }
-  return -1;
-}
+#include <string_view>
+#include <vector>
+#include <memory>
+#include <unordered_map>
+#include <map>
+#include <thread>
 
 /**
- * JSON Tools
+
+            ┌───────────────────────────────────────────────────────────┐
+            │░░░░░░░░░░░░░░░░░░░░░ PROTOCOL ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+            │░░░░░░░░        1. Empty              ░░░░░░░░░░░░░░░░░░░░░░░│
+            │░░░░░░░░        2. Type               ░░░░░░░░░░░░░░░░░░░░░░░│
+            │░░░░░░░░        3. Data               ░░░░░░░░░░░░░░░░░░░░░░░│
+            │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
+            └───────────────────────────────────────────────────────────┘
  */
 
-std::string getJsonString(std::string s) {
-  Document d;
-  d.Parse(s.c_str());
-  StringBuffer buffer;
-  PrettyWriter<StringBuffer> writer(buffer);
-  d.Accept(writer);
-  return buffer.GetString();
+namespace constants {
+static const uint8_t IPC_OK_TYPE         {0x00};
+static const uint8_t IPC_KEEPALIVE_TYPE  {0x01};
+static const uint8_t IPC_KIQ_MESSAGE     {0x02};
+static const uint8_t IPC_PLATFORM_TYPE   {0x03};
+static const uint8_t IPC_PLATFORM_ERROR  {0x04};
+static const uint8_t IPC_PLATFORM_REQUEST{0x05};
+static const uint8_t IPC_PLATFORM_INFO   {0x06};
+
+static const std::unordered_map<uint8_t, const char*> IPC_MESSAGE_NAMES{
+  {IPC_OK_TYPE,          "IPC_OK_TYPE"},
+  {IPC_KEEPALIVE_TYPE,   "IPC_KEEPALIVE_TYPE"},
+  {IPC_KIQ_MESSAGE,      "IPC_KIQ_MESSAGE"},
+  {IPC_PLATFORM_TYPE,    "IPC_PLATFORM_TYPE"},
+  {IPC_PLATFORM_ERROR,   "IPC_PLATFORM_ERROR"},
+  {IPC_PLATFORM_REQUEST, "IPC_PLATFORM_REQUEST"},
+  {IPC_PLATFORM_INFO,    "IPC_PLATFORM_INFO"}
+};
+
+namespace index {
+static const uint8_t EMPTY     = 0x00;
+static const uint8_t TYPE      = 0x01;
+static const uint8_t PLATFORM  = 0x02;
+static const uint8_t ID        = 0x03;
+static const uint8_t INFO      = 0x03;
+static const uint8_t INFO_TYPE = 0x04;
+static const uint8_t USER      = 0x04;
+static const uint8_t DATA      = 0x05;
+static const uint8_t URLS      = 0x06;
+static const uint8_t REQ_ARGS  = 0x06;
+static const uint8_t REPOST    = 0x07;
+static const uint8_t ARGS      = 0x08;
+static const uint8_t CMD       = 0x09;
+static const uint8_t KIQ_DATA  = 0x02;
+static const uint8_t ERROR     = 0x05;
+} // namespace index
+
+static const uint8_t TELEGRAM_COMMAND_INDEX = 0x00;
+static const uint8_t MASTODON_COMMAND_INDEX = 0x01;
+static const uint8_t DISCORD_COMMAND_INDEX  = 0x02;
+static const uint8_t YOUTUBE_COMMAND_INDEX  = 0x03;
+static const uint8_t NO_COMMAND_INDEX       = 0x04;
+
+static const char*   IPC_COMMANDS[]{
+"telegram:messages",
+"mastodon:comments",
+"discord:messages",
+"youtube:livestream",
+"no:command"
+};
+
+} // namespace constants
+
+class ipc_message
+{
+public:
+using byte_buffer   = std::vector<uint8_t>;
+using u_ipc_msg_ptr = std::unique_ptr<ipc_message>;
+virtual ~ipc_message() {}
+
+uint8_t type() const
+{
+  return m_frames.at(constants::index::TYPE).front();
 }
 
-std::string createMessage(const char *data, std::string args) {
-  StringBuffer s;
-  Writer<StringBuffer, Document::EncodingType, ASCII<>> w(s);
-  w.StartObject();
-  w.Key("type");
-  w.String("custom");
-  w.Key("message");
-  w.String(data);
-  w.Key("args");
-  w.String(args.c_str());
-  w.EndObject();
-  return s.GetString();
+std::vector<byte_buffer> data() {
+  return m_frames;
 }
 
-std::string createEvent(const char *event, int mask, std::string stdout) {
-  StringBuffer s;
-  Writer<StringBuffer, Document::EncodingType, ASCII<>> w(s);
-  w.StartObject();
-  w.Key("type");
-  w.String("event");
-  w.Key("mask");
-  w.Int(mask);
-  w.Key("args");
-  w.String(stdout.c_str());
-  w.EndObject();
-  return s.GetString();
+std::vector<byte_buffer> m_frames;
+
+virtual std::string to_string() const
+{
+  return ::constants::IPC_MESSAGE_NAMES.at(type());
+}
+};
+
+class platform_error : public ipc_message
+{
+public:
+platform_error(const std::string& name, const std::string& id, const std::string& user, const std::string& error)
+{
+  m_frames = {
+    byte_buffer{},
+    byte_buffer{constants::IPC_PLATFORM_ERROR},
+    byte_buffer{name.data(), name.data() + name.size()},
+    byte_buffer{id.data(), id.data() + id.size()},
+    byte_buffer{user.data(), user.data() + user.size()},
+    byte_buffer{error.data(), error.data() + error.size()}
+  };
 }
 
-std::string createEvent(const char *event, std::vector<std::string> args) {
-  StringBuffer s;
-  Writer<StringBuffer, Document::EncodingType, ASCII<>> w(s);
-  w.StartObject();
-  w.Key("type");
-  w.String("event");
-  w.Key("event");
-  w.String(event);
-  w.Key("args");
-  w.StartArray();
-  if (!args.empty()) {
-    for (const auto &arg : args) {
-      w.String(arg.c_str());
-    }
+platform_error(const std::vector<byte_buffer>& data)
+{
+  m_frames = {
+    byte_buffer{},
+    byte_buffer{data.at(constants::index::TYPE)},
+    byte_buffer{data.at(constants::index::PLATFORM)},
+    byte_buffer{data.at(constants::index::ID)},
+    byte_buffer{data.at(constants::index::USER)},
+    byte_buffer{data.at(constants::index::ERROR)}
+  };
+}
+
+const std::string name() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::PLATFORM).data()),
+    m_frames.at(constants::index::PLATFORM).size()
+  };
+}
+
+const std::string user() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::USER).data()),
+    m_frames.at(constants::index::USER).size()
+  };
+}
+
+const std::string error() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::ERROR).data()),
+    m_frames.at(constants::index::ERROR).size()
+  };
+}
+
+const std::string id() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::ID).data()),
+    m_frames.at(constants::index::ID).size()
+  };
+}
+
+std::string to_string() const override
+{
+  return  "(Type): "     + ipc_message::to_string() + ',' +
+          "(Platform): " + name()                   + ',' +
+          "(ID):"       + id()                      + ',' +
+          "(User): "     + user()                   + ',' +
+          "(Error):"     + error();
+}
+};
+
+class okay_message : public ipc_message
+{
+public:
+okay_message()
+{
+  m_frames = {
+    byte_buffer{},
+    byte_buffer{constants::IPC_OK_TYPE}
+  };
+}
+
+virtual ~okay_message() override {}
+};
+
+class keepalive : public ipc_message
+{
+public:
+keepalive()
+{
+  m_frames = {
+    byte_buffer{},
+    byte_buffer{constants::IPC_KEEPALIVE_TYPE}
+  };
+}
+
+virtual ~keepalive() override {}
+};
+
+class kiq_message : public ipc_message
+{
+public:
+kiq_message(const std::string& payload)
+{
+  m_frames = {
+    byte_buffer{},
+    byte_buffer{constants::IPC_KIQ_MESSAGE},
+    byte_buffer{payload.data(), payload.data() + payload.size()}
+  };
+}
+
+kiq_message(const std::vector<byte_buffer>& data)
+{
+  m_frames = {
+    byte_buffer{},
+    byte_buffer{data.at(constants::index::TYPE)},
+    byte_buffer{data.at(constants::index::KIQ_DATA)}
+  };
+}
+
+const std::string payload() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::KIQ_DATA).data()),
+    m_frames.at(constants::index::KIQ_DATA).size()
+  };
+}
+
+std::string to_string() const override
+{
+  return  "(Type): "    + ipc_message::to_string() + ',' +
+          "(Payload): " + payload();
+}
+
+};
+
+class platform_message : public ipc_message
+{
+public:
+platform_message(const std::string& platform, const std::string& id, const std::string& user, const std::string& content, const std::string& urls, const bool repost = false, uint32_t cmd = 0x00, const std::string& args = "")
+{
+  m_frames = {
+    byte_buffer{},
+    byte_buffer{constants::IPC_PLATFORM_TYPE},
+    byte_buffer{platform.data(), platform.data() + platform.size()},
+    byte_buffer{id.data(), id.data() + id.size()},
+    byte_buffer{user.data(), user.data() + user.size()},
+    byte_buffer{content.data(), content.data() + content.size()},
+    byte_buffer{urls.data(),    urls.data() + urls.size()},
+    byte_buffer{static_cast<uint8_t>(repost)},
+    byte_buffer{args.data(), args.data() + args.size()},
+    byte_buffer{static_cast<unsigned char>((cmd >> 24) & 0xFF),
+                static_cast<unsigned char>((cmd >> 16) & 0xFF),
+                static_cast<unsigned char>((cmd >> 8 ) & 0xFF),
+                static_cast<unsigned char>((cmd      ) & 0xFF)}
+  };
+}
+
+platform_message(const std::vector<byte_buffer>& data)
+{
+  m_frames = {
+    byte_buffer{},
+    byte_buffer{data.at(constants::index::TYPE)},
+    byte_buffer{data.at(constants::index::PLATFORM)},
+    byte_buffer{data.at(constants::index::ID)},
+    byte_buffer{data.at(constants::index::USER)},
+    byte_buffer{data.at(constants::index::DATA)},
+    byte_buffer{data.at(constants::index::URLS)},
+    byte_buffer{data.at(constants::index::REPOST)},
+    byte_buffer{data.at(constants::index::ARGS)},
+    byte_buffer{data.at(constants::index::CMD)}
+  };
+}
+
+virtual ~platform_message() override {}
+
+const std::string platform() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::PLATFORM).data()),
+    m_frames.at(constants::index::PLATFORM).size()
+  };
+}
+
+const std::string id() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::ID).data()),
+    m_frames.at(constants::index::ID).size()
+  };
+}
+
+const std::string user() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::USER).data()),
+    m_frames.at(constants::index::USER).size()
+  };
+}
+
+const std::string content() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::DATA).data()),
+    m_frames.at(constants::index::DATA).size()
+  };
+}
+
+const std::string urls() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::URLS).data()),
+    m_frames.at(constants::index::URLS).size()
+  };
+}
+
+const bool repost() const
+{
+  return (m_frames.at(constants::index::REPOST).front() != 0x00);
+}
+
+const std::string args() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::ARGS).data()),
+    m_frames.at(constants::index::ARGS).size()
+  };
+}
+
+const uint32_t cmd() const
+{
+  auto bytes = m_frames.at(constants::index::CMD).data();
+  auto cmd   = static_cast<uint32_t>(bytes[0] << 24 | bytes[1] << 16 | bytes[2] << 8 | bytes[3]);
+
+  return cmd;
+}
+
+std::string to_string() const override
+{
+  auto text = content();
+  if (text.size() > 120) text = text.substr(0, 120);
+  return  "(Type):" + ipc_message::to_string()   + ',' +
+          "(Platform):" + platform()             + ',' +
+          "(ID):" + id()                         + ',' +
+          "(User):" + user()                     + ',' +
+          "(Content):" + text                    + ',' +
+          "(URLS):" + urls()                     + ',' +
+          "(Repost):" + std::to_string(repost()) + ',' +
+          "(Args):" + args()                     + ',' +
+          "(Cmd):" + std::to_string(cmd());
+}
+
+};
+
+class platform_request : public ipc_message
+{
+public:
+platform_request(const std::string& platform, const std::string& id, const std::string& user, const std::string& data, const std::string& args)
+{
+  m_frames = {
+    byte_buffer{},
+    byte_buffer{constants::IPC_PLATFORM_REQUEST},
+    byte_buffer{platform.data(), platform.data() + platform.size()},
+    byte_buffer{id.data(), id.data() + id.size()},
+    byte_buffer{user.data(), user.data() + user.size()},
+    byte_buffer{data.data(), data.data() + data.size()},
+    byte_buffer{args.data(), args.data() + args.size()}
+  };
+}
+
+platform_request(const std::vector<byte_buffer>& data)
+{
+  m_frames = {
+    byte_buffer{},
+    byte_buffer{data.at(constants::index::TYPE)},
+    byte_buffer{data.at(constants::index::PLATFORM)},
+    byte_buffer{data.at(constants::index::ID)},
+    byte_buffer{data.at(constants::index::USER)},
+    byte_buffer{data.at(constants::index::DATA)},
+    byte_buffer{data.at(constants::index::REQ_ARGS)}
+  };
+}
+
+const std::string platform() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::PLATFORM).data()),
+    m_frames.at(constants::index::PLATFORM).size()
+  };
+}
+
+const std::string id() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::ID).data()),
+    m_frames.at(constants::index::ID).size()
+  };
+}
+
+const std::string user() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::USER).data()),
+    m_frames.at(constants::index::USER).size()
+  };
+}
+
+const std::string content() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::DATA).data()),
+    m_frames.at(constants::index::DATA).size()
+  };
+}
+
+const std::string args() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::REQ_ARGS).data()),
+    m_frames.at(constants::index::REQ_ARGS).size()
+  };
+}
+
+std::string to_string() const override
+{
+  auto text = content();
+  if (text.size() > 120) text = text.substr(0, 120);
+  return  "(Type): "     + ipc_message::to_string() + ',' +
+          "(Platform): " + platform()               + ',' +
+          "(ID): "       + id()                     + ',' +
+          "(User): "     + user()                   + ',' +
+          "(Content): "  + text                     + ',' +
+          "(Args): "     + args();
+}
+};
+
+class platform_info : public ipc_message
+{
+public:
+platform_info(const std::string& platform, const std::string& info, const std::string& type)
+{
+  m_frames = {
+    byte_buffer{},
+    byte_buffer{constants::IPC_PLATFORM_INFO},
+    byte_buffer{platform.data(), platform.data() + platform.size()},
+    byte_buffer{info.data(), info.data() + info.size()},
+    byte_buffer{type.data(), type.data() + type.size()}
+  };
+}
+
+platform_info(const std::vector<byte_buffer>& data)
+{
+  m_frames = {
+    byte_buffer{},
+    byte_buffer{data.at(constants::index::TYPE)},
+    byte_buffer{data.at(constants::index::PLATFORM)},
+    byte_buffer{data.at(constants::index::INFO)},
+    byte_buffer{data.at(constants::index::INFO_TYPE)}
+  };
+}
+
+const std::string platform() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::PLATFORM).data()),
+    m_frames.at(constants::index::PLATFORM).size()
+  };
+}
+
+const std::string info() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::INFO).data()),
+    m_frames.at(constants::index::INFO).size()
+  };
+}
+
+const std::string type() const
+{
+  return std::string{
+    reinterpret_cast<const char*>(m_frames.at(constants::index::INFO_TYPE).data()),
+    m_frames.at(constants::index::INFO_TYPE).size()
+  };
+}
+
+std::string to_string() const override
+{
+  return  "(Type):"    + ipc_message::to_string() + ',' +
+          "(Platform)" + platform()               + ',' +
+          "(Type):"    + type()                   + ',' +
+          "(Info):"    + info();
+}
+};
+
+static ipc_message::u_ipc_msg_ptr DeserializeIPCMessage(std::vector<ipc_message::byte_buffer>&& data)
+{
+   uint8_t message_type = *(data.at(constants::index::TYPE).data());
+
+   switch (message_type)
+   {
+    case (constants::IPC_OK_TYPE):          return std::make_unique<okay_message>();
+    case (constants::IPC_KEEPALIVE_TYPE):   return std::make_unique<keepalive>();
+    case (constants::IPC_KIQ_MESSAGE):      return std::make_unique<kiq_message>(data);
+    case (constants::IPC_PLATFORM_TYPE):    return std::make_unique<platform_message>(data);
+    case (constants::IPC_PLATFORM_INFO):    return std::make_unique<platform_info>(data);
+    case (constants::IPC_PLATFORM_ERROR):   return std::make_unique<platform_error>(data);
+    case (constants::IPC_PLATFORM_REQUEST): return std::make_unique<platform_request>(data);
+    default:                                return nullptr;
+   }
+}
+
+using timepoint = std::chrono::time_point<std::chrono::system_clock>;
+using duration  = std::chrono::milliseconds;
+static const duration time_limit = std::chrono::milliseconds(60000);
+static const duration hb_rate    = std::chrono::milliseconds(600);
+class session_daemon {
+public:
+  session_daemon()
+  : m_active(false),
+    m_valid(true)
+  {
+    m_future = std::async(std::launch::async, [this] { while (true) loop(); });
   }
-  w.EndArray();
-  w.EndObject();
-  return s.GetString();
-}
 
-std::string createEvent(const char *event, int mask,
-                        std::vector<std::string> args) {
-  StringBuffer s;
-  Writer<StringBuffer, Document::EncodingType, ASCII<>> w(s);
-  w.StartObject();
-  w.Key("type");
-  w.String("event");
-  w.Key("event");
-  w.String(event);
-  w.Key("args");
-  w.StartArray();
-  if (!args.empty()) {
-    for (const auto &arg : args) {
-      w.String(arg.c_str());
-    }
+  ~session_daemon()
+  {
+    if (m_future.valid())
+      m_future.wait();
   }
-  w.EndArray();
-  w.EndObject();
-  return s.GetString();
-}
 
-std::string createOperation(const char *op, std::vector<std::string> args) {
-  StringBuffer s;
-  Writer<StringBuffer, Document::EncodingType, ASCII<>> w(s);
-  w.StartObject();
-  w.Key("type");
-  w.String("operation");
-  w.Key("command");
-  w.String(op);
-  w.Key("args");
-  w.StartArray();
-  if (!args.empty()) {
-    for (const auto &arg : args) {
-      w.String(arg.c_str());
-    }
+  void add_observer(std::string_view peer, std::function<void()> callback)
+  {
+    observer_t observer{hbtime_t{}, callback};
+    m_observers.try_emplace(peer, observer);
+    m_observers.at(peer).first.first = std::chrono::system_clock::now();
   }
-  w.EndArray();
-  w.EndObject();
-  return s.GetString();
-}
 
-
-std::string getMessage(const char *data) {
-  Document d;
-  d.Parse(data);
-  if (d.HasMember("message")) {
-    return d["message"].GetString();
+  void reset()
+  {
+    if (!m_active) m_active = true;
+    m_tp = std::chrono::system_clock::now();
   }
-  return "";
-}
 
-std::string getEvent(std::string data) {
-  if (!data.empty()) {
-    Document d;
-    d.Parse(data.c_str());
-    if (d.HasMember("event")) {
-      return d["event"].GetString();
-    }
-  }
-  return "";
-}
-
-bool isSessionMessageEvent(std::string event) {
-  return event.compare("Session Message") == 0;
-}
-
-bool isCloseEvent(std::string event) {
-  return event.compare("Close Session") == 0;
-}
-
-std::vector<std::string> getArgs(std::string data) {
-  Document d;
-  d.Parse(data.c_str());
-  std::vector<std::string> args{};
-  if (d.HasMember("args")) {
-    for (const auto &v : d["args"].GetArray()) {
-      args.push_back(v.GetString());
-    }
-  }
-  return args;
-}
-
-std::vector<std::string> getArgs(const char* data) {
-  Document d;
-  d.Parse(data);
-  std::vector<std::string> args{};
-  if (d.HasMember("args")) {
-    for (const auto &v : d["args"].GetArray()) {
-      args.push_back(v.GetString());
-    }
-  }
-  return args;
-}
-
-CommandMap getArgMap(const char *data) {
-  Document d;
-  d.Parse(data);
-  CommandMap cm{};
-  if (d.HasMember("args")) {
-    for (const auto &m : d["args"].GetObject()) {
-      cm.emplace(std::stoi(m.name.GetString()), m.value.GetString());
-    }
-  }
-  return cm;
-}
-
-std::string createSessionEvent(
-    int status, std::string message,
-    std::vector<std::pair<std::string, std::string>> args) {
-  StringBuffer s;
-  Writer<StringBuffer, Document::EncodingType, ASCII<>> w(s);
-  w.StartObject();
-  w.Key("type");
-  w.String("event");
-  w.Key("event");
-  w.String("Session Message");
-  w.Key("status");
-  w.Int(status);
-  w.Key("message");
-  w.String(message.c_str());
-  w.Key("info");
-  w.StartObject();
-  if (!args.empty()) {
-    for (const auto &v : args) {
-      w.Key(v.first.c_str());
-      w.String(v.second.c_str());
-    }
-  }
-  w.EndObject();
-  w.EndObject();
-  return s.GetString();
-}
-
-std::string createMessage(
-    const char *data, std::vector<std::pair<std::string, std::string>> args) {
-  StringBuffer s;
-  Writer<StringBuffer, Document::EncodingType, ASCII<>> w(s);
-  w.StartObject();
-  w.Key("type");
-  w.String("custom");
-  w.Key("message");
-  w.String(data);
-  w.Key("args");
-  w.StartObject();
-  if (!args.empty()) {
-    for (const auto &v : args) {
-      w.Key(v.first.c_str());
-      w.String(v.second.c_str());
-    }
-  }
-  w.EndObject();
-  w.EndObject();
-  return s.GetString();
-}
-
-std::string createMessage(const char *data,
-                          std::map<int, std::string> map) {
-  StringBuffer s;
-  Writer<StringBuffer, Document::EncodingType, ASCII<>> w(s);
-  w.StartObject();
-  w.Key("type");
-  w.String("custom");
-  w.Key("message");
-  w.String(data);
-  w.Key("args");
-  w.StartObject();
-  if (!map.empty()) {
-    for (const auto &[k, v] : map) {
-      w.Key(std::to_string(k).c_str());
-      w.String(v.c_str());
-    }
-  }
-  w.EndObject();
-  w.EndObject();
-  return s.GetString();
-}
-
-std::string createMessage(const char *data, std::vector<KApplication> commands) {
-  StringBuffer s;
-  Writer<StringBuffer, Document::EncodingType, ASCII<>> w(s);
-  w.StartObject();
-  w.Key("type");
-  w.String("custom");
-  w.Key("message");
-  w.String(data);
-  w.Key("args");
-  w.StartArray();
-  if (!commands.empty()) {
-    for (const auto& command : commands) {
-      w.String(command.mask.c_str());
-      w.String(command.name.c_str());
-      w.String(command.path.c_str());
-      w.String(command.data.c_str());
-    }
-  }
-  w.EndArray();
-  w.EndObject();
-  return s.GetString();
-}
-
-std::string createMessage(const char *data,
-                          std::map<int, std::vector<std::string>> map) {
-  StringBuffer s;
-  Writer<StringBuffer, Document::EncodingType, ASCII<>> w(s);
-  w.StartObject();
-  w.Key("type");
-  w.String("custom");
-  w.Key("message");
-  w.String(data);
-  w.Key("args");
-  w.StartObject();
-  if (!map.empty()) {
-    for (const auto &[k, v] : map) {
-      w.Key(std::to_string(k).c_str());
-      if (!v.empty()) {
-        w.StartArray();
-        for (const auto &arg : v) {
-          w.String(arg.c_str());
-        }
-        w.EndArray();
+  bool validate(std::string_view peer)
+  {
+    if (m_active)
+    {
+      if (auto it = m_observers.find(peer); it != m_observers.end())
+      {
+        duration & interval = it->second.first.second;
+        timepoint& tpoint   = it->second.first.first;
+        const auto now      = std::chrono::system_clock::now();
+                   interval = std::chrono::duration_cast<duration>(now - tpoint);
+                   tpoint   = now;
+        if (interval < time_limit)
+          return true;
+        else
+          it->second.second();
       }
     }
-  }
-  w.EndObject();
-  w.EndObject();
-  return s.GetString();
-}
-
-/**
- * Operations
- */
-bool isMessage(const char *data) {
-  if (*data != '\0') {
-    Document d;
-    d.Parse(data);
-    return d.HasMember("message");
-  }
-  return false;
-}
-
-bool isOperation(const char *data) {
-  if (*data != '\0') {
-    Document d;
-    d.Parse(data);
-    return strcmp(d["type"].GetString(), "operation") == 0;
-  }
-  return false;
-}
-
-bool isExecuteOperation(const char *data) {
-  return strcmp(data, "Execute") == 0;
-}
-
-bool isScheduleOperation(const char *data) {
-  return strcmp(data, "Schedule") == 0;
-}
-
-bool isFileUploadOperation(const char *data) {
-  return strcmp(data, "FileUpload") == 0;
-}
-
-bool isIPCOperation(const char *data) {
-  return strcmp(data, "ipc") == 0;
-}
-
-bool isStartOperation(const char *data) { return strcmp(data, "start") == 0; }
-
-bool isStopOperation(const char *data) { return strcmp(data, "stop") == 0; }
-
-bool isAppOperation(const char* data) { return strcmp(data, "AppRequest") == 0; }
-
-/**
- * General
- */
-
-Either<std::string, std::vector<std::string>> getDecodedMessage(
-    std::shared_ptr<uint8_t[]> s_buffer_ptr) {
-  // Obtain the raw buffer so we can read the header
-  uint8_t *raw_buffer = s_buffer_ptr.get();
-
-  uint8_t msg_type_byte_code = *(raw_buffer + 4);
-
-  if (msg_type_byte_code == 0xFD) {
-    return left(std::to_string(msg_type_byte_code));
-  } else{
-    auto byte1 = *raw_buffer << 24;
-    auto byte2 = *(raw_buffer + 1) << 16;
-    auto byte3 = *(raw_buffer + 2) << 8;
-    auto byte4 = *(raw_buffer + 3);
-
-    uint32_t message_byte_size = byte1 | byte2 | byte3 | byte4;
-    uint8_t decode_buffer[message_byte_size];
-
-    if (msg_type_byte_code == 0xFF) {
-      flatbuffers::Verifier verifier(&raw_buffer[0 + 5], message_byte_size);
-
-      if (VerifyIGTaskBuffer(verifier)) {
-        std::memcpy(decode_buffer, raw_buffer + 5, message_byte_size);
-        const IGData::IGTask *ig_task = GetIGTask(&decode_buffer);
-
-        /**
-         * /note The specification for the order of these arguments can be found
-         * in namespace: IGTaskIndex
-         */
-        return right(std::move(
-          std::vector<std::string>{
-            std::to_string(ig_task->mask()), // Mask always comes first
-            ig_task->file_info()->str(), ig_task->time()->str(),
-            ig_task->description()->str(), ig_task->hashtags()->str(),
-            ig_task->requested_by()->str(), ig_task->requested_by_phrase()->str(),
-            ig_task->promote_share()->str(), ig_task->link_bio()->str(),
-            std::to_string(ig_task->is_video()),
-            ig_task->header()->str(), ig_task->user()->str()
-          }
-        ));
-      }
-      return right(std::vector<std::string>{});
-    } else if (msg_type_byte_code == 0xFE) {
-      // TODO: Copying into a new buffer for readability - switch to using the
-      // original buffer
-      flatbuffers::Verifier verifier(&raw_buffer[0 + 5], message_byte_size);
-      if (VerifyMessageBuffer(verifier)) {
-        std::memcpy(decode_buffer, raw_buffer + 5, message_byte_size);
-        // Parse the bytes into an encoded message structure
-        auto k_message = GetMessage(&decode_buffer);
-        // Get the message bytes and create a string
-        const flatbuffers::Vector<uint8_t> *message_bytes = k_message->data();
-        return left(std::string{message_bytes->begin(), message_bytes->end()});
-      } else {
-        return left(std::string(""));
-      }
-    } else if (msg_type_byte_code == 0xFC) {
-      flatbuffers::Verifier verifier(&raw_buffer[0 + 5], message_byte_size);
-
-      if (VerifyGenericTaskBuffer(verifier)) {
-        std::memcpy(decode_buffer, raw_buffer + 5, message_byte_size);
-        const GenericData::GenericTask *gen_task = GetGenericTask(&decode_buffer);
-
-        /**
-         * /note The specification for the order of these arguments can be found
-         * in namespace: GenericTaskIndex
-         */
-        return right(std::move(
-          std::vector<std::string>{
-            std::to_string(gen_task->mask()), // Mask always comes first
-            gen_task->file_info()->str(),          gen_task->time()->str(),
-            gen_task->description()->str(),        std::to_string(gen_task->is_video()),
-            gen_task->header()->str(),             gen_task->user()->str(),
-            std::to_string(gen_task->recurring()), std::to_string(gen_task->notify()),
-            gen_task->runtime()->str()
-          }
-        ));
-      }
-      return right(std::vector<std::string>{});
-    } else {
-      return left(std::string(""));
-    }
-  }
-}
-
-bool isNewSession(const char *data) {
-  if (*data != '\0') {
-    Document d;
-    d.Parse(data);
-    if (d.HasMember("message")) {
-      return strcmp(d["message"].GetString(), "New Session") == 0;
-    }
-  }
-  return false;
-}
-
-namespace SystemUtils {
-void sendMail(std::string recipient, std::string message, std::string from) {
-  std::string sanitized = StringUtils::sanitizeSingleQuotes(message);
-  std::system(
-    std::string{
-      "echo '" + sanitized + "' | mail -s 'KServer notification\nContent-Type: text/html' -a FROM:" + from + " " + recipient
-    }.c_str()
-  );
-}
-} // namespace SystemUtils
-
-namespace FileUtils {
-
-bool createDirectory(const char *dir_name) {
-  std::error_code err{};
-  std::filesystem::create_directory(dir_name, err);
-  auto code = err.value();
-  if (code == 0) {
-    return true;
-  }
-  std::cout << err.message() << "\n" << err.value() << std::endl;
-  return false;
-}
-
-void saveFile(std::vector<char> bytes, const char *filename) {
-  std::ofstream output(filename,
-                       std::ios::binary | std::ios::out | std::ios::app);
-  char *raw_data = bytes.data();
-  for (size_t i = 0; i < bytes.size(); i++) {
-    output.write(const_cast<const char *>(&raw_data[i]), 1);
-  }
-  output.close();
-}
-
-void saveFile(uint8_t *bytes, int size, std::string filename) {
-  std::ofstream output(filename.c_str(),
-                       std::ios::binary | std::ios::out | std::ios::app);
-  for (int i = 0; i < size; i++) {
-    output.write((const char *)(&bytes[i]), 1);
-  }
-  output.close();
-}
-
-std::string saveEnvFile(std::string env_file_string, std::string uuid) {
-  std::string relative_path{"data/" + uuid + "/v.env"};
-  std::string filename{get_executable_cwd() + "/" + relative_path};
-  std::ofstream out{filename.c_str()};
-  out << env_file_string;
-  return relative_path;
-}
-
-void saveFopenFile(std::vector<char> bytes, const char *filename) {
-  std::ofstream output(filename,
-                       std::ios::binary | std::ios::out | std::ios::app);
-  char *raw_data = bytes.data();
-  for (size_t i = 0; i < bytes.size(); i++) {
-    output.write(const_cast<const char *>(&raw_data[i]), 1);
-  }
-  output.close();
-}
-
-void saveFile(std::string env_file_string, std::string env_file_path) {
-  std::ofstream out{env_file_path.c_str(), (std::ios::trunc | std::ios::out | std::ios::binary)};
-  out << env_file_string;
-}
-
-std::string readEnvFile(std::string env_file_path, bool relative_path) {
-  std::string full_path = (relative_path) ? get_cwd() + "/" + env_file_path : env_file_path;
-  std::ifstream file_stream{full_path};
-  std::stringstream env_file_stream{};
-  env_file_stream << file_stream.rdbuf();
-  return env_file_stream.str();
-}
-
-std::string readRunArgs(std::string env_file_path) {
-  const std::string token_key{"R_ARGS="};
-  std::string run_arg_s{};
-  std::string env = readEnvFile(env_file_path);
-  if (!env.empty()) {
-    auto start = env.find(token_key);
-    if (start != std::string::npos) {
-      auto sub_s = env.substr(start);
-      auto end   = sub_s.find_first_of("|");
-      run_arg_s  = sub_s.substr(token_key.size(), end);
-    }
-  }
-  return run_arg_s;
-}
-
-std::string readFile(std::string env_file_path) {
-    std::ifstream file_stream{env_file_path};
-    std::stringstream env_file_stream{};
-    env_file_stream << file_stream.rdbuf();
-    return env_file_stream.str();
-}
-
-std::string readEnvToken(std::string env_file_path, std::string token_key) {
-  std::string run_arg_s{};
-  std::string env = readEnvFile(env_file_path);
-  if (!env.empty()) {
-    auto start = env.find(token_key);
-    if (start != std::string::npos) {
-      auto sub_s = env.substr(start + token_key.size() + 1);
-      auto end   = sub_s.find_first_of("|");
-      run_arg_s  = sub_s.substr(0, end);
-    }
-  }
-  return run_arg_s;
-}
-
-bool writeEnvToken(std::string env_file_path, std::string token_key, std::string token_value) {
-  std::string env = readEnvFile(env_file_path);
-  if (!env.empty()) {
-    auto key_index = env.find(token_key);
-    if (key_index != std::string::npos) {
-      auto start_index = key_index + token_key.size() + 1;
-      auto rem_s       = env.substr(start_index);
-      auto end_index   = rem_s.find_first_of("|");
-
-      if (end_index != std::string::npos) {
-        end_index += start_index;
-        env.replace(start_index, end_index - start_index, token_value);
-        saveFile(env, env_file_path);
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-std::vector<std::string> extractFlagTokens(std::string flags) {
-  const char token_symbol{'$'};
-  std::vector<std::string> tokens{};
-  auto delim_index = flags.find_first_of(token_symbol);
-  while (delim_index != std::string::npos) {
-    std::string token_start = flags.substr(delim_index);
-    auto end_index = token_start.find_first_of(' ') - 1;
-    std::string token = token_start.substr(1, end_index);
-    tokens.push_back(token);
-
-    if (token_start.size() >= token.size()) {
-      flags = token_start.substr(token.size());
-      delim_index = flags.find_first_of(token_symbol);
-    } else {
-      break;
-    }
-  }
-  return tokens;
-}
-
-std::vector<std::string> readFlagTokens(std::string env_file_path, std::string flags) {
-  std::vector<std::string> tokens = extractFlagTokens(flags);
-  std::vector<std::string> token_values{};
-  // TODO: Do this in one pass without reading the entire environment file each time
-  for (const auto& token : tokens) {
-    token_values.emplace_back(readEnvToken(env_file_path, token));
-  }
-  return token_values;
-}
-
-void clearFile(std::string file_path) {
-  std::ofstream file(file_path);
-}
-
-bool createTaskDirectory(std::string uuid) {
-  std::string directory_name{"data/" + uuid};
-  return createDirectory(directory_name.c_str());
-}
-}  // namespace FileUtils
-
-namespace StringUtils {
-template <typename T>
-void split(const std::string &s, char delim, T result) {
-    std::istringstream iss(s);
-    std::string item;
-    while (std::getline(iss, item, delim)) {
-        *result++ = item;
-    }
-}
-
-std::vector<std::string> split(const std::string &s, char delim) {
-    std::vector<std::string> v{};
-    if (!s.empty()) {
-      split(s, delim, std::back_inserter(v));
-    }
-    return v;
-}
-
-std::string sanitizeSingleQuotes(const std::string& s) {
-  std::string o{};
-
-  for (const char& c : s) {
-    if (c == '\'')
-      o += "&#39;";
-    else
-      o += c;
+    return false;
   }
 
-  return o;
-}
-
-} // namespace StringUtils
-
-// Bit helpers
-
-inline size_t findNullIndex(uint8_t *data) {
-  size_t index = 0;
-  while (data) {
-    if (strcmp(const_cast<const char *>((char *)data), "\0") == 0) {
-      break;
-    }
-    index++;
-    data++;
+  void stop()
+  {
+    m_active = false;
+    m_valid  = true;
   }
-  return index;
-}
 
-template <typename T>
-static std::string toBinaryString(const T &x) {
-  std::stringstream ss;
-  ss << std::bitset<sizeof(T) * 8>(x);
-  return ss.str();
-}
-
-bool hasNthBitSet(int value, int n) {
-  auto result = value & (1 << (n - 1));
-  if (result) {
-    return true;
+  bool active() const
+  {
+    return m_active;
   }
-  return false;
-}
 
-std::string stripSQuotes(std::string s) {
-  s.erase(
-    std::remove(s.begin(), s.end(),'\''),
-    s.end()
-  );
-  return s;
-}
+  void loop()
+  {
+    for (const auto& [_, observer] : m_observers)
+      if (observer.first.second > time_limit)
+        observer.second();
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
 
-// aka isNumber
-bool isdigits(const std::string &s) {
-  for (char c : s)
-    if (!isdigit(c)) {
-      return false;
-    }
-  return true;
-}
+private:
+  using hbtime_t    = std::pair<timepoint, duration>;
+  using observer_t  = std::pair<hbtime_t, std::function<void()>>;
+  using observers_t = std::map<std::string_view, observer_t>;
 
-namespace TimeUtils {
-int unixtime() {
-  return std::chrono::duration_cast<std::chrono::seconds>(
-    std::chrono::system_clock::now().time_since_epoch()
-  ).count();
-}
+  timepoint         m_tp;
+  duration          m_duration;
+  bool              m_active;
+  bool              m_valid;
+  observers_t       m_observers;
+  std::future<void> m_future;
 
-std::string_view format_timestamp(int unixtime) {
-  char       buf[80];
-  const std::time_t time = static_cast<std::time_t>(unixtime);
-  struct tm ts = *localtime(&time);
-  std::strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S", &ts);
-  return std::string{buf};
-}
 
-std::string format_timestamp(std::string unixtime) {
-  char       buf[80];
-  const std::time_t time = static_cast<std::time_t>(stoi(unixtime));
-  struct tm ts = *localtime(&time);
-  std::strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S", &ts);
-  return std::string{buf};
-}
-
-std::string time_as_today(std::string unixtime) {
-  const std::time_t time = static_cast<std::time_t>(stoi(unixtime));
-  const std::time_t now  = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-  struct tm         ts   = *localtime(&time);
-  struct tm         tn   = *localtime(&now);
-  ts.tm_year = tn.tm_year;
-  ts.tm_mon  = tn.tm_mon;
-  ts.tm_mday = tn.tm_mday;
-
-  return std::to_string(mktime(&ts));
-}
-}  // namespace TimeUtils
+};
