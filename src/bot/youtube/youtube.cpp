@@ -68,8 +68,6 @@ bool YouTubeBot::init() {
  * The loop method runs on its own thread
  */
 void YouTubeBot::loop() {
-  using namespace korean;
-
   uint8_t no_hits{0};
   static std::chrono::time_point<std::chrono::system_clock> initial_time = std::chrono::system_clock::now();
 

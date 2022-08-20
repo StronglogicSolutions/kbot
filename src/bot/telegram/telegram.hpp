@@ -8,6 +8,7 @@ namespace kbot {
 namespace keleqram {
 namespace constants {
 static const uint8_t     APP_NAME_LENGTH{6};
+static const uint8_t     MAX_FAILURE_LIMIT{5};
 static const std::string USER{};
 static const char*       DEFAULT_CONFIG_PATH{"config/config.ini"};
 static const char*       REQUEST_PollStop   {"poll stop"};
@@ -18,7 +19,7 @@ static const char*       REQUEST_Rooms      {"process rooms"};
 static std::string get_executable_cwd()
 {
   std::string full_path{realpath("/proc/self/exe", NULL)};
-  return full_path.substr(0, full_path.size() - (constants::APP_NAME_LENGTH  + 1));
+  return full_path.substr(0, full_path.size() - (constants::APP_NAME_LENGTH + 1));
 }
 
 static const INIReader GetConfig()
@@ -51,8 +52,14 @@ public:
 TelegramBot()
 : kbot::Bot{keleqram::constants::USER},
   ::keleqram::KeleqramBot{keleqram::GetToken()},
-  m_retries(3)
+  m_retries(keleqram::constants::MAX_FAILURE_LIMIT)
 {}
+
+TelegramBot& operator=(const TelegramBot& bot)
+{
+  m_retries = bot.m_retries;
+  return *this;
+}
 
 virtual void Init() override
 {
@@ -61,19 +68,25 @@ virtual void Init() override
 
 virtual void loop() override
 {
+  Worker::m_is_running = true;
+  static int32_t i = 0;
   try
   {
     while (m_is_running)
       ::keleqram::KeleqramBot::Poll();
+    log("Telegram worker is no longer running");
   }
   catch(const std::exception& e)
   {
     log("Exception caught while polling for updates", e.what());
-    if (--m_retries)
+
+    if (!--m_retries)
     {
-      std::cerr << "Telegram has reached maximum retries" << std::endl;
-      throw;
+      m_send_event_fn(BotRequest{Platform::telegram, kbot::RESTART_EVENT});
+      m_retries = keleqram::constants::MAX_FAILURE_LIMIT;
     }
+    else
+     loop();
   }
 }
 
@@ -179,6 +192,12 @@ bool HandleEvent(BotRequest request)
     {
       reply = false;
       m_send_event_fn(CreateInfo(KeleqramBot::GetRooms(), "rooms", request));
+    }
+    else
+    if (event == "telegram:restart")
+    {
+      reply = false;
+      m_send_event_fn(BotRequest{Platform::telegram, kbot::RESTART_EVENT});
     }
   }
   catch (const std::exception& e)

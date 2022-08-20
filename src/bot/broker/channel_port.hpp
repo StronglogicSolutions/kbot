@@ -30,7 +30,7 @@ m_context   {1},
 m_rep_socket{m_context, ZMQ_REP},
 m_req_socket{m_context, ZMQ_REQ},
 m_socket_num{2},
-m_timeout   {0},
+m_timeout   {50},
 m_retries   {0}
 {
   Reset(true);

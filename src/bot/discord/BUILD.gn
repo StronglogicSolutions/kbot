@@ -1,4 +1,3 @@
-
 config("kscord") {
   include_dirs = ["//third_party/kscord/src", "//third_party/kstodon/third_party/kjson"]
   libs = ["//third_party/kscord/out/libkscord_lib.so"]
@@ -46,10 +45,7 @@ deps = [
 ]
 
 libs = [
-  "crypto",
-  "cpr",
-  "curl",
-  "pthread"
+  "cpr"
 ]
 
 sources = [
