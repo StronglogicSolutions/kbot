@@ -27,23 +27,23 @@ using u_ipc_msg_ptr = ipc_message::u_ipc_msg_ptr;
 ChannelPort()
 :
 m_context   {1},
-m_req{m_context, ZMQ_DEALER},
-m_rep{m_context, ZMQ_ROUTER},
+m_tx{m_context, ZMQ_DEALER},
+m_rx{m_context, ZMQ_ROUTER},
 m_socket_num{1},
 m_timeout   {50},
 m_retries   {0}
 {
-  m_req.set(zmq::sockopt::linger, 0);
-  m_rep.set(zmq::sockopt::linger, 0);
-  m_req.set(zmq::sockopt::routing_id, "botbroker");
-  m_rep.set(zmq::sockopt::routing_id, "botrouter");
-  m_req.connect(TX_ADDR);
-  m_rep.bind(RX_ADDR);
+  m_tx.set(zmq::sockopt::linger, 0);
+  m_rx.set(zmq::sockopt::linger, 0);
+  m_tx.set(zmq::sockopt::routing_id, "botbroker");
+  m_rx.set(zmq::sockopt::routing_id, "botrouter");
+  m_tx.connect(TX_ADDR);
+  m_rx.bind(RX_ADDR);
 }
 
 bool ReceiveIPCMessage(const bool is_request = true)
 {
-  auto& socket = (is_request) ? m_rep : m_req;
+  auto& socket = (is_request) ? m_rx : m_tx;
   zmq::message_t  identity;
   socket.recv(&identity);
 
@@ -72,7 +72,6 @@ bool ReceiveIPCMessage(const bool is_request = true)
   if (ipc_message)
   {
     m_rx_msgs.emplace_back(std::move(ipc_message));
-    // m_req_ready = (use_req) ? true : m_req_ready;
     return true;
   }
 
@@ -81,7 +80,7 @@ bool ReceiveIPCMessage(const bool is_request = true)
 
 bool SendIPCMessage(u_ipc_msg_ptr message, const bool use_req = false)
 {
-  auto&          socket    = (use_req) ? m_req : m_rep;
+  auto&          socket    = (use_req) ? m_tx : m_rx;
   auto           payload   = message->data();
   int32_t        frame_num = payload.size();
 
@@ -102,8 +101,8 @@ bool SendIPCMessage(u_ipc_msg_ptr message, const bool use_req = false)
 uint8_t Poll()
 {
   uint8_t poll_mask{0x00};
-  zmq::pollitem_t items[] = { { m_req, 0, ZMQ_POLLIN, 0},
-                              { m_rep, 1, ZMQ_POLLIN, 0} };
+  zmq::pollitem_t items[] = { { m_tx, 0, ZMQ_POLLIN, 0},
+                              { m_rx, 1, ZMQ_POLLIN, 0} };
   zmq::poll(&items[0], 2, m_timeout);
 
   if (items[0].revents & ZMQ_POLLIN)
@@ -120,7 +119,7 @@ std::vector<u_ipc_msg_ptr> GetRXMessages()
 
 bool REQReady()
 {
-  return m_req_ready;
+  return m_tx_ready;
 }
 
 private:
@@ -131,14 +130,14 @@ static std::string const FindDataRequest(std::string message) {
 }
 
 zmq::context_t m_context;
-zmq::socket_t  m_rep;
-zmq::socket_t  m_req;
+zmq::socket_t  m_rx;
+zmq::socket_t  m_tx;
 std::vector<u_ipc_msg_ptr>     m_tx_msgs;
 std::vector<u_ipc_msg_ptr>     m_rx_msgs;
 uint8_t        m_socket_num;
 uint8_t        m_timeout;
 uint8_t        m_retries;
-bool           m_req_ready;
+bool           m_tx_ready;
 
 };
 } // ns kbot
