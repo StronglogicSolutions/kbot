@@ -15,20 +15,20 @@ struct SocketState
 static const uint32_t TX_MAX_MISSES = 100;
 
 SocketState()
-: broker([this]() { ResetChannel(true); })
+: broker([this]() { ResetChannel(); })
 {
   broker.run();
+  channel.SendIPCMessage(std::make_unique<keepalive>(), true);
 }
 
-void ResetChannel(bool both_sockets = false)
+void ResetChannel()
 {
-  channel.Reset(both_sockets);
+  log("ResetChannel was called. Broker isn't happy");
 }
 
 void Poll()
 {
   uint8_t mask;
-
   {
     std::mutex                   mtx;
     std::unique_lock<std::mutex> lock{mtx};
@@ -36,19 +36,14 @@ void Poll()
   }
 
   broker_has_messages = broker.Poll();
-  has_req             = HasRequest(mask);
-  has_rep             = HasReply(mask);
+  has_request         = HasIncomingRequest(mask);
+  has_response        = HasResponse(mask);
 }
 
-void ReceiveIPC()
+void ReceiveResponse()
 {
   channel.ReceiveIPCMessage(false);
   channel.SendIPCMessage(std::make_unique<okay_message>(), false);
-}
-
-void ReceiveReply()
-{
-  channel.ReceiveIPCMessage(true);
 }
 
 void ChannelSend()
@@ -58,16 +53,21 @@ void ChannelSend()
 
 void ProcessChannel()
 {
-  if (has_req)
-    ReceiveIPC();
-  if (has_rep)
-    ReceiveReply();
+  if (has_response)
+    ReceiveResponse();
+  if (has_request)
+    ReceiveRequest();
 }
 
 void ProcessRX()
 {
   for (auto&& message : channel.GetRXMessages())
     broker.ProcessMessage(std::move(message));
+}
+
+void ReceiveRequest()
+{
+  channel.ReceiveIPCMessage(true);
 }
 
 void Shutdown()
@@ -77,25 +77,14 @@ void Shutdown()
 
 void Transmit()
 {
-  channel_can_send = channel.REQReady();
   if (broker_has_messages)
-  {
-    if (channel_can_send)
-      ChannelSend();
-    else
-    if (++tx_misses > TX_MAX_MISSES)
-    {
-      log("TX misses exceeded");
-      ResetChannel();
-      tx_misses = 0;
-    }
-  }
+    ChannelSend();
 }
 
 ChannelPort channel;
 Broker      broker;
-bool        has_req            {false};
-bool        has_rep            {false};
+bool        has_response       {false};
+bool        has_request        {false};
 bool        broker_has_messages{false};
 bool        port_has_messages  {false};
 bool        channel_can_send   {true};

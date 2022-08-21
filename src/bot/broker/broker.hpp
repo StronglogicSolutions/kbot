@@ -120,6 +120,8 @@ Broker(ipc_fail_fn _cb)
   MXBot().Init();
 
   g_broker = this;
+
+  m_daemon.add_observer("botbroker", [] { log("Heartbeat timed out"); });
 }
 
 void ProcessMessage(u_ipc_msg_ptr message)
@@ -162,13 +164,9 @@ void ProcessMessage(u_ipc_msg_ptr message)
   if (message->type() == ::constants::IPC_KEEPALIVE_TYPE)
   {
     m_daemon.reset();
-    if (m_daemon.validate())
-      m_outbound_queue.emplace_back(std::make_unique<keepalive>());
-    else
-    {
-      m_daemon.stop();
+    if (!m_daemon.validate("botbroker"))
       m_on_ipc_fail();
-    }
+    m_outbound_queue.emplace_back(std::make_unique<keepalive>());
   }
 }
 
