@@ -47,8 +47,11 @@ bool ReceiveIPCMessage(const bool is_request = true)
   zmq::message_t  identity;
   socket.recv(&identity);
 
-  if (identity.empty())
+  if (identity.empty() || identity.to_string_view() != "botbroker__worker")
+  {
+    log("Rejecting message from ", identity.to_string().c_str());
     return false;
+  }
 
   std::vector<ipc_message::byte_buffer> received_message{};
   zmq::message_t                        message;
