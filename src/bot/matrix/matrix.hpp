@@ -60,6 +60,8 @@ public:
     return false;
   }
 
+private:
+
   bool ready(const time_point_t t)
   {
     return (std::chrono::duration_cast<ms_t>(t - _last).count() > INTERVAL);
@@ -71,7 +73,6 @@ public:
     return std::chrono::system_clock::now();
   }
 
-private:
   time_point_t _last{now()};
 };
 
