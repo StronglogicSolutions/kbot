@@ -15,6 +15,9 @@ config("cpr") {
   include_dirs = [
     "//third_party/cpr/include"
   ]
+  libs = [
+    "//third_party/kettr/third_party/cpr/build/lib/libcpr.so",
+  ]
 }
 
 config("kbot_includes") {
@@ -44,9 +47,9 @@ deps = [
   "//src/bot/youtube:inih_lib"
 ]
 
-libs = [
-  "cpr"
-]
+# libs = [
+#   "cpr"
+# ]
 
 sources = [
   "//src/bot/discord/main.cpp"

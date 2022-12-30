@@ -100,21 +100,22 @@ source_set("youtube_bot_sources") {
     ":ktube",
     ":knlp",
     ":process_executor",
-    ":psql_config"
+    ":psql_config",
+    "//src/bot/kettr:cpr"
   ]
   deps = [
     ":ini_reader",
     ":ktube_lib",
     ":knlp_lib",
-    ":korean"
+    ":korean",
   ]
   include_dirs = [
     "//src",
     "//third_party/",
   ]
-  libs = [
-    "cpr"
-  ]
+  # libs = [
+  #   "cpr"
+  # ]
   sources = [
     "youtube.cpp",
   ]
