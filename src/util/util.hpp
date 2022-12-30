@@ -81,7 +81,7 @@ static std::string ExtractFilename(const std::string& full_url)
 static std::string FetchTemporaryFile(const std::string& full_url, const bool verify_ssl = true)
 {
   const auto filename   = ExtractFilename(full_url);
-  const cpr::Response r = cpr::Get(cpr::Url{full_url}, cpr::VerifySsl(verify_ssl));
+  const cpr::Response r = cpr::Get(cpr::Url{full_url});//, cpr::VerifySsl(verify_ssl));
   save_as_file(r.text, filename);
 
   return filename;

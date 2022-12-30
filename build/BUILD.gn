@@ -7,7 +7,7 @@ config("compiler_defaults") {
     cflags = [
       "-fPIC",
       "-pthread",
-      "-lcpr",
+      # "-lcpr",
       "-g",
     ]
 

@@ -1,7 +1,7 @@
 executable("blog_bot") {
   public_configs = [
     "//src/bot/youtube:inih",
-    "//src/bot/discord:cpr"
+    "//src/bot/kettr:cpr"
   ]
 
   deps = [
@@ -11,9 +11,9 @@ executable("blog_bot") {
     "//src/"
   ]
 
-  libs = [
-    "cpr"
-  ]
+  # libs = [
+  #   "cpr"
+  # ]
 
   sources = [
     "//src/bot/blog/main.cpp"

@@ -1,0 +1,58 @@
+
+config("kettr") {
+  include_dirs = [
+    "//third_party/kettr/src",
+    "//third_party/katrix/third_party/kutils/include",
+    "//third_party/json/include"
+  ]
+
+  libs = [
+    "//third_party/kettr/build/libkettr.a",
+  ]
+
+  visibility = [ ":kettr_lib" ]
+}
+
+config("cpr") {
+  # include_dirs = [
+  #   "//third_party/kettr/third_party/cpr/include"
+  # ]
+
+  libs = [
+    "//third_party/kettr/third_party/cpr/build/lib/libcpr.so",
+  ]
+  include_dirs = [
+    "//third_party/cpr/include"
+  ]
+}
+
+group("kettr_lib") {
+  public_configs = [
+    ":kettr",
+    ":cpr"
+  ]
+
+}
+
+executable("kettr_bot") {
+
+deps = [
+  ":kettr_lib",
+]
+
+include_dirs = [
+    "//src/"
+]
+
+# libs = [
+#   # "crypto",
+#   "cpr",
+#   # "curl",
+#   # "pthread"
+# ]
+
+sources = [
+  "//src/bot/kettr/main.cpp"
+]
+
+}
