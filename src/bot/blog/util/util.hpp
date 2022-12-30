@@ -29,7 +29,7 @@ static const std::string FetchFile(const std::string& full_url, const std::strin
   if (fln_beg != std::string::npos)
   {
     const std::string   filename = url.substr(fln_beg + 1);
-    const cpr::Response r        = cpr::Get(cpr::Url{s_url}, cpr::VerifySsl(verify_ssl));
+    const cpr::Response r        = cpr::Get(cpr::Url{s_url});
     if (r.error.code == cpr::ErrorCode::OK)
     {
       SaveToFile(r.text, (path + filename));
