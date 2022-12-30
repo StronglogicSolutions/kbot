@@ -208,6 +208,7 @@ virtual bool                 IsRunning() = 0;
 virtual void                 Start() = 0;
 virtual void                 Shutdown() = 0;
 virtual void                 Init() = 0;
+virtual void                 do_work() { /* no-op */ };
 
 private:
 std::string m_name;

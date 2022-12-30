@@ -2,6 +2,7 @@
 #include "channel_port.hpp"
 #include <condition_variable>
 #include <mutex>
+#include <kettr.hpp>
 
 static void sig_pipe_handler(int signal)
 {
@@ -97,6 +98,7 @@ int main(int argc, char** argv)
 {
   signal(SIGPIPE, sig_pipe_handler);
   kbot::SocketState state{};
+  // kettr kettr_bot{"something", "other"};
 
   for (;;)
   {

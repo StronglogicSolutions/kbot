@@ -7,7 +7,8 @@
 
 namespace katrix
 {
-namespace constants {
+namespace constants
+{
 static const uint8_t     APP_NAME_LENGTH{6};
 static const char*       DEFAULT_CONFIG_PATH{"config/config.ini"};
 } // namespace constants
@@ -39,7 +40,48 @@ static std::string GetRoomID()
 }
 
 } // ns katrix
-namespace kbot {
+namespace kbot
+{
+template <int64_t INTERVAL = 3000>
+class timer
+{
+using time_point_t = std::chrono::time_point<std::chrono::system_clock>;
+using ms_t         = std::chrono::milliseconds;
+using duration_t   = std::chrono::duration<std::chrono::system_clock, ms_t>;
+
+public:
+  bool check_and_update()
+  {
+    if (const auto tp = now(); ready(tp))
+    {
+      _last = tp;
+      return true;
+    }
+    return false;
+  }
+
+  bool ready(const time_point_t t)
+  {
+    return (std::chrono::duration_cast<ms_t>(t - _last).count() > INTERVAL);
+  }
+
+  time_point_t
+  now()
+  {
+    return std::chrono::system_clock::now();
+  }
+
+private:
+  time_point_t _last{now()};
+};
+
+auto FetchFiles = [](const auto& urls)
+{
+  std::vector<std::string> fetched;
+  for (const auto& url : urls) if (!url.empty()) fetched.push_back(FetchTemporaryFile(url));
+  return fetched;
+};
+
 class MatrixBot : public kbot::Worker,
                   public kbot::Bot,
                   public katrix::KatrixBot
@@ -108,12 +150,11 @@ public:
   {
     using Message = katrix::Msg_t;
 
-    auto FetchFiles = [](auto urls)
+    if (!m_timer.check_and_update())
     {
-      std::vector<std::string> fetched_uris;
-      for (const auto& url : urls) if (!url.empty()) fetched_uris.push_back(FetchTemporaryFile(url));
-      return fetched_uris;
-    };
+      m_requests.push_back(request);
+      return false;
+    }
 
     m_last_request = request;
 
@@ -170,8 +211,19 @@ public:
     Worker::stop();
   }
 
+  void do_work() final
+  {
+    if (!m_requests.empty())
+    {
+      const auto& request = m_requests.back();
+      m_requests.pop_back();
+      HandleEvent(request);
+    }
+  }
+
 private:
   using files_t = std::vector<std::string>;
+  using requests_t = std::deque<BotRequest>;
 
   BrokerCallback m_send_event_fn;
   BotRequest     m_last_request;
@@ -179,5 +231,7 @@ private:
   files_t        m_files;
   uint32_t       m_files_to_send;
   uint32_t       m_retries;
+  timer<3000>    m_timer;
+  requests_t     m_requests;
 };
 } // namespace kbot
