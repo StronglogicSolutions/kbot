@@ -55,4 +55,4 @@ group("kettr_lib") {
 #   "//src/bot/kettr/main.cpp"
 # ]
 
-}
+# }
