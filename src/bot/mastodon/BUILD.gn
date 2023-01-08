@@ -38,7 +38,6 @@ group("kstodon_lib") {
 executable("mastodon_bot") {
 public_configs = [
   ":nlp",
-  # ":cpr",
   "//src/bot/youtube:kjson",
   "//src/bot/youtube:inih",
 ]
@@ -46,13 +45,6 @@ public_configs = [
 deps = [
   ":kstodon_lib"
 ]
-
-# libs = [
-#   # "crypto",
-#   "cpr",
-#   # "curl",
-#   # "pthread"
-# ]
 
 sources = [
   "//src/bot/mastodon/main.cpp"

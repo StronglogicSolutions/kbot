@@ -11,10 +11,6 @@ executable("blog_bot") {
     "//src/"
   ]
 
-  # libs = [
-  #   "cpr"
-  # ]
-
   sources = [
     "//src/bot/blog/main.cpp"
   ]
