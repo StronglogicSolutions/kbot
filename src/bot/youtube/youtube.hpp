@@ -47,7 +47,7 @@ public:
   virtual void                 Start() override;
   virtual void                 Shutdown() override;
   virtual void                 SetCallback(BrokerCallback cb_fn) override;
-  virtual bool                 HandleEvent(BotRequest event) override;
+  virtual bool                 HandleEvent(const BotRequest& event) override;
   LiveChatMap                  GetChats();
   std::string                  GetResults();
   bool                         PostMessage(std::string message);

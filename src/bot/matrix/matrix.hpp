@@ -147,7 +147,7 @@ public:
     m_send_event_fn = cb_fn;
   }
 
-  bool HandleEvent(BotRequest request)
+  bool HandleEvent(const BotRequest& request)
   {
     using Message = katrix::Msg_t;
 
@@ -216,7 +216,7 @@ public:
   {
     if (!m_requests.empty())
     {
-      const auto& request = m_requests.back();
+      const auto request = m_requests.back();
       m_requests.pop_back();
       HandleEvent(request);
     }

@@ -226,7 +226,7 @@ void YouTubeBot::SetCallback(BrokerCallback cb_fn) {
  * @return true
  * @return false
  */
-bool YouTubeBot::HandleEvent(BotRequest request) {
+bool YouTubeBot::HandleEvent(const BotRequest& request) {
   using namespace ktube;
   bool error{false};
   const auto event = request.event;

@@ -203,7 +203,7 @@ std::string GetName() { return m_name; }
 
 virtual std::unique_ptr<API> GetAPI(std::string name) = 0;
 virtual void                 SetCallback(BrokerCallback cb_fn_ptr) = 0;
-virtual bool                 HandleEvent(BotRequest event) = 0;
+virtual bool                 HandleEvent(const BotRequest& event) = 0;
 virtual bool                 IsRunning() = 0;
 virtual void                 Start() = 0;
 virtual void                 Shutdown() = 0;
