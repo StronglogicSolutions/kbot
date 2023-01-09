@@ -34,25 +34,25 @@ group("kettr_lib") {
 
 }
 
-executable("kettr_bot") {
+# executable("kettr_bot") {
 
-deps = [
-  ":kettr_lib",
-]
-
-include_dirs = [
-    "//src/"
-]
-
-# libs = [
-#   # "crypto",
-#   "cpr",
-#   # "curl",
-#   # "pthread"
+# deps = [
+#   ":kettr_lib",
 # ]
 
-sources = [
-  "//src/bot/kettr/main.cpp"
-]
+# include_dirs = [
+#     "//src/"
+# ]
 
-}
+# # libs = [
+# #   # "crypto",
+# #   "cpr",
+# #   # "curl",
+# #   # "pthread"
+# # ]
+
+# sources = [
+#   "//src/bot/kettr/main.cpp"
+# ]
+
+# }

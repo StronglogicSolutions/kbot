@@ -7,7 +7,8 @@
 
 namespace katrix
 {
-namespace constants {
+namespace constants
+{
 static const uint8_t     APP_NAME_LENGTH{6};
 static const char*       DEFAULT_CONFIG_PATH{"config/config.ini"};
 } // namespace constants
@@ -17,29 +18,72 @@ static std::string get_executable_cwd()
   std::string full_path{realpath("/proc/self/exe", NULL)};
   return full_path.substr(0, full_path.size() - (constants::APP_NAME_LENGTH  + 1));
 }
-
+//-----------------------------------------------------------------------
 static const INIReader GetConfig()
 {
   return INIReader{get_executable_cwd() + "/../" + constants::DEFAULT_CONFIG_PATH};
 }
-
+//-----------------------------------------------------------------------
 static std::string GetUsername()
 {
   return GetConfig().GetString("matrix_bot", "username", "");
 }
-
+//-----------------------------------------------------------------------
 static std::string GetPassword()
 {
   return GetConfig().GetString("matrix_bot", "password", "");
 }
-
+//-----------------------------------------------------------------------
 static std::string GetRoomID()
 {
   return GetConfig().GetString("matrix_bot", "room_id", "");
 }
 
 } // ns katrix
-namespace kbot {
+namespace kbot
+{
+template <int64_t INTERVAL = 3000>
+class timer
+{
+using time_point_t = std::chrono::time_point<std::chrono::system_clock>;
+using ms_t         = std::chrono::milliseconds;
+using duration_t   = std::chrono::duration<std::chrono::system_clock, ms_t>;
+
+public:
+  bool
+  check_and_update()
+  {
+    if (const auto tp = now(); ready(tp))
+    {
+      _last = tp;
+      return true;
+    }
+    return false;
+  }
+
+private:
+  bool
+  ready(const time_point_t t) const
+  {
+    return (std::chrono::duration_cast<ms_t>(t - _last).count() > INTERVAL);
+  }
+//-----------------------------------------------------------------------
+  time_point_t
+  now()
+  {
+    return std::chrono::system_clock::now();
+  }
+//-----------------------------------------------------------------------
+  time_point_t _last{now()};
+};
+
+auto FetchFiles = [](const auto& urls)
+{
+  std::vector<std::string> fetched;
+  for (const auto& url : urls) if (!url.empty()) fetched.push_back(FetchTemporaryFile(url));
+  return fetched;
+};
+
 class MatrixBot : public kbot::Worker,
                   public kbot::Bot,
                   public katrix::KatrixBot
@@ -82,14 +126,14 @@ public:
     m_files_to_send(0),
     m_retries(50)
   {}
-
-  virtual void Init() override
+//-----------------------------------------------------------------------
+  virtual void Init() final
   {
     kbot::log("Katrix logging in");
     katrix::KatrixBot::login();
   }
-
-  virtual void loop() override
+//-----------------------------------------------------------------------
+  virtual void loop() final
   {
     if (katrix::KatrixBot::logged_in())
     {
@@ -98,22 +142,21 @@ public:
         katrix::KatrixBot::run();
     }
   }
-
-  void SetCallback(BrokerCallback cb_fn)
+//-----------------------------------------------------------------------
+  void SetCallback(BrokerCallback cb_fn) final
   {
     m_send_event_fn = cb_fn;
   }
-
-  bool HandleEvent(BotRequest request)
+//-----------------------------------------------------------------------
+  bool HandleEvent(const BotRequest& request) final
   {
     using Message = katrix::Msg_t;
 
-    auto FetchFiles = [](auto urls)
+    if (!m_timer.check_and_update())
     {
-      std::vector<std::string> fetched_uris;
-      for (const auto& url : urls) if (!url.empty()) fetched_uris.push_back(FetchTemporaryFile(url));
-      return fetched_uris;
-    };
+      m_requests.push_back(request);
+      return false;
+    }
 
     m_last_request = request;
 
@@ -147,31 +190,42 @@ public:
     }
     return true;
   }
-
-  virtual std::unique_ptr<API> GetAPI(std::string name) override
+//-----------------------------------------------------------------------
+  virtual std::unique_ptr<API> GetAPI(std::string name) final
   {
     return nullptr;
   }
-
-  virtual bool IsRunning() override
+//-----------------------------------------------------------------------
+  virtual bool IsRunning() final
   {
     return m_is_running;
   }
-
-  virtual void Start() override
+//-----------------------------------------------------------------------
+  virtual void Start() final
   {
     while (!katrix::KatrixBot::logged_in());
     if (!m_is_running)
       Worker::start();
   }
-
-  virtual void Shutdown() override
+//-----------------------------------------------------------------------
+  virtual void Shutdown() final
   {
     Worker::stop();
   }
+//-----------------------------------------------------------------------
+  void do_work() final
+  {
+    if (!m_requests.empty())
+    {
+      const auto request = m_requests.back();
+      m_requests.pop_back();
+      HandleEvent(request);
+    }
+  }
 
 private:
-  using files_t = std::vector<std::string>;
+  using files_t    = std::vector<std::string>;
+  using requests_t = std::deque<BotRequest>;
 
   BrokerCallback m_send_event_fn;
   BotRequest     m_last_request;
@@ -179,5 +233,7 @@ private:
   files_t        m_files;
   uint32_t       m_files_to_send;
   uint32_t       m_retries;
+  timer<3000>    m_timer;
+  requests_t     m_requests;
 };
 } // namespace kbot

@@ -50,13 +50,6 @@ deps = [
   "//src/bot/youtube:inih_lib"
 ]
 
-# libs = [
-#   # "crypto",
-#   "cpr",
-#   # "curl",
-#   # "pthread"
-# ]
-
 sources = [
   "//src/bot/telegram/main.cpp"
 ]
