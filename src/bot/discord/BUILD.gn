@@ -47,10 +47,6 @@ deps = [
   "//src/bot/youtube:inih_lib"
 ]
 
-# libs = [
-#   "cpr"
-# ]
-
 sources = [
   "//src/bot/discord/main.cpp"
 ]
