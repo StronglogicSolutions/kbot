@@ -72,7 +72,7 @@ void SetCallback(BrokerCallback cb_fn) {
   m_send_event_fn = cb_fn;
 }
 
-bool HandleEvent(BotRequest request) {
+bool HandleEvent(const BotRequest& request) {
   bool error{false};
   const auto event = request.event;
 

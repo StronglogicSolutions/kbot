@@ -18,6 +18,9 @@ config("cpr") {
   include_dirs = [
     "//third_party/cpr/include"
   ]
+  libs = [
+    "//third_party/kettr/third_party/cpr/build/lib/libcpr.so",
+  ]
 }
 
 config("kbot_includes") {
@@ -45,13 +48,6 @@ public_configs = [
 deps = [
   ":keleqram_lib",
   "//src/bot/youtube:inih_lib"
-]
-
-libs = [
-  # "crypto",
-  "cpr",
-  # "curl",
-  # "pthread"
 ]
 
 sources = [

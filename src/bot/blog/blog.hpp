@@ -148,7 +148,7 @@ virtual void SetCallback(BrokerCallback cb_fn) override
   m_send_event_fn = cb_fn;
 }
 
-virtual bool HandleEvent(BotRequest request) override
+virtual bool HandleEvent(const BotRequest& request) override
 {
   static const auto MAX_TITLE_SIZE{25};
 

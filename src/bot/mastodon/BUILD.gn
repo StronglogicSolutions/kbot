@@ -15,6 +15,9 @@ config("cpr") {
   include_dirs = [
     "//third_party/cpr/include"
   ]
+  libs = [
+    "//third_party/kettr/third_party/cpr/build/lib/libcpr.so",
+  ]
 }
 
 config("kbot_includes") {
@@ -27,27 +30,20 @@ config("kbot_includes") {
 group("kstodon_lib") {
   public_configs = [
     ":kstodon",
-    ":kbot_includes"
-    ]
+    ":kbot_includes",
+    ":cpr",
+  ]
 }
 
 executable("mastodon_bot") {
 public_configs = [
   ":nlp",
-  ":cpr",
   "//src/bot/youtube:kjson",
   "//src/bot/youtube:inih",
 ]
 
 deps = [
   ":kstodon_lib"
-]
-
-libs = [
-  # "crypto",
-  "cpr",
-  # "curl",
-  # "pthread"
 ]
 
 sources = [

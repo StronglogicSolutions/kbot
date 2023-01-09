@@ -38,7 +38,7 @@ m_retries   {0}
   m_tx.set(zmq::sockopt::routing_id, "botbroker");
   m_rx.set(zmq::sockopt::routing_id, "botrouter");
   m_tx.connect(TX_ADDR);
-  m_rx.bind(RX_ADDR);
+  m_rx.bind   (RX_ADDR);
 }
 
 bool ReceiveIPCMessage(const bool is_request = true)
@@ -72,7 +72,7 @@ bool ReceiveIPCMessage(const bool is_request = true)
 
   if (ipc_message)
   {
-    m_rx_msgs.emplace_back(std::move(ipc_message));
+    m_messages.emplace_back(std::move(ipc_message));
     return true;
   }
 
@@ -81,14 +81,16 @@ bool ReceiveIPCMessage(const bool is_request = true)
 
 bool SendIPCMessage(u_ipc_msg_ptr message, const bool use_req = false)
 {
-  auto&          socket    = (use_req) ? m_tx : m_rx;
-  auto           payload   = message->data();
-  int32_t        frame_num = payload.size();
+        auto&  socket    = (use_req) ? m_tx : m_rx;
+  const auto   payload   = message->data();
+  const size_t frame_num = payload.size();
+  if (message->type() != ::constants::IPC_KEEPALIVE_TYPE)
+    log("Sending IPC message of type ", ::constants::IPC_MESSAGE_NAMES.at(message->type()));
 
   for (int i = 0; i < frame_num; i++)
   {
-    int  flag  = i == (frame_num - 1) ? 0 : ZMQ_SNDMORE;
-    auto data  = payload.at(i);
+    int  flag = i == (frame_num - 1) ? 0 : ZMQ_SNDMORE;
+    auto data = payload.at(i);
 
     zmq::message_t message{data.size()};
     std::memcpy(message.data(), data.data(), data.size());
@@ -115,26 +117,16 @@ uint8_t Poll()
 
 std::vector<u_ipc_msg_ptr> GetRXMessages()
 {
-  return std::move(m_rx_msgs);
-}
-
-bool REQReady()
-{
-  return m_tx_ready;
+  return std::move(m_messages);
 }
 
 private:
-static std::string const FindDataRequest(std::string message) {
-  return (message.find(DATA_REQUEST) != std::string::npos) ?
-    DATA_REQUEST :
-    "";
-}
+using ipc_msgs_t = std::vector<u_ipc_msg_ptr>;
 
 zmq::context_t m_context;
 zmq::socket_t  m_rx;
 zmq::socket_t  m_tx;
-std::vector<u_ipc_msg_ptr>     m_tx_msgs;
-std::vector<u_ipc_msg_ptr>     m_rx_msgs;
+ipc_msgs_t     m_messages;
 uint8_t        m_socket_num;
 uint8_t        m_timeout;
 uint8_t        m_retries;

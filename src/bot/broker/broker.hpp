@@ -343,7 +343,7 @@ virtual void loop() override
       else
       if (request.event == INFO_EVENT)
       {
-        kbot::log(platform + " sending info in respones to " + request.previous_event);
+        kbot::log(platform + " sending info in response to " + request.previous_event);
         m_outbound_queue.emplace_back(std::make_unique<platform_info>(platform, request.data, request.args));
       }
       else
@@ -351,6 +351,9 @@ virtual void loop() override
 
       m_queue.pop_front();
     }
+
+    for (const auto& bot : m_pool)
+      bot->do_work();
 
     m_condition.wait_for(lock, std::chrono::milliseconds(300));
   }

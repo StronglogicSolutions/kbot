@@ -103,7 +103,7 @@ poll      = 0x01,
 poll_stop = 0x02
 };
 
-bool HandleEvent(BotRequest request)
+bool HandleEvent(const BotRequest& request)
 {
   using namespace kbot::keleqram::constants;
   static const uint32_t msg_cmd   = static_cast<uint32_t>(TGCommand::message);
