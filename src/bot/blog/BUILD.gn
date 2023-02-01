@@ -1,12 +1,15 @@
 executable("blog_bot") {
   public_configs = [
     "//src/bot/youtube:inih",
-    "//src/bot/kettr:cpr"
+    # "//src/bot/kettr:cpr"
   ]
 
   deps = [
     "//src/bot/youtube:ini_reader",
   ]
+
+  public_deps = ["//src/bot/broker:cpr_lib"]
+
   include_dirs = [
     "//src/"
   ]

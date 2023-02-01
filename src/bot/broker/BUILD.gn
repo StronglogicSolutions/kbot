@@ -1,9 +1,20 @@
+config("cpr") {
+  libs = [
+    "//third_party/kettr/third_party/cpr/build/lib/libcpr.so",
+  ]
+  include_dirs = [
+    "//third_party/cpr/include"
+  ]
+}
 
+group("cpr_lib") {
+ public_configs = [":cpr"]
+}
 
 executable("broker") {
 public_configs = [
   "//:cppzmq",
-  "//src/bot/kettr:cpr",
+  # "//src/bot/kettr:cpr",
   "//src/bot/mastodon:kstodon",
   "//src/bot/mastodon:nlp",
   "//src/bot/discord:kscord",
@@ -28,6 +39,8 @@ deps = [
   # "//src/bot/kettr:kettr_lib",
   "//src/bot/youtube:youtube_bot_sources",
 ]
+
+public_deps = [":cpr_lib"]
 
 sources = [
   "//src/bot/broker/main.cpp"

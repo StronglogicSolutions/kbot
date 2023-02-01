@@ -15,7 +15,7 @@ all_executables = [
   "//src/bot/broker:broker",
   "//src/bot/blog:blog_bot",
   "//src/bot/telegram:telegram_bot",
-  "//src/bot/kettr:kettr_bot",
+#  "//src/bot/kettr:kettr_bot",
 ]
 
 group("executables") {

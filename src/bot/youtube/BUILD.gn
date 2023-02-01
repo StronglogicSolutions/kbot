@@ -103,12 +103,14 @@ source_set("youtube_bot_sources") {
     ":psql_config",
     "//src/bot/kettr:cpr"
   ]
+
   deps = [
     ":ini_reader",
     ":ktube_lib",
     ":knlp_lib",
     ":korean",
   ]
+
   include_dirs = [
     "//src",
     "//third_party/",
@@ -116,6 +118,9 @@ source_set("youtube_bot_sources") {
   # libs = [
   #   "cpr"
   # ]
+
+  public_deps = ["//src/bot/broker:cpr_lib"]
+
   sources = [
     "youtube.cpp",
   ]

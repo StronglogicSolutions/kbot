@@ -11,14 +11,14 @@ config("nlp") {
   ]
 }
 
-config("cpr") {
-  include_dirs = [
-    "//third_party/cpr/include"
-  ]
-  libs = [
-    "//third_party/kettr/third_party/cpr/build/lib/libcpr.so",
-  ]
-}
+# config("cpr") {
+#   include_dirs = [
+#     "//third_party/cpr/include"
+#   ]
+#   libs = [
+#     "//third_party/kettr/third_party/cpr/build/lib/libcpr.so",
+#   ]
+# }
 
 config("kbot_includes") {
   include_dirs = [
@@ -29,7 +29,6 @@ config("kbot_includes") {
 group("kscord_lib") {
   public_configs = [
     ":kscord",
-    ":cpr",
     ":kbot_includes",
   ]
 }
@@ -37,7 +36,7 @@ group("kscord_lib") {
 executable("discord_bot") {
 public_configs = [
   ":nlp",
-  ":cpr",
+  # ":cpr",
   "//src/bot/youtube:kjson",
   "//src/bot/youtube:inih",
 ]
@@ -46,6 +45,8 @@ deps = [
   ":kscord_lib",
   "//src/bot/youtube:inih_lib"
 ]
+
+public_deps = ["//src/bot/broker:cpr_lib"]
 
 # libs = [
 #   "cpr"

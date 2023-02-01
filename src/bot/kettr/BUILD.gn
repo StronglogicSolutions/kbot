@@ -14,10 +14,6 @@ config("kettr") {
 }
 
 config("cpr") {
-  # include_dirs = [
-  #   "//third_party/kettr/third_party/cpr/include"
-  # ]
-
   libs = [
     "//third_party/kettr/third_party/cpr/build/lib/libcpr.so",
   ]

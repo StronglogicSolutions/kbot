@@ -9,7 +9,7 @@ config("katrix") {
   ]
 
   libs = [
-    "//third_party/katrix/build/libkatrix.a",
+    "//third_party/katrix/build/libkatrixd.a",
     "//third_party/katrix/build/third_party/mtxclient/libmatrix_client.so"
   ]
 
