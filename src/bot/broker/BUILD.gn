@@ -1,14 +1,24 @@
-config("cpr") {
-  libs = [
-    "//third_party/kettr/third_party/cpr/build/lib/libcpr.so",
-  ]
-  include_dirs = [
-    "//third_party/cpr/include"
-  ]
+# config("cpr") {
+#   libs = [
+#     "//third_party/kettr/third_party/cpr/build/lib/libcpr.so",
+#   ]
+#   include_dirs = [
+#     "//third_party/cpr/include"
+#   ]
+# }
+
+# group("cpr_lib") {
+#  public_configs = [":cpr"]
+# }
+
+config("cpr_library") {
+  include_dirs = [cpr_include]
+  libs = ["cpr"]
+  visibility = [ ":cpr_lib" ]
 }
 
 group("cpr_lib") {
- public_configs = [":cpr"]
+  public_configs = [":cpr_library"]
 }
 
 executable("broker") {
