@@ -20,6 +20,7 @@ is_mac = host_os == "mac" && current_os == "mac" && target_os == "mac"
 
 declare_args() {
   is_debug = true
+  cpr_include = "/usr/local/include/cpr"
 }
 
 # All binary targets will get this list of configs by default.
