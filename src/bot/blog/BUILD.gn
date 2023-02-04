@@ -1,7 +1,6 @@
 executable("blog_bot") {
   public_configs = [
-    "//src/bot/youtube:inih",
-    # "//src/bot/kettr:cpr"
+    "//src/bot/youtube:inih"
   ]
 
   deps = [
