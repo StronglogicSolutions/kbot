@@ -9,16 +9,12 @@
 
 #include <interfaces/interfaces.hpp>
 #include <api/api.hpp>
-// #include <api/korean/korean.hpp>
 
 #include <ktube/ktube.hpp>
 #include <psqlorm.hpp>
 
 namespace kbot {
 
-// using namespace conversation;
-// using namespace ktube;
-// using namespace korean;
 using LiveMessages   = ktube::LiveMessages;
 using LiveChatMap    = ktube::LiveChatMap;
 using YouTubeDataAPI = ktube::YouTubeDataAPI;

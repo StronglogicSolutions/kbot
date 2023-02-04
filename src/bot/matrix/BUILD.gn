@@ -38,13 +38,6 @@ include_dirs = [
     "//src/"
 ]
 
-# libs = [
-#   # "crypto",
-#   # "cpr",
-#   # "curl",
-#   # "pthread"
-# ]
-
 sources = [
   "//src/bot/matrix/main.cpp"
 ]
