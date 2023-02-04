@@ -14,7 +14,8 @@
 
 #define OPENSSL_API_COMPAT 0x0908
 
-namespace kbot {
+namespace kbot
+{
 using bot_ptr       = Bot*;
 using BotPool       = std::vector<bot_ptr>;
 using EventQueue    = std::deque<BotRequest>;
@@ -27,19 +28,20 @@ static const uint8_t IPC_USER_INDEX   {0x02};
 static const uint8_t IPC_OPTIONS_INDEX{0x03};
 static const uint8_t IPC_PARAM_NUMBER {0x03};
 
-static std::vector<std::string> GetArgs(std::string s) {
+static std::vector<std::string> GetArgs(std::string s)
+{
   using json = nlohmann::json;
   json d = json::parse(s, nullptr, false);
   return (!d.is_null() && d.contains("args")) ? d["args"].get<std::vector<std::string>>() : std::vector<std::string>{};
 }
-
+//------------------------------------------------------------
 static std::string CreateArgs(const std::string& s)
 {
   nlohmann::json json;
   json["args"].push_back(s);
   return json.dump();
 }
-
+//------------------------------------------------------------
 static std::string CreateArgs(const std::vector<std::string>& v)
 {
   nlohmann::json json;
@@ -47,17 +49,17 @@ static std::string CreateArgs(const std::vector<std::string>& v)
   for (const auto& s : v) json["args"].push_back(s);
   return json.dump();
 }
-
+//------------------------------------------------------------
 bool ValidIPCArguments(const std::vector<std::string>& arguments)
 {
   return arguments.size() >= IPC_PARAM_NUMBER;
 }
-
+//------------------------------------------------------------
 bool HasOptions(const std::vector<std::string>& arguments)
 {
   return arguments.size() >= IPC_PARAM_NUMBER + 1;
 }
-
+//------------------------------------------------------------
 static std::string GetOptions(const std::vector<std::string>& data)
 {
   std::vector<std::string> options;
@@ -65,7 +67,7 @@ static std::string GetOptions(const std::vector<std::string>& data)
     options = std::vector<std::string>{data.begin() + IPC_OPTIONS_INDEX, data.end()};
   return CreateArgs(options);
 }
-
+//------------------------------------------------------------
 static const BotRequest CreatePlatformEvent(platform_message* message)
 {
   return BotRequest{
@@ -80,13 +82,14 @@ static const BotRequest CreatePlatformEvent(platform_message* message)
   };
 }
 
-namespace constants {
-const uint8_t YOUTUBE_BOT_INDEX {0x00};
-const uint8_t MASTODON_BOT_INDEX{0x01};
-const uint8_t DISCORD_BOT_INDEX {0x02};
-const uint8_t BLOG_BOT_INDEX    {0x03};
-const uint8_t TELEGRAM_BOT_INDEX{0x04};
-const uint8_t MATRIX_BOT_INDEX  {0x05};
+namespace constants
+{
+  const uint8_t YOUTUBE_BOT_INDEX {0x00};
+  const uint8_t MASTODON_BOT_INDEX{0x01};
+  const uint8_t DISCORD_BOT_INDEX {0x02};
+  const uint8_t BLOG_BOT_INDEX    {0x03};
+  const uint8_t TELEGRAM_BOT_INDEX{0x04};
+  const uint8_t MATRIX_BOT_INDEX  {0x05};
 } // namespace constants
 
 Broker* g_broker;
@@ -123,7 +126,7 @@ Broker(ipc_fail_fn _cb)
 
   m_daemon.add_observer("botbroker", [] { log("Heartbeat timed out"); });
 }
-
+//------------------------------------------------------------
 void ProcessMessage(u_ipc_msg_ptr message)
 {
   auto TGMessage = [](auto msg) { return msg.find("telegram") != std::string::npos; };
@@ -169,14 +172,7 @@ void ProcessMessage(u_ipc_msg_ptr message)
     m_outbound_queue.emplace_back(std::make_unique<keepalive>());
   }
 }
-
-/**
- * @brief
- *
- * @param event
- * @return true
- * @return false
- */
+//------------------------------------------------------------
 static bool ProcessEvent(BotRequest event)
 {
   log("Processing event to broker's queue\n", event.to_string().c_str());
@@ -187,26 +183,17 @@ static bool ProcessEvent(BotRequest event)
   }
   return false;
 }
-
-/**
- * @brief
- *
- * @param event
- */
+//------------------------------------------------------------
 void enqueue(BotRequest event)
 {
   m_queue.emplace_back(event);
 }
-
-/**
- * @brief
- *
- */
+//------------------------------------------------------------
 void run()
 {
   Worker::start();
 }
-
+//------------------------------------------------------------
 void restart_bot(Platform platform)
 {
   switch (platform)
@@ -255,11 +242,7 @@ void restart_bot(Platform platform)
     break;
   }
 }
-
-/**
- * @brief
- *
- */
+//------------------------------------------------------------
 virtual void loop() override
 {
   YTBot().Start();
@@ -358,12 +341,7 @@ virtual void loop() override
     m_condition.wait_for(lock, std::chrono::milliseconds(300));
   }
 }
-
-/**
- * SendEvent
- *
- * @param [in] {BotEvent}
- */
+//------------------------------------------------------------
 void SendEvent(const BotRequest& event)
 {
   switch (event.platform)
@@ -391,13 +369,7 @@ void SendEvent(const BotRequest& event)
     break;
   }
 }
-
-/**
- * @brief
- *
- * @return true
- * @return false
- */
+//------------------------------------------------------------
 bool Shutdown()
 {
   try
@@ -406,18 +378,18 @@ bool Shutdown()
     Bot& mastodon_bot = MDBot();
     Bot& discord_bot  = DCBot();
     Bot& blog_bot     = BLBot();
-    Bot& tg_bot       = TGBot();
-    Bot& mx_bot       = MXBot();
+    Bot& telegram_bot = TGBot();
+    Bot& matrix_bot   = MXBot();
 
     youtube_bot .Shutdown();
     mastodon_bot.Shutdown();
     discord_bot .Shutdown();
     blog_bot    .Shutdown();
-    tg_bot      .Shutdown();
-    mx_bot      .Shutdown();
+    telegram_bot.Shutdown();
+    matrix_bot  .Shutdown();
 
     while (youtube_bot.IsRunning() || mastodon_bot.IsRunning() || discord_bot.IsRunning() ||
-              blog_bot.IsRunning() ||       tg_bot.IsRunning() || mx_bot.IsRunning())
+              blog_bot.IsRunning() || telegram_bot.IsRunning() ||  matrix_bot.IsRunning())
 
     Worker::stop();
 
@@ -430,12 +402,12 @@ bool Shutdown()
     return false;
   }
 }
-
+//------------------------------------------------------------
 const bool Poll() const
 {
   return !m_outbound_queue.empty();
 }
-
+//------------------------------------------------------------
 u_ipc_msg_ptr DeQueue()
 {
   auto is_keepalive = [](auto type) { return type == ::constants::IPC_KEEPALIVE_TYPE; };
@@ -448,51 +420,51 @@ u_ipc_msg_ptr DeQueue()
 }
 
 private:
-
+//------------------------------------------------------------
 Bot& YTBot()
 {
   return *m_pool.at(constants::YOUTUBE_BOT_INDEX);
 }
-
+//------------------------------------------------------------
 Bot& MDBot()
 {
   return *m_pool.at(constants::MASTODON_BOT_INDEX);
 }
-
+//------------------------------------------------------------
 Bot& DCBot()
 {
   return *m_pool.at(constants::DISCORD_BOT_INDEX);
 }
-
+//------------------------------------------------------------
 Bot& BLBot()
 {
   return *m_pool.at(constants::BLOG_BOT_INDEX);
 }
-
+//------------------------------------------------------------
 Bot& TGBot()
 {
   return *m_pool.at(constants::TELEGRAM_BOT_INDEX);
 }
-
+//------------------------------------------------------------
 Bot& MXBot()
 {
   return *m_pool.at(constants::MATRIX_BOT_INDEX);
 }
 
-BotPool                    m_pool;
-EventQueue                 m_queue;
-std::deque<u_ipc_msg_ptr>  m_outbound_queue;
-bool                       m_bots_active;
-std::mutex                 m_mutex;
-std::condition_variable    m_condition;
-kbot::YouTubeBot           m_yt_bot;
-kbot::MastodonBot          m_md_bot;
-kbot::DiscordBot           m_dc_bot;
-kbot::BlogBot              m_bg_bot;
-kbot::TelegramBot          m_tg_bot;
-kbot::MatrixBot            m_mx_bot;
-session_daemon             m_daemon;
-ipc_fail_fn                m_on_ipc_fail;
+BotPool                   m_pool;
+EventQueue                m_queue;
+std::deque<u_ipc_msg_ptr> m_outbound_queue;
+bool                      m_bots_active;
+std::mutex                m_mutex;
+std::condition_variable   m_condition;
+kbot::YouTubeBot          m_yt_bot;
+kbot::MastodonBot         m_md_bot;
+kbot::DiscordBot          m_dc_bot;
+kbot::BlogBot             m_bg_bot;
+kbot::TelegramBot         m_tg_bot;
+kbot::MatrixBot           m_mx_bot;
+session_daemon            m_daemon;
+ipc_fail_fn               m_on_ipc_fail;
 };
 
 } // namespace kbot

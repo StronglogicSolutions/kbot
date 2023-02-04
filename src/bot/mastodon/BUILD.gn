@@ -11,15 +11,6 @@ config("nlp") {
   ]
 }
 
-config("cpr") {
-  include_dirs = [
-    "//third_party/cpr/include"
-  ]
-  libs = [
-    "//third_party/kettr/third_party/cpr/build/lib/libcpr.so",
-  ]
-}
-
 config("kbot_includes") {
   include_dirs = [
     "//src/"
@@ -30,8 +21,7 @@ config("kbot_includes") {
 group("kstodon_lib") {
   public_configs = [
     ":kstodon",
-    ":kbot_includes",
-    ":cpr",
+    ":kbot_includes"
   ]
 }
 
@@ -45,6 +35,8 @@ public_configs = [
 deps = [
   ":kstodon_lib"
 ]
+
+public_deps = ["//src/bot/broker:cpr_lib"]
 
 sources = [
   "//src/bot/mastodon/main.cpp"

@@ -116,7 +116,9 @@ source_set("youtube_bot_sources") {
     "//third_party/",
   ]
 
-  sources = [
+  public_deps = ["//src/bot/broker:cpr_lib"]
+
+sources = [
     "youtube.cpp",
   ]
 }
