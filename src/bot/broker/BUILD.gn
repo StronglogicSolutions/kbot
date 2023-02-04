@@ -1,16 +1,3 @@
-# config("cpr") {
-#   libs = [
-#     "//third_party/kettr/third_party/cpr/build/lib/libcpr.so",
-#   ]
-#   include_dirs = [
-#     "//third_party/cpr/include"
-#   ]
-# }
-
-# group("cpr_lib") {
-#  public_configs = [":cpr"]
-# }
-
 config("cpr_library") {
   include_dirs = [cpr_include]
   libs = ["cpr"]
