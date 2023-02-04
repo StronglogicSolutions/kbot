@@ -11,15 +11,6 @@ config("nlp") {
   ]
 }
 
-# config("cpr") {
-#   include_dirs = [
-#     "//third_party/cpr/include"
-#   ]
-#   libs = [
-#     "//third_party/kettr/third_party/cpr/build/lib/libcpr.so",
-#   ]
-# }
-
 config("kbot_includes") {
   include_dirs = [
     "//src/"
@@ -36,7 +27,6 @@ group("kscord_lib") {
 executable("discord_bot") {
 public_configs = [
   ":nlp",
-  # ":cpr",
   "//src/bot/youtube:kjson",
   "//src/bot/youtube:inih",
 ]
@@ -47,10 +37,6 @@ deps = [
 ]
 
 public_deps = ["//src/bot/broker:cpr_lib"]
-
-# libs = [
-#   "cpr"
-# ]
 
 sources = [
   "//src/bot/discord/main.cpp"
