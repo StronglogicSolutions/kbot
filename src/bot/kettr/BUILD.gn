@@ -13,42 +13,31 @@ config("kettr") {
   visibility = [ ":kettr_lib" ]
 }
 
-config("cpr") {
-  libs = [
-    "//third_party/kettr/third_party/cpr/build/lib/libcpr.so",
-  ]
-  include_dirs = [
-    "//third_party/cpr/include"
-  ]
-}
 
 group("kettr_lib") {
   public_configs = [
     ":kettr",
-    ":cpr"
+  ]
+
+  public_deps = [
+    "//src/bot/broker:cpr_lib",
+    "//src/bot/youtube:inih_lib"
   ]
 
 }
 
-# executable("kettr_bot") {
+executable("kettr_bot") {
 
-# deps = [
-#   ":kettr_lib",
-# ]
+deps = [
+  ":kettr_lib",
+]
 
-# include_dirs = [
-#     "//src/"
-# ]
+include_dirs = [
+    "//src/"
+]
 
-# # libs = [
-# #   # "crypto",
-# #   "cpr",
-# #   # "curl",
-# #   # "pthread"
-# # ]
+sources = [
+  "//src/bot/kettr/main.cpp"
+]
 
-# sources = [
-#   "//src/bot/kettr/main.cpp"
-# ]
-
-# }
+}

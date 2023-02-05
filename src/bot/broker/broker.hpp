@@ -10,6 +10,7 @@
 #include "bot/telegram/telegram.hpp"
 #include "bot/matrix/matrix.hpp"
 #include "bot/blog/blog.hpp"
+#include "bot/kettr/gettr.hpp"
 #include "ipc.hpp"
 
 #define OPENSSL_API_COMPAT 0x0908
@@ -90,6 +91,7 @@ namespace constants
   const uint8_t BLOG_BOT_INDEX    {0x03};
   const uint8_t TELEGRAM_BOT_INDEX{0x04};
   const uint8_t MATRIX_BOT_INDEX  {0x05};
+  const uint8_t GETTR_BOT_INDEX   {0x06};
 } // namespace constants
 
 Broker* g_broker;
@@ -100,13 +102,14 @@ public:
 Broker(ipc_fail_fn _cb)
 : m_on_ipc_fail(_cb)
 {
-  m_pool.resize(6);
+  m_pool.resize(7);
   m_pool.at(constants::YOUTUBE_BOT_INDEX)  = &m_yt_bot;
   m_pool.at(constants::MASTODON_BOT_INDEX) = &m_md_bot;
   m_pool.at(constants::DISCORD_BOT_INDEX)  = &m_dc_bot;
   m_pool.at(constants::BLOG_BOT_INDEX)     = &m_bg_bot;
   m_pool.at(constants::TELEGRAM_BOT_INDEX) = &m_tg_bot;
   m_pool.at(constants::MATRIX_BOT_INDEX)   = &m_mx_bot;
+  m_pool.at(constants::GETTR_BOT_INDEX)    = &m_gt_bot;
 
   YTBot().SetCallback(&ProcessEvent);
   MDBot().SetCallback(&ProcessEvent);
@@ -463,6 +466,7 @@ kbot::DiscordBot          m_dc_bot;
 kbot::BlogBot             m_bg_bot;
 kbot::TelegramBot         m_tg_bot;
 kbot::MatrixBot           m_mx_bot;
+kbot::GettrBot            m_gt_bot;
 session_daemon            m_daemon;
 ipc_fail_fn               m_on_ipc_fail;
 };

@@ -100,8 +100,7 @@ source_set("youtube_bot_sources") {
     ":ktube",
     ":knlp",
     ":process_executor",
-    ":psql_config",
-    "//src/bot/kettr:cpr"
+    ":psql_config"
   ]
 
   deps = [
