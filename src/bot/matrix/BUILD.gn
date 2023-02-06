@@ -19,13 +19,14 @@ config("katrix") {
 group("katrix_lib") {
   public_configs = [
     ":katrix",
-    "//src/bot/kettr:cpr",
     "//src/bot/youtube:inih",
   ]
 
   deps = [
     "//src/bot/youtube:inih_lib"
   ]
+
+  public_deps = ["//src/bot/broker:cpr_lib"]
 }
 
 executable("matrix_bot") {

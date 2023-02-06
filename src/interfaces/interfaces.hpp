@@ -26,7 +26,8 @@ enum Platform
   blog     = 0x03,
   telegram = 0x04,
   matrix   = 0x05,
-  unknown  = 0x06
+  gettr    = 0x06,
+  unknown  = 0x07
 };
 
 static enum Platform get_platform(const std::string& name)
@@ -43,6 +44,8 @@ static enum Platform get_platform(const std::string& name)
     return Platform::telegram;
   if (name == "Matrix")
     return Platform::matrix;
+  if (name == "KETTR")
+    return Platform::gettr;
   return Platform::unknown;
 }
 
@@ -60,6 +63,8 @@ static const std::string get_platform_name(Platform platform)
     return "Telegram";
   if (platform == Platform::matrix)
     return "Matrix";
+  if (platform == Platform::gettr)
+    return "Gettr";
 
   return "";
 };

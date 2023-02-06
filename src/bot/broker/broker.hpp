@@ -10,6 +10,7 @@
 #include "bot/telegram/telegram.hpp"
 #include "bot/matrix/matrix.hpp"
 #include "bot/blog/blog.hpp"
+#include "bot/kettr/gettr.hpp"
 #include "ipc.hpp"
 
 #define OPENSSL_API_COMPAT 0x0908
@@ -90,6 +91,7 @@ namespace constants
   const uint8_t BLOG_BOT_INDEX    {0x03};
   const uint8_t TELEGRAM_BOT_INDEX{0x04};
   const uint8_t MATRIX_BOT_INDEX  {0x05};
+  const uint8_t GETTR_BOT_INDEX   {0x06};
 } // namespace constants
 
 Broker* g_broker;
@@ -100,13 +102,14 @@ public:
 Broker(ipc_fail_fn _cb)
 : m_on_ipc_fail(_cb)
 {
-  m_pool.resize(6);
+  m_pool.resize(7);
   m_pool.at(constants::YOUTUBE_BOT_INDEX)  = &m_yt_bot;
   m_pool.at(constants::MASTODON_BOT_INDEX) = &m_md_bot;
   m_pool.at(constants::DISCORD_BOT_INDEX)  = &m_dc_bot;
   m_pool.at(constants::BLOG_BOT_INDEX)     = &m_bg_bot;
   m_pool.at(constants::TELEGRAM_BOT_INDEX) = &m_tg_bot;
   m_pool.at(constants::MATRIX_BOT_INDEX)   = &m_mx_bot;
+  m_pool.at(constants::GETTR_BOT_INDEX)    = &m_gt_bot;
 
   YTBot().SetCallback(&ProcessEvent);
   MDBot().SetCallback(&ProcessEvent);
@@ -114,6 +117,7 @@ Broker(ipc_fail_fn _cb)
   BLBot().SetCallback(&ProcessEvent);
   TGBot().SetCallback(&ProcessEvent);
   MXBot().SetCallback(&ProcessEvent);
+  GTBot().SetCallback(&ProcessEvent);
 
   YTBot().Init();
   MDBot().Init();
@@ -121,6 +125,7 @@ Broker(ipc_fail_fn _cb)
   BLBot().Init();
   TGBot().Init();
   MXBot().Init();
+  GTBot().Init();
 
   g_broker = this;
 
@@ -134,6 +139,8 @@ void ProcessMessage(u_ipc_msg_ptr message)
   auto MDMessage = [](auto msg) { return msg.find("mastodon") != std::string::npos; };
   auto DCMessage = [](auto msg) { return msg.find("discord")  != std::string::npos; };
   auto MXMessage = [](auto msg) { return msg.find("matrix")   != std::string::npos; };
+  auto GTMessage = [](auto msg) { return msg.find("gettr")    != std::string::npos; };
+
   if (message->type() == ::constants::IPC_KIQ_MESSAGE)
   {
     kiq_message* kiq_msg = static_cast<kiq_message*>(message.get());
@@ -156,6 +163,8 @@ void ProcessMessage(u_ipc_msg_ptr message)
       if (TGMessage(command)) platform = Platform::telegram;
       else
       if (MXMessage(command)) platform = Platform::matrix;
+      else
+      if (GTMessage(command)) platform = Platform::gettr;
 
       SendEvent(BotRequest{platform, command, user, payload, options});
     }
@@ -240,6 +249,13 @@ void restart_bot(Platform platform)
       MXBot().Init();
       MXBot().Start();
     break;
+    case Platform::gettr:
+      m_gt_bot = kbot::GettrBot{};
+      m_pool.at(constants::GETTR_BOT_INDEX) = &m_gt_bot;
+      GTBot().SetCallback(&ProcessEvent);
+      GTBot().Init();
+      GTBot().Start();
+    break;
   }
 }
 //------------------------------------------------------------
@@ -251,6 +267,7 @@ virtual void loop() override
   BLBot().Start();
   TGBot().Start();
   MXBot().Start();
+  GTBot().Start();
 
   while (Worker::m_is_running)
   {
@@ -259,7 +276,7 @@ virtual void loop() override
         [this]()
         {
           return (YTBot().IsRunning() || MDBot().IsRunning() || DCBot().IsRunning() ||
-                  BLBot().IsRunning() || TGBot().IsRunning() || MXBot().IsRunning());
+                  BLBot().IsRunning() || TGBot().IsRunning() || MXBot().IsRunning()); // GettrBot not included
         }
       );
     m_condition.notify_one();
@@ -364,8 +381,11 @@ void SendEvent(const BotRequest& event)
     case (Platform::matrix):
       MXBot().HandleEvent(event);
     break;
+    case (Platform::gettr):
+      GTBot().HandleEvent(event);
+    break;
     default:
-      kbot::log("Unable to send event for unknown platform");
+      kbot::log("Unable to send event for unknown platform: ", std::to_string(event.platform).c_str());
     break;
   }
 }
@@ -450,6 +470,11 @@ Bot& MXBot()
 {
   return *m_pool.at(constants::MATRIX_BOT_INDEX);
 }
+//------------------------------------------------------------
+Bot& GTBot()
+{
+  return *m_pool.at(constants::GETTR_BOT_INDEX);
+}
 
 BotPool                   m_pool;
 EventQueue                m_queue;
@@ -463,6 +488,7 @@ kbot::DiscordBot          m_dc_bot;
 kbot::BlogBot             m_bg_bot;
 kbot::TelegramBot         m_tg_bot;
 kbot::MatrixBot           m_mx_bot;
+kbot::GettrBot            m_gt_bot;
 session_daemon            m_daemon;
 ipc_fail_fn               m_on_ipc_fail;
 };

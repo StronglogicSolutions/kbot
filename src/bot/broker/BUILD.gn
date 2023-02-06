@@ -11,12 +11,12 @@ group("cpr_lib") {
 executable("broker") {
 public_configs = [
   "//:cppzmq",
-  # "//src/bot/kettr:cpr",
   "//src/bot/mastodon:kstodon",
   "//src/bot/mastodon:nlp",
   "//src/bot/discord:kscord",
   "//src/bot/telegram:keleqram",
   "//src/bot/matrix:katrix",
+  "//src/bot/kettr:kettr",
 ]
 
 libs = [ "zmq" ]
@@ -33,7 +33,7 @@ deps = [
   "//src/bot/discord:kscord_lib",
   "//src/bot/mastodon:kstodon_lib",
   "//src/bot/telegram:keleqram_lib",
-  # "//src/bot/kettr:kettr_lib",
+  "//src/bot/kettr:kettr_lib",
   "//src/bot/youtube:youtube_bot_sources",
 ]
 
