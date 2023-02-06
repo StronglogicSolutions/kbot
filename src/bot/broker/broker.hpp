@@ -247,6 +247,13 @@ void restart_bot(Platform platform)
       MXBot().Init();
       MXBot().Start();
     break;
+    case Platform::gettr:
+      m_gt_bot = kbot::GettrBot{};
+      m_pool.at(constants::GETTR_BOT_INDEX) = &m_gt_bot;
+      GTBot().SetCallback(&ProcessEvent);
+      GTBot().Init();
+      GTBot().Start();
+    break;
   }
 }
 //------------------------------------------------------------
@@ -258,6 +265,7 @@ virtual void loop() override
   BLBot().Start();
   TGBot().Start();
   MXBot().Start();
+  GTBot().Start();
 
   while (Worker::m_is_running)
   {
@@ -266,7 +274,7 @@ virtual void loop() override
         [this]()
         {
           return (YTBot().IsRunning() || MDBot().IsRunning() || DCBot().IsRunning() ||
-                  BLBot().IsRunning() || TGBot().IsRunning() || MXBot().IsRunning());
+                  BLBot().IsRunning() || TGBot().IsRunning() || MXBot().IsRunning()); // GettrBot not included
         }
       );
     m_condition.notify_one();
@@ -371,7 +379,7 @@ void SendEvent(const BotRequest& event)
     case (Platform::matrix):
       MXBot().HandleEvent(event);
     break;
-    case (Platform::matrix):
+    case (Platform::gettr):
       GTBot().HandleEvent(event);
     break;
     default:
