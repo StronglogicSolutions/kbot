@@ -75,23 +75,26 @@ virtual void loop() override
   Worker::m_is_running = true;
   log("Gettr worker doesn't need to loop");
 }
-
+//--------------------------------------------------------
 void SetCallback(BrokerCallback cb_fn)
 {
   m_send_event_fn = cb_fn;
 }
-
+//--------------------------------------------------------
 bool HandleEvent(const BotRequest& request)
 {
   using namespace kbot::kettr::constants;
 
+  auto post_event = [](const auto& e) { return (e == "livestream active" || e == "platform:repost" ||
+                                                e == "gettr:messages"); };
         bool   error = false;
   const auto&  event = request.event;
   const auto&  data  = request.data;
-  std::string err_msg;
+  std::string  err_msg;
+
   try
   {
-    if (event == "livestream active" || event == "platform:repost" || event == "gettr:messages")
+    if (post_event(event))
       kettr::post(data);
   }
   catch (const std::exception& e)
@@ -103,17 +106,17 @@ bool HandleEvent(const BotRequest& request)
 
   return !error;
 }
-
+//--------------------------------------------------------
 virtual std::unique_ptr<API> GetAPI(std::string name) final
 {
   return nullptr;
 }
-
+//--------------------------------------------------------
 virtual bool IsRunning() final
 {
   return m_is_running;
 }
-
+//--------------------------------------------------------
 virtual void Start() final
 {
   if (!m_is_running)

@@ -137,6 +137,8 @@ void ProcessMessage(u_ipc_msg_ptr message)
   auto MDMessage = [](auto msg) { return msg.find("mastodon") != std::string::npos; };
   auto DCMessage = [](auto msg) { return msg.find("discord")  != std::string::npos; };
   auto MXMessage = [](auto msg) { return msg.find("matrix")   != std::string::npos; };
+  auto GTMessage = [](auto msg) { return msg.find("gettr")    != std::string::npos; };
+
   if (message->type() == ::constants::IPC_KIQ_MESSAGE)
   {
     kiq_message* kiq_msg = static_cast<kiq_message*>(message.get());
@@ -159,6 +161,8 @@ void ProcessMessage(u_ipc_msg_ptr message)
       if (TGMessage(command)) platform = Platform::telegram;
       else
       if (MXMessage(command)) platform = Platform::matrix;
+      else
+      if (GTMessage(command)) platform = Platform::gettr;
 
       SendEvent(BotRequest{platform, command, user, payload, options});
     }
