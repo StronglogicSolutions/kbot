@@ -95,13 +95,17 @@ bool HandleEvent(const BotRequest& request)
   try
   {
     if (post_event(event))
+    {
       kettr::post(data);
+      m_send_event_fn(CreateSuccessEvent(request));
+    }
   }
   catch (const std::exception& e)
   {
+    error    = true;
     err_msg += "Exception caught handling " + request.event + ": " + e.what();
     log(err_msg);
-    error = true;
+    m_send_event_fn(CreateErrorEvent(err_msg, request));
   }
 
   return !error;
