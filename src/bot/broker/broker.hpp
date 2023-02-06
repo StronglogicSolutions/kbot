@@ -117,6 +117,7 @@ Broker(ipc_fail_fn _cb)
   BLBot().SetCallback(&ProcessEvent);
   TGBot().SetCallback(&ProcessEvent);
   MXBot().SetCallback(&ProcessEvent);
+  GTBot().SetCallback(&ProcessEvent);
 
   YTBot().Init();
   MDBot().Init();
@@ -124,6 +125,7 @@ Broker(ipc_fail_fn _cb)
   BLBot().Init();
   TGBot().Init();
   MXBot().Init();
+  GTBot().Init();
 
   g_broker = this;
 
