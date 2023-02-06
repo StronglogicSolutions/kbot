@@ -383,7 +383,7 @@ void SendEvent(const BotRequest& event)
       GTBot().HandleEvent(event);
     break;
     default:
-      kbot::log("Unable to send event for unknown platform");
+      kbot::log("Unable to send event for unknown platform: ", std::to_string(event.platform).c_str());
     break;
   }
 }
