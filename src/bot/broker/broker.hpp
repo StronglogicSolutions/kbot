@@ -371,6 +371,9 @@ void SendEvent(const BotRequest& event)
     case (Platform::matrix):
       MXBot().HandleEvent(event);
     break;
+    case (Platform::matrix):
+      GTBot().HandleEvent(event);
+    break;
     default:
       kbot::log("Unable to send event for unknown platform");
     break;
@@ -456,6 +459,11 @@ Bot& TGBot()
 Bot& MXBot()
 {
   return *m_pool.at(constants::MATRIX_BOT_INDEX);
+}
+//------------------------------------------------------------
+Bot& GTBot()
+{
+  return *m_pool.at(constants::GETTR_BOT_INDEX);
 }
 
 BotPool                   m_pool;
