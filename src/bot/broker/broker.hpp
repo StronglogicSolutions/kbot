@@ -10,7 +10,7 @@
 #include "bot/telegram/telegram.hpp"
 #include "bot/matrix/matrix.hpp"
 #include "bot/blog/blog.hpp"
-#include "bot/kettr/gettr.hpp"
+#include "bot/gettr/gettr.hpp"
 #include "ipc.hpp"
 
 #define OPENSSL_API_COMPAT 0x0908

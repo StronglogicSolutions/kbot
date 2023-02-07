@@ -44,7 +44,7 @@ static enum Platform get_platform(const std::string& name)
     return Platform::telegram;
   if (name == "Matrix")
     return Platform::matrix;
-  if (name == "KETTR")
+  if (name == "GETTR")
     return Platform::gettr;
   return Platform::unknown;
 }
@@ -64,7 +64,7 @@ static const std::string get_platform_name(Platform platform)
   if (platform == Platform::matrix)
     return "Matrix";
   if (platform == Platform::gettr)
-    return "Gettr";
+    return "GETTR";
 
   return "";
 };

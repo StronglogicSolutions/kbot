@@ -26,7 +26,7 @@ group("kettr_lib") {
 
 }
 
-executable("kettr_bot") {
+executable("gettr_bot") {
 
 deps = [
   ":kettr_lib",
@@ -37,7 +37,7 @@ include_dirs = [
 ]
 
 sources = [
-  "//src/bot/kettr/main.cpp"
+  "//src/bot/gettr/main.cpp"
 ]
 
 }

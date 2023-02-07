@@ -63,11 +63,11 @@ static const uint8_t YOUTUBE_COMMAND_INDEX  = 0x03;
 static const uint8_t NO_COMMAND_INDEX       = 0x04;
 
 static const char*   IPC_COMMANDS[]{
-"telegram:messages",
-"mastodon:comments",
-"discord:messages",
-"youtube:livestream",
-"no:command"
+  "telegram:messages",
+  "mastodon:comments",
+  "discord:messages",
+  "youtube:livestream",
+  "no:command"
 };
 
 } // namespace constants
@@ -159,7 +159,7 @@ std::string to_string() const override
 {
   return  "(Type): "     + ipc_message::to_string() + ',' +
           "(Platform): " + name()                   + ',' +
-          "(ID):"       + id()                      + ',' +
+          "(ID):"        + id()                     + ',' +
           "(User): "     + user()                   + ',' +
           "(Error):"     + error();
 }

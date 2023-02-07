@@ -16,7 +16,7 @@ public_configs = [
   "//src/bot/discord:kscord",
   "//src/bot/telegram:keleqram",
   "//src/bot/matrix:katrix",
-  "//src/bot/kettr:kettr",
+  "//src/bot/gettr:kettr",
 ]
 
 libs = [ "zmq" ]
@@ -33,7 +33,7 @@ deps = [
   "//src/bot/discord:kscord_lib",
   "//src/bot/mastodon:kstodon_lib",
   "//src/bot/telegram:keleqram_lib",
-  "//src/bot/kettr:kettr_lib",
+  "//src/bot/gettr:kettr_lib",
   "//src/bot/youtube:youtube_bot_sources",
 ]
 
