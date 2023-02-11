@@ -200,63 +200,65 @@ using BrokerCallback = bool(*)(BotRequest event);
 class Bot
 {
 public:
-Bot(std::string name)
-: m_name(name) {}
+  Bot(std::string name)
+  : m_name(name) {}
 
-virtual ~Bot() {}
-std::string GetName() { return m_name; }
+  virtual ~Bot() {}
+  std::string GetName() { return m_name; }
 
-virtual std::unique_ptr<API> GetAPI(std::string name) = 0;
-virtual void                 SetCallback(BrokerCallback cb_fn_ptr) = 0;
-virtual bool                 HandleEvent(const BotRequest& event) = 0;
-virtual bool                 IsRunning() = 0;
-virtual void                 Start() = 0;
-virtual void                 Shutdown() = 0;
-virtual void                 Init() = 0;
-virtual void                 do_work() { /* no-op */ };
+  virtual std::unique_ptr<API> GetAPI(std::string name) = 0;
+  virtual void                 SetCallback(BrokerCallback cb_fn_ptr) = 0;
+  virtual bool                 HandleEvent(const BotRequest& event) = 0;
+  virtual bool                 IsRunning() = 0;
+  virtual void                 Start() = 0;
+  virtual void                 Shutdown() = 0;
+  virtual void                 Init() = 0;
+  virtual void                 do_work() { /* no-op */ };
 
 private:
-std::string m_name;
+  std::string m_name;
 };
 
 class Worker
 {
 public:
-Worker()
-: m_is_running(false) {}
+  Worker()
+  : m_is_running(false) {}
 
-virtual void start() {
-  m_is_running = true;
-  m_thread = std::thread(Worker::run, this);
-}
-
-static void run(void* worker) {
-  static_cast<Worker*>(worker)->loop();
-}
-
-void stop() {
-  m_is_running = false;
-  if (m_thread.joinable()) {
-    m_thread.join();
+  virtual void start()
+  {
+    m_is_running = true;
+    m_thread = std::thread(Worker::run, this);
   }
-}
 
-bool        m_is_running;
-uint32_t    m_loops;
+  static void run(void* worker)
+  {
+    static_cast<Worker*>(worker)->loop();
+  }
+
+  void stop()
+  {
+    m_is_running = false;
+    if (m_thread.joinable()) {
+      m_thread.join();
+    }
+  }
+
+  bool        m_is_running;
 
 protected:
-virtual void loop() = 0;
+  virtual void loop() = 0;
 
 private:
-std::thread m_thread;
+  std::thread m_thread;
 };
 
 struct PlatformQuery
 {
-Platform                 platform;
-std::string              subject;
-std::string              text;
-std::vector<std::string> urls;
+  Platform                 platform;
+  std::string              subject;
+  std::string              text;
+  std::vector<std::string> urls;
 };
 
 
