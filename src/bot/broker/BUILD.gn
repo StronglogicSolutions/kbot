@@ -8,18 +8,34 @@ group("cpr_lib") {
   public_configs = [":cpr_library"]
 }
 
+config("klogger_library") {
+  include_dirs = ["//third_party/klogger/src"]
+  libs = ["//third_party/klogger/src/libspdlog.a"]
+  visibility = [":klogger"]
+  defines = ["SPDLOG_COMPILED_LIB"]
+}
+
+source_set("klogger_sources") {
+  sources = ["//third_party/klogger/src/logger.cpp"]
+}
+
+group ("klogger") {
+  public_configs = [":klogger_library"]
+  public_deps = [":klogger_sources"]
+}
+
 executable("broker") {
-public_configs = [
-  "//:cppzmq",
-  "//src/bot/mastodon:kstodon",
-  "//src/bot/mastodon:nlp",
-  "//src/bot/discord:kscord",
-  "//src/bot/telegram:keleqram",
-  "//src/bot/matrix:katrix",
-  "//src/bot/gettr:kettr",
+  public_configs = [
+    "//:cppzmq",
+    "//src/bot/mastodon:kstodon",
+    "//src/bot/mastodon:nlp",
+    "//src/bot/discord:kscord",
+    "//src/bot/telegram:keleqram",
+    "//src/bot/matrix:katrix",
+    "//src/bot/gettr:kettr",
 ]
 
-libs = [ "zmq" ]
+libs = [ "zmq", "fmt", "//third_party/klogger/src/libspdlog.a" ]
 
 include_dirs = [
   "//third_party/inih/cpp",
@@ -37,7 +53,11 @@ deps = [
   "//src/bot/youtube:youtube_bot_sources",
 ]
 
-public_deps = [":cpr_lib"]
+public_deps = [
+  ":cpr_lib",
+  ":klogger"
+  ]
+
 
 sources = [
   "//src/bot/broker/main.cpp"

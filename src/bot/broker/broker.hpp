@@ -4,6 +4,8 @@
 #include <mutex>
 #include <condition_variable>
 
+#include <logger.hpp>
+
 #include "bot/mastodon/mastodon.hpp"
 #include "bot/youtube/youtube.hpp"
 #include "bot/discord/discord.hpp"
@@ -102,6 +104,7 @@ public:
 Broker(ipc_fail_fn _cb)
 : m_on_ipc_fail(_cb)
 {
+  KLOG("Broker initializing");
   m_pool.resize(7);
   m_pool.at(constants::YOUTUBE_BOT_INDEX)  = &m_yt_bot;
   m_pool.at(constants::MASTODON_BOT_INDEX) = &m_md_bot;
