@@ -101,7 +101,7 @@ public:
 Broker(ipc_fail_fn _cb)
 : m_on_ipc_fail(_cb)
 {
-  m_pool.resize(7);
+  m_pool.resize(6);
   m_pool.at(constants::YOUTUBE_BOT_INDEX)  = &m_yt_bot;
   //m_pool.at(constants::MASTODON_BOT_INDEX) = &m_md_bot;
   m_pool.at(constants::DISCORD_BOT_INDEX)  = &m_dc_bot;
