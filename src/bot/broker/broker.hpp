@@ -86,12 +86,12 @@ static const BotRequest CreatePlatformEvent(platform_message* message)
 namespace constants
 {
   const uint8_t YOUTUBE_BOT_INDEX {0x00};
-  const uint8_t MASTODON_BOT_INDEX{0x01};
-  const uint8_t DISCORD_BOT_INDEX {0x02};
-  const uint8_t BLOG_BOT_INDEX    {0x03};
-  const uint8_t TELEGRAM_BOT_INDEX{0x04};
-  const uint8_t MATRIX_BOT_INDEX  {0x05};
-  const uint8_t GETTR_BOT_INDEX   {0x06};
+  const uint8_t DISCORD_BOT_INDEX {0x01};
+  const uint8_t BLOG_BOT_INDEX    {0x02};
+  const uint8_t TELEGRAM_BOT_INDEX{0x03};
+  const uint8_t MATRIX_BOT_INDEX  {0x04};
+  const uint8_t GETTR_BOT_INDEX   {0x05};
+  const uint8_t
 } // namespace constants
 
 Broker* g_broker;
@@ -104,7 +104,7 @@ Broker(ipc_fail_fn _cb)
 {
   m_pool.resize(7);
   m_pool.at(constants::YOUTUBE_BOT_INDEX)  = &m_yt_bot;
-  m_pool.at(constants::MASTODON_BOT_INDEX) = nullptr;//&m_md_bot;
+  //m_pool.at(constants::MASTODON_BOT_INDEX) = &m_md_bot;
   m_pool.at(constants::DISCORD_BOT_INDEX)  = &m_dc_bot;
   m_pool.at(constants::BLOG_BOT_INDEX)     = &m_bg_bot;
   m_pool.at(constants::TELEGRAM_BOT_INDEX) = &m_tg_bot;
