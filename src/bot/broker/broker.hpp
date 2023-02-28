@@ -91,7 +91,6 @@ namespace constants
   const uint8_t TELEGRAM_BOT_INDEX{0x03};
   const uint8_t MATRIX_BOT_INDEX  {0x04};
   const uint8_t GETTR_BOT_INDEX   {0x05};
-  const uint8_t
 } // namespace constants
 
 Broker* g_broker;
