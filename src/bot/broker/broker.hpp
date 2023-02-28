@@ -4,7 +4,7 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "bot/mastodon/mastodon.hpp"
+// #include "bot/mastodon/mastodon.hpp"
 #include "bot/youtube/youtube.hpp"
 #include "bot/discord/discord.hpp"
 #include "bot/telegram/telegram.hpp"
@@ -104,7 +104,7 @@ Broker(ipc_fail_fn _cb)
 {
   m_pool.resize(7);
   m_pool.at(constants::YOUTUBE_BOT_INDEX)  = &m_yt_bot;
-  m_pool.at(constants::MASTODON_BOT_INDEX) = &m_md_bot;
+  m_pool.at(constants::MASTODON_BOT_INDEX) = nullptr;//&m_md_bot;
   m_pool.at(constants::DISCORD_BOT_INDEX)  = &m_dc_bot;
   m_pool.at(constants::BLOG_BOT_INDEX)     = &m_bg_bot;
   m_pool.at(constants::TELEGRAM_BOT_INDEX) = &m_tg_bot;
@@ -112,7 +112,7 @@ Broker(ipc_fail_fn _cb)
   m_pool.at(constants::GETTR_BOT_INDEX)    = &m_gt_bot;
 
   YTBot().SetCallback(&ProcessEvent);
-  MDBot().SetCallback(&ProcessEvent);
+  // MDBot().SetCallback(&ProcessEvent);
   DCBot().SetCallback(&ProcessEvent);
   BLBot().SetCallback(&ProcessEvent);
   TGBot().SetCallback(&ProcessEvent);
@@ -120,7 +120,7 @@ Broker(ipc_fail_fn _cb)
   GTBot().SetCallback(&ProcessEvent);
 
   YTBot().Init();
-  MDBot().Init();
+  // MDBot().Init();
   DCBot().Init();
   BLBot().Init();
   TGBot().Init();
@@ -136,7 +136,7 @@ void ProcessMessage(u_ipc_msg_ptr message)
 {
   auto TGMessage = [](auto msg) { return msg.find("telegram") != std::string::npos; };
   auto YTMessage = [](auto msg) { return msg.find("youtube")  != std::string::npos; };
-  auto MDMessage = [](auto msg) { return msg.find("mastodon") != std::string::npos; };
+  // auto MDMessage = [](auto msg) { return msg.find("mastodon") != std::string::npos; };
   auto DCMessage = [](auto msg) { return msg.find("discord")  != std::string::npos; };
   auto MXMessage = [](auto msg) { return msg.find("matrix")   != std::string::npos; };
   auto GTMessage = [](auto msg) { return msg.find("gettr")    != std::string::npos; };
@@ -155,8 +155,8 @@ void ProcessMessage(u_ipc_msg_ptr message)
       Platform    platform;
 
       if (YTMessage(command)) platform = Platform::youtube;
-      else
-      if (MDMessage(command)) platform = Platform::mastodon;
+      // else
+      // if (MDMessage(command)) platform = Platform::mastodon;
       else
       if (DCMessage(command)) platform = Platform::discord;
       else
@@ -214,13 +214,13 @@ void restart_bot(Platform platform)
       YTBot().Init();
       YTBot().Start();
     break;
-    case Platform::mastodon:
-      m_md_bot = kbot::MastodonBot{};
-      m_pool.at(constants::MASTODON_BOT_INDEX)  = &m_md_bot;
-      MDBot().SetCallback(&ProcessEvent);
-      MDBot().Init();
-      MDBot().Start();
-    break;
+    // case Platform::mastodon:
+    //   m_md_bot = kbot::MastodonBot{};
+    //   m_pool.at(constants::MASTODON_BOT_INDEX)  = &m_md_bot;
+    //   MDBot().SetCallback(&ProcessEvent);
+    //   MDBot().Init();
+    //   MDBot().Start();
+    // break;
     case Platform::discord:
       m_dc_bot = kbot::DiscordBot{};
       m_pool.at(constants::DISCORD_BOT_INDEX)  = &m_dc_bot;
@@ -262,7 +262,7 @@ void restart_bot(Platform platform)
 virtual void loop() override
 {
   YTBot().Start();
-  MDBot().Start();
+  // MDBot().Start();
   DCBot().Start();
   BLBot().Start();
   TGBot().Start();
@@ -275,8 +275,8 @@ virtual void loop() override
       m_condition.wait(lock,
         [this]()
         {
-          return (YTBot().IsRunning() || MDBot().IsRunning() || DCBot().IsRunning() ||
-                  BLBot().IsRunning() || TGBot().IsRunning() || MXBot().IsRunning()); // GettrBot not included
+          return (YTBot().IsRunning() ||/* MDBot().IsRunning() ||*/ DCBot().IsRunning() ||
+                  BLBot().IsRunning() || TGBot().IsRunning() ||     MXBot().IsRunning()); // GettrBot not included
         }
       );
     m_condition.notify_one();
@@ -366,9 +366,9 @@ void SendEvent(const BotRequest& event)
     case (Platform::discord):
       DCBot().HandleEvent(event);
     break;
-    case (Platform::mastodon):
-      MDBot().HandleEvent(event);
-    break;
+    // case (Platform::mastodon):
+    //   MDBot().HandleEvent(event);
+    // break;
     case (Platform::youtube):
       YTBot().HandleEvent(event);
     break;
@@ -395,21 +395,21 @@ bool Shutdown()
   try
   {
     Bot& youtube_bot  = YTBot();
-    Bot& mastodon_bot = MDBot();
+    // Bot& mastodon_bot = MDBot();
     Bot& discord_bot  = DCBot();
     Bot& blog_bot     = BLBot();
     Bot& telegram_bot = TGBot();
     Bot& matrix_bot   = MXBot();
 
     youtube_bot .Shutdown();
-    mastodon_bot.Shutdown();
+    // mastodon_bot.Shutdown();
     discord_bot .Shutdown();
     blog_bot    .Shutdown();
     telegram_bot.Shutdown();
     matrix_bot  .Shutdown();
 
-    while (youtube_bot.IsRunning() || mastodon_bot.IsRunning() || discord_bot.IsRunning() ||
-              blog_bot.IsRunning() || telegram_bot.IsRunning() ||  matrix_bot.IsRunning())
+    while (youtube_bot.IsRunning() ||/* mastodon_bot.IsRunning() || */discord_bot.IsRunning() ||
+              blog_bot.IsRunning() || telegram_bot.IsRunning() ||     matrix_bot.IsRunning())
 
     Worker::stop();
 
@@ -446,10 +446,10 @@ Bot& YTBot()
   return *m_pool.at(constants::YOUTUBE_BOT_INDEX);
 }
 //------------------------------------------------------------
-Bot& MDBot()
-{
-  return *m_pool.at(constants::MASTODON_BOT_INDEX);
-}
+// Bot& MDBot()
+// {
+//   return *m_pool.at(constants::MASTODON_BOT_INDEX);
+// }
 //------------------------------------------------------------
 Bot& DCBot()
 {
@@ -483,7 +483,7 @@ bool                      m_bots_active;
 std::mutex                m_mutex;
 std::condition_variable   m_condition;
 kbot::YouTubeBot          m_yt_bot;
-kbot::MastodonBot         m_md_bot;
+// kbot::MastodonBot         m_md_bot;
 kbot::DiscordBot          m_dc_bot;
 kbot::BlogBot             m_bg_bot;
 kbot::TelegramBot         m_tg_bot;
