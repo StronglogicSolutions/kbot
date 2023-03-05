@@ -1,6 +1,11 @@
 
 config("keleqram") {
-  include_dirs = ["//third_party/keleqram/src", "//third_party/kstodon/third_party/kjson", "//third_party/keleqram/third_party/tgbot-cpp/include"]
+  include_dirs = [
+    "//third_party/keleqram/src",
+    "//third_party/kstodon/third_party/kjson",
+    "//third_party/keleqram/third_party/tgbot-cpp/include",
+    "//third_party/katrix/third_party/kutils/include"
+  ]
   libs = [
     "//third_party/keleqram/libkeleqram.a",
     "//third_party/keleqram/third_party/tgbot-cpp/libTgBot.so"
