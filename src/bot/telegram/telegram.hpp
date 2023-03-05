@@ -116,7 +116,7 @@ bool HandleEvent(const BotRequest& request)
     std::vector<std::string> urls;
     for (const auto& url : v)
     {
-      auto mime = ::keleqram::GetMimeType(url);
+      auto mime = kutils::GetMimeType(url);
       if (mime.IsPhoto())
       {
         if (!found_image)
