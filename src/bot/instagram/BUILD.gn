@@ -1,0 +1,14 @@
+
+executable("instagram_bot") {
+include_dirs = [
+  "//src",
+  "//src/bot/instagram"
+]
+
+libs = ["cpr"]
+
+sources = [
+  "//src/bot/instagram/main.cpp"
+]
+
+}
