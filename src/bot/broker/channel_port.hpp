@@ -43,9 +43,16 @@ m_retries   {0}
 
 bool ReceiveIPCMessage(const bool is_request = true)
 {
-  auto& socket = (is_request) ? m_rx : m_tx;
-  zmq::message_t  identity;
-  socket.recv(&identity);
+  using buffers_t = std::vector<ipc_message::byte_buffer>;
+
+  auto&          socket = (is_request) ? m_rx : m_tx;
+  zmq::message_t identity;
+
+  if (!socket.recv(&identity))
+  {
+    log("Socket failed to receive");
+    return false;
+  }
 
   if (identity.empty() || identity.to_string_view() != "botbroker__worker")
   {
@@ -53,9 +60,9 @@ bool ReceiveIPCMessage(const bool is_request = true)
     return false;
   }
 
-  std::vector<ipc_message::byte_buffer> received_message{};
-  zmq::message_t                        message;
-  int                                   more_flag{1};
+  buffers_t      received_message;
+  zmq::message_t message;
+  int            more_flag{1};
 
   while (more_flag)
   {
@@ -103,9 +110,10 @@ bool SendIPCMessage(u_ipc_msg_ptr message, const bool use_req = false)
 
 uint8_t Poll()
 {
-  uint8_t poll_mask{0x00};
-  zmq::pollitem_t items[] = { { m_tx, 0, ZMQ_POLLIN, 0},
-                              { m_rx, 1, ZMQ_POLLIN, 0} };
+  uint8_t         poll_mask = {0x00};
+  zmq::pollitem_t items[]   = { { m_tx, 0, ZMQ_POLLIN, 0},
+                                { m_rx, 1, ZMQ_POLLIN, 0} };
+
   zmq::poll(&items[0], 2, m_timeout);
 
   if (items[0].revents & ZMQ_POLLIN)
