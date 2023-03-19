@@ -18,7 +18,6 @@
             │░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░│
             └───────────────────────────────────────────────────────────┘
  */
-
 namespace constants {
 static const uint8_t IPC_OK_TYPE         {0x00};
 static const uint8_t IPC_KEEPALIVE_TYPE  {0x01};
@@ -69,8 +68,8 @@ static const char*   IPC_COMMANDS[]{
   "youtube:livestream",
   "no:command"
 };
-
 } // namespace constants
+
 
 class ipc_message
 {
