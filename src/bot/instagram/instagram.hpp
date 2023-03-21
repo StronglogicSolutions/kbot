@@ -22,6 +22,10 @@ public:
   : ctx_(1),
     socket_(ctx_, ZMQ_DEALER)
   {
+    socket_.set(zmq::sockopt::linger, 0);
+    socket_.set(zmq::sockopt::tcp_keepalive, 1);
+    socket_.set(zmq::sockopt::tcp_keepalive_idle,  300);
+    socket_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
     socket_.connect(g_addr);
   }
 
