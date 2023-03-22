@@ -1,0 +1,16 @@
+
+executable("instagram_bot") {
+  include_dirs = [
+    "//src",
+    "//src/bot/instagram"
+  ]
+
+  libs = [
+    "cpr",
+    "zmq"
+  ]
+
+  sources = [
+    "//src/bot/instagram/main.cpp"
+  ]
+}
