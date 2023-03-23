@@ -14,13 +14,14 @@ static platform_message BotRequestToIPC(Platform platform, const BotRequest& req
 }
 } // ns kbot
 //-------------------------------------------------------------
-
+using observer_t = std::function<void(bool)>;
 class ipc_worker
 {
 public:
-  ipc_worker()
+  explicit ipc_worker(const observer_t& cb)
   : ctx_(1),
-    socket_(ctx_, ZMQ_DEALER)
+    socket_(ctx_, ZMQ_DEALER),
+    cb_(cb)
   {
     socket_.set(zmq::sockopt::linger, 0);
     socket_.set(zmq::sockopt::tcp_keepalive, 1);
@@ -41,7 +42,7 @@ public:
 
     for (int i = 0; i < frame_num; i++)
     {
-      int  flag = i == (frame_num - 1) ? 0 : ZMQ_SNDMORE;
+      auto flag = i == (frame_num - 1) ? zmq::send_flags::none : zmq::send_flags::sndmore;
       auto data = payload.at(i);
 
       zmq::message_t message{data.size()};
@@ -51,9 +52,36 @@ public:
     }
   }
 
+  void recv()
+  {
+    using buffers_t = std::vector<ipc_message::byte_buffer>;
+
+    zmq::message_t identity;
+    if (!rx_.recv(identity) || identity.empty())
+      return kbot::log("Socket failed to receive identity");
+
+    buffers_t      buffer;
+    zmq::message_t msg;
+    int            more_flag{1};
+
+    while (more_flag && rx_.recv(msg))
+    {
+      more_flag = rx_.get(zmq::sockopt::rcvmore);
+      buffer.push_back({static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
+    }
+    msgs_.push_back(DeserializeIPCMessage(std::move(buffer)));
+    kbot::log("IPC message received");
+    cb_(true);
+  }
+
 private:
+  using ipc_msgs_t = std::vector<ipc_message::u_ipc_msg_ptr>;
+
   zmq::context_t ctx_;
   zmq::socket_t  socket_;
+  zmq::socket_t  rx_;
+  ipc_msgs_t     msgs_;
+  observer_t     cb_;
 };
 
 
@@ -77,7 +105,18 @@ class InstagramBot : public kbot::Worker,
 {
 public:
 InstagramBot()
-: kbot::Bot{kgram::constants::USER}
+: kbot::Bot{kgram::constants::USER},
+  m_worker([this] (auto result)
+  {
+    if (!m_pending)
+      log("Received worker message, but nothing is pending");
+    else
+    {
+      m_send_event_fn((result) ? CreateSuccessEvent(m_last_req) :
+                                 CreateErrorEvent("Failed to handle request", m_last_req));
+      m_pending = false;
+    }
+  })
 {}
 
 InstagramBot& operator=(const InstagramBot& bot)
@@ -93,11 +132,7 @@ virtual void Init() final
 virtual void loop() final
 {
   Worker::m_is_running = true;
-  // TODO:
-  // Get Messages
-  // Send requests
 }
-
 
 void SetCallback(BrokerCallback cb_fn)
 {
@@ -113,17 +148,19 @@ bool HandleEvent(const BotRequest& request)
   try
   {
     if (event == "livestream active" || event == "platform:repost" || event == "instagram:messages")
+    {
+      m_pending = true;
       m_worker.send(BotRequestToIPC(Platform::instagram, request));
+      m_last_req = request;
+    }
   }
   catch (const std::exception& e)
   {
     err_msg += "Exception caught handling " + request.event + ": " + e.what();
     log(err_msg);
+    CreateErrorEvent(err_msg, request);
     error = true;
   }
-  if (reply)
-    m_send_event_fn((error) ? CreateErrorEvent(err_msg, request) : CreateSuccessEvent(request));
-
   return !error;
 }
 
@@ -151,5 +188,7 @@ virtual void Shutdown() final
 private:
   BrokerCallback m_send_event_fn;
   ipc_worker     m_worker;
+  BotRequest     m_last_req;
+  bool           m_pending{false};
 };
 } // namespace kgram
