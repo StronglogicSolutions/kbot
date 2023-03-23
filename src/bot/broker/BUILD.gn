@@ -10,7 +10,6 @@ group("cpr_lib") {
 
 config("klogger_library") {
   include_dirs = ["//third_party/klogger/src"]
-  libs = ["//third_party/klogger/src/libspdlog.a"]
   visibility = [":klogger"]
   defines = ["SPDLOG_COMPILED_LIB"]
 }
@@ -33,9 +32,13 @@ executable("broker") {
     "//src/bot/telegram:keleqram",
     "//src/bot/matrix:katrix",
     "//src/bot/gettr:kettr",
-]
+  ]
 
-libs = [ "zmq", "fmt", "//third_party/klogger/src/libspdlog.a" ]
+libs = [
+  "zmq",
+  "fmt",
+  "//third_party/klogger/src/libspdlog.a"
+]
 
 include_dirs = [
   "//third_party/inih/cpp",
