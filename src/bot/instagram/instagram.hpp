@@ -41,7 +41,7 @@ public:
 
     for (int i = 0; i < frame_num; i++)
     {
-      int  flag = i == (frame_num - 1) ? 0 : ZMQ_SNDMORE;
+      auto flag = i == (frame_num - 1) ? zmq::send_flags::none : zmq::send_flags::sndmore;
       auto data = payload.at(i);
 
       zmq::message_t message{data.size()};
@@ -51,9 +51,34 @@ public:
     }
   }
 
+  void recv()
+  {
+    using buffers_t = std::vector<ipc_message::byte_buffer>;
+
+    zmq::message_t identity;
+    if (!rx_.recv(identity) || identity.empty())
+      return kbot::log("Socket failed to receive identity");
+
+    buffers_t      buffer;
+    zmq::message_t msg;
+    int            more_flag{1};
+
+    while (more_flag && rx_.recv(msg))
+    {
+      more_flag = rx_.get(zmq::sockopt::rcvmore);
+      buffer.push_back({static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
+    }
+    msgs_.push_back(DeserializeIPCMessage(std::move(buffer)));
+    kbot::log("IPC message received");
+  }
+
 private:
+  using ipc_msgs_t = std::vector<ipc_message::u_ipc_msg_ptr>;
+
   zmq::context_t ctx_;
   zmq::socket_t  socket_;
+  zmq::socket_t  rx_;
+  ipc_msgs_t     msgs_;
 };
 
 
