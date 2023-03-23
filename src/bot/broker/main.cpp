@@ -23,7 +23,7 @@ SocketState()
 
 void ResetChannel()
 {
-  log("ResetChannel was called. Broker isn't happy");
+  WLOG("ResetChannel was called. Broker isn't happy");
 }
 
 void Poll()

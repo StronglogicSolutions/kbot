@@ -16,6 +16,7 @@ all_executables = [
   "//src/bot/blog:blog_bot",
   "//src/bot/telegram:telegram_bot",
   "//src/bot/gettr:gettr_bot",
+  "//src/bot/instagram:instagram_bot",
 ]
 
 group("executables") {
