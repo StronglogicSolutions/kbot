@@ -20,53 +20,57 @@ class  Broker;
 
 enum Platform
 {
-  youtube  = 0x00,
-  mastodon = 0x01,
-  discord  = 0x02,
-  blog     = 0x03,
-  telegram = 0x04,
-  matrix   = 0x05,
-  gettr    = 0x06,
-  unknown  = 0x07
+  youtube   = 0x00,
+  mastodon  = 0x01,
+  discord   = 0x02,
+  blog      = 0x03,
+  telegram  = 0x04,
+  matrix    = 0x05,
+  gettr     = 0x06,
+  instagram = 0x07,
+  unknown   = 0x08
 };
+
+
+
+static const char* g_YouTube_str   = "YouTube";
+static const char* g_Mastodon_str  = "Mastodon";
+static const char* g_Discord_str   = "Discord";
+static const char* g_Blog_str      = "Blog";
+static const char* g_Telegram_str  = "Telegram";
+static const char* g_Matrix_str    = "Matrix";
+static const char* g_GETTR_str     = "GETTR";
+static const char* g_Instagram_str = "Instagram";
+static const char* g_Unknown_str   = "Unknown";
 
 static enum Platform get_platform(const std::string& name)
 {
-  if (name == "Discord")
-    return Platform::discord;
-  if (name == "Mastodon")
-    return Platform::mastodon;
-  if (name == "YouTube")
-    return Platform::youtube;
-  if (name == "Blog")
-    return Platform::blog;
-  if (name == "Telegram")
-    return Platform::telegram;
-  if (name == "Matrix")
-    return Platform::matrix;
-  if (name == "GETTR")
-    return Platform::gettr;
+  if (name == g_Discord_str)   return Platform::discord;
+  if (name == g_Mastodon_str)  return Platform::mastodon;
+  if (name == g_YouTube_str)   return Platform::youtube;
+  if (name == g_Blog_str)      return Platform::blog;
+  if (name == g_Telegram_str)  return Platform::telegram;
+  if (name == g_Matrix_str)    return Platform::matrix;
+  if (name == g_GETTR_str)     return Platform::gettr;
+  if (name == g_Instagram_str) return Platform::instagram;
   return Platform::unknown;
 }
 
 static const std::string get_platform_name(Platform platform)
 {
-  if (platform == Platform::youtube)
-    return "YouTube";
-  if (platform == Platform::mastodon)
-    return "Mastodon";
-  if (platform == Platform::discord)
-    return "Discord";
-  if (platform == Platform::blog)
-    return "Blog";
-  if (platform == Platform::telegram)
-    return "Telegram";
-  if (platform == Platform::matrix)
-    return "Matrix";
-  if (platform == Platform::gettr)
-    return "GETTR";
+  switch (platform)
+  {
+    case Platform::youtube:   return g_YouTube_str;
+    case Platform::mastodon:  return g_Mastodon_str;
+    case Platform::discord:   return g_Discord_str;
+    case Platform::blog:      return g_Blog_str;
+    case Platform::telegram:  return g_Telegram_str;
+    case Platform::matrix:    return g_Matrix_str;
+    case Platform::gettr:     return g_GETTR_str;
+    case Platform::instagram: return g_Instagram_str;
+  }
 
-  return "";
+  return g_Unknown_str;
 };
 
 struct BotRequest
