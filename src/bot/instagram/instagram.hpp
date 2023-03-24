@@ -3,7 +3,8 @@
 #include "interfaces/interfaces.hpp"
 #include "../broker/ipc.hpp"
 #include <zmq.hpp>
-static const char* g_addr = "tcp://127.0.0.1:28475";
+static const char* g_addr      = "tcp://127.0.0.1:28475";
+static const char* g_recv_addr = "tcp://127.0.0.1:28476";
 //-------------------------------------------------------------
 namespace kbot
 {
@@ -20,19 +21,30 @@ class ipc_worker
 public:
   explicit ipc_worker(const observer_t& cb)
   : ctx_(1),
-    socket_(ctx_, ZMQ_DEALER),
+    tx_(ctx_, ZMQ_DEALER),
+    rx_(ctx_, ZMQ_ROUTER),
     cb_(cb)
   {
-    socket_.set(zmq::sockopt::linger, 0);
-    socket_.set(zmq::sockopt::tcp_keepalive, 1);
-    socket_.set(zmq::sockopt::tcp_keepalive_idle,  300);
-    socket_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
-    socket_.connect(g_addr);
+    tx_.set(zmq::sockopt::linger, 0);
+    rx_.set(zmq::sockopt::linger, 0);
+    tx_.set(zmq::sockopt::tcp_keepalive, 1);
+    rx_.set(zmq::sockopt::tcp_keepalive, 1);
+    tx_.set(zmq::sockopt::tcp_keepalive_idle,  300);
+    tx_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
+    rx_.set(zmq::sockopt::tcp_keepalive_idle,  300);
+    rx_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
+    tx_.connect(g_addr);
+    rx_.bind   (g_recv_addr);
+
+    fut_ = std::async(std::launch::async, [this] {
+      while (active_)
+        recv(); });
+
   }
 
   ~ipc_worker()
   {
-    socket_.disconnect(g_addr);
+    tx_.disconnect(g_addr);
   }
 
   void send(platform_message msg)
@@ -48,7 +60,7 @@ public:
       zmq::message_t message{data.size()};
       std::memcpy(message.data(), data.data(), data.size());
 
-      socket_.send(message, flag);
+      tx_.send(message, flag);
     }
   }
 
@@ -77,11 +89,13 @@ public:
 private:
   using ipc_msgs_t = std::vector<ipc_message::u_ipc_msg_ptr>;
 
-  zmq::context_t ctx_;
-  zmq::socket_t  socket_;
-  zmq::socket_t  rx_;
-  ipc_msgs_t     msgs_;
-  observer_t     cb_;
+  zmq::context_t    ctx_;
+  zmq::socket_t     tx_;
+  zmq::socket_t     rx_;
+  std::future<void> fut_;
+  bool              active_{true};
+  ipc_msgs_t        msgs_;
+  observer_t        cb_;
 };
 
 
