@@ -1,6 +1,6 @@
 
 config("kstodon") {
-  include_dirs = ["//third_party/kstodon/src", "//third_party/kstodon/third_party/kjson"]
+  include_dirs = ["//third_party/kstodon/src", "//third_party/kstodon/third_party/json"]
   libs = ["//third_party/kstodon/out/libkstodon_lib.so"]
   visibility = [ ":kstodon_lib" ]
 }
@@ -28,7 +28,6 @@ group("kstodon_lib") {
 executable("mastodon_bot") {
 public_configs = [
   ":nlp",
-  "//src/bot/youtube:kjson",
   "//src/bot/youtube:inih",
 ]
 
