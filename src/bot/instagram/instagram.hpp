@@ -123,12 +123,13 @@ InstagramBot()
   m_worker([this] (auto result)
   {
     if (!m_pending)
-      log("Received worker message, but nothing is pending");
+      log("Received worker message, but nothing is pending. Last request: ", m_last_req.id.c_str());
     else
     {
       m_send_event_fn((result) ? CreateSuccessEvent(m_last_req) :
                                  CreateErrorEvent("Failed to handle request", m_last_req));
       m_pending = false;
+      m_posts[m_last_req.id] = true;
     }
   })
 {}
@@ -153,6 +154,11 @@ void SetCallback(BrokerCallback cb_fn)
   m_send_event_fn = cb_fn;
 }
 
+bool post_requested(const std::string& id) const
+{
+  return (m_posts.find(id) != m_posts.end());
+}
+
 bool HandleEvent(const BotRequest& request)
 {
         bool  error = false;
@@ -161,11 +167,16 @@ bool HandleEvent(const BotRequest& request)
   std::string err_msg;
   try
   {
+    if (post_requested(request.id))
+      log(request.id + " was already requested");
+    else
     if (event == "livestream active" || event == "platform:repost" || event == "instagram:messages")
     {
+
       m_pending = true;
       m_worker.send(BotRequestToIPC(Platform::instagram, request));
       m_last_req = request;
+      m_posts[request.id] = false;
     }
   }
   catch (const std::exception& e)
@@ -200,9 +211,12 @@ virtual void Shutdown() final
 }
 
 private:
+  using post_map_t = std::map<std::string, bool>;
+
   BrokerCallback m_send_event_fn;
   ipc_worker     m_worker;
-  BotRequest     m_last_req;
-  bool           m_pending{false};
+  BotRequest     m_last_req{};
+  bool           m_pending {false};
+  post_map_t     m_posts;
 };
 } // namespace kgram
