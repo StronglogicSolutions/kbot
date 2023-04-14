@@ -16,6 +16,7 @@ config("klogger_library") {
 
 source_set("klogger_sources") {
   sources = ["//third_party/klogger/src/logger.cpp"]
+  include_dirs = ["//third_party/klogger/src"]
 }
 
 group ("klogger") {
@@ -43,7 +44,8 @@ libs = [
 include_dirs = [
   "//third_party/inih/cpp",
   "//third_party/json/include",
-  "//third_party/kjson"
+  "//third_party/kjson",
+  "//third_party/klogger/src"
 ]
 
 deps = [

@@ -2,7 +2,9 @@
 
 #include "interfaces/interfaces.hpp"
 #include "../broker/ipc.hpp"
+#include <logger.hpp>
 #include <zmq.hpp>
+
 static const char* g_addr      = "tcp://127.0.0.1:28475";
 static const char* g_recv_addr = "tcp://127.0.0.1:28476";
 //-------------------------------------------------------------
@@ -39,7 +41,7 @@ public:
     fut_ = std::async(std::launch::async, [this] {
       while (active_)
         recv(); });
-
+    VLOG("Instagram Bot!");
   }
 
   ~ipc_worker()

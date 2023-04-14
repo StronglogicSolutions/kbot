@@ -7,8 +7,12 @@ executable("instagram_bot") {
 
   libs = [
     "cpr",
-    "zmq"
+    "zmq",
+    "fmt",
+    "//third_party/klogger/src/libspdlog.a"
   ]
+
+  public_deps = ["//src/bot/broker:klogger"]
 
   sources = [
     "//src/bot/instagram/main.cpp"
