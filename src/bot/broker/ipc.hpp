@@ -11,7 +11,7 @@
 #include <future>
 #include <zmq.hpp>
 
-namespace kiq {
+//namespace kiq {
 using external_log_fn = std::function<void(const char*)>;
 namespace
 {
@@ -692,4 +692,4 @@ public:
 };
 //---------------------------------------------------------------------
 using client_handlers_t = std::map<std::string_view, IPCHandlerInterface*>;
-} // ns kiq
+//} // ns kiq

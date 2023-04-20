@@ -32,7 +32,7 @@ public:
 MastodonBot()
 : kbot::Bot{constants::USERNAME},
   kstodon::Bot{constants::USERNAME, &GenerateStatusMessage, &ReplyToMastodonMessage}
-{}
+{ }
 
 virtual void Init() override
 {

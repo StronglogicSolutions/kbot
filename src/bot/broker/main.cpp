@@ -23,7 +23,7 @@ SocketState()
 
 void ResetChannel()
 {
-  WLOG("ResetChannel was called. Broker isn't happy");
+  kutils::log("ResetChannel was called. Broker isn't happy");
 }
 
 void Poll()

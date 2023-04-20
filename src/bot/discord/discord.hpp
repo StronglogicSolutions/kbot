@@ -16,7 +16,7 @@ public:
 DiscordBot()
 : kbot::Bot{constants::USER},
   kscord::Client{}
-{}
+{ }
 
 virtual void Init() override
 {

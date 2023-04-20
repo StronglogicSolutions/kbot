@@ -4,8 +4,6 @@
 #include <mutex>
 #include <condition_variable>
 
-#include <logger.hpp>
-
 #include "bot/mastodon/mastodon.hpp"
 #include "bot/youtube/youtube.hpp"
 #include "bot/discord/discord.hpp"
@@ -111,7 +109,7 @@ namespace kbot
 
     g_broker = this;
 
-    m_daemon.add_observer("botbroker", [] { VLOG("Heartbeat timed out"); });
+    m_daemon.add_observer("botbroker", [] { kutils::log("Heartbeat timed out"); });
   }
   //------------------------------------------------------------
   void ProcessMessage(u_ipc_msg_ptr message)
@@ -169,7 +167,7 @@ namespace kbot
   //------------------------------------------------------------
   static bool ProcessEvent(BotRequest event)
   {
-    VLOG("Processing event to broker's queue:\n{}", event.to_string());
+    kutils::log("Processing event to broker's queue: ", event.to_string().c_str());
     if (g_broker != nullptr)
     {
       g_broker->enqueue(event);
@@ -226,7 +224,7 @@ namespace kbot
         bot_ptr  = &m_ig_bot;
     }
     if (!bot_ptr)
-      return ELOG("Failed to restart bot for platform {}", get_platform_name(platform));
+      return kutils::log("Failed to restart bot for platform", get_platform_name(platform).c_str());
 
     bot_ptr->SetCallback(&ProcessEvent);
     bot_ptr->Init();
