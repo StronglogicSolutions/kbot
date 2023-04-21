@@ -128,7 +128,7 @@ InstagramBot()
     {
       m_send_event_fn((result) ? CreateSuccessEvent(m_last_req) :
                                  CreateErrorEvent("Failed to handle request", m_last_req));
-      m_pending = false;
+      m_pending--;
       m_posts[m_last_req.id] = true;
     }
   })
@@ -216,7 +216,7 @@ private:
   BrokerCallback m_send_event_fn;
   ipc_worker     m_worker;
   BotRequest     m_last_req{};
-  bool           m_pending {false};
+  unsigned int   m_pending {0};
   post_map_t     m_posts;
 };
 } // namespace kgram
