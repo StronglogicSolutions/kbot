@@ -61,7 +61,7 @@ TelegramBot& operator=(const TelegramBot& bot)
   return *this;
 }
 
-virtual void Init() override
+virtual void Init(bool flood_protect) override
 {
   return;
 }

@@ -132,7 +132,7 @@ BlogBot()
 : kbot::Bot{constants::blog::USER}
 {}
 
-virtual void Init() override
+virtual void Init(bool flood_protect) final
 {
   return;
 }

@@ -139,8 +139,9 @@ InstagramBot& operator=(const InstagramBot& bot)
   return *this;
 }
 
-virtual void Init() final
+virtual void Init(bool flood_protect) final
 {
+  m_flood_protect = flood_protect;
   return;
 }
 
@@ -167,7 +168,7 @@ bool HandleEvent(const BotRequest& request)
   std::string err_msg;
   try
   {
-    if (post_requested(request.id))
+    if (m_flood_protect && post_requested(request.id))
       log(request.id + " was already requested");
     else
     if (event == "livestream active" || event == "platform:repost" || event == "instagram:messages")
@@ -218,5 +219,6 @@ private:
   BotRequest     m_last_req{};
   unsigned int   m_pending {0};
   post_map_t     m_posts;
+  bool           m_flood_protect{true};
 };
 } // namespace kgram

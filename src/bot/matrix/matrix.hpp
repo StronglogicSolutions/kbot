@@ -127,7 +127,7 @@ public:
     m_retries(50)
   {}
 //-----------------------------------------------------------------------
-  virtual void Init() final
+  virtual void Init(bool flood_protect) final
   {
     kbot::log("Katrix logging in");
     katrix::KatrixBot::login();

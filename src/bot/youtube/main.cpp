@@ -49,7 +49,7 @@ int main(int argc, char** argv) {
   using namespace kbot;
   auto event = ParseRuntimeArguments(argc, argv);
   YouTubeBot bot{};
-  bot.Init();
+  bot.Init(false);
 
   if (bot.HandleEvent(event))
   {

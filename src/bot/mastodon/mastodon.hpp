@@ -34,7 +34,7 @@ MastodonBot()
   kstodon::Bot{constants::USERNAME, &GenerateStatusMessage, &ReplyToMastodonMessage}
 { }
 
-virtual void Init() override
+virtual void Init(bool flood_protect) override
 {
   return;
 }

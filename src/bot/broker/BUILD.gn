@@ -41,7 +41,7 @@ deps = [
 
 public_deps = [
   ":cpr_lib",
-  ]
+]
 
 
 sources = [

@@ -18,7 +18,7 @@ DiscordBot()
   kscord::Client{}
 { }
 
-virtual void Init() override
+virtual void Init(bool flood_protect) override
 {
   return;
 }
