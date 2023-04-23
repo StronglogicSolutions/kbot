@@ -163,7 +163,10 @@ namespace kbot
     }
     else
     if (message->type() == ::constants::IPC_PLATFORM_TYPE)
+    {
+
       SendEvent(CreatePlatformEvent(static_cast<platform_message*>(message.get())));
+    }
     else
     if (message->type() == ::constants::IPC_KEEPALIVE_TYPE)
     {
