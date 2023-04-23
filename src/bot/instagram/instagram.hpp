@@ -174,7 +174,7 @@ bool HandleEvent(const BotRequest& request)
     if (event == "livestream active" || event == "platform:repost" || event == "instagram:messages")
     {
 
-      m_pending = true;
+      m_pending++;
       m_worker.send(BotRequestToIPC(Platform::instagram, request));
       m_last_req = request;
       m_posts[request.id] = false;
