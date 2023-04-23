@@ -10,8 +10,8 @@
 #include <type_traits>
 #include <future>
 #include <zmq.hpp>
+#include <iostream>
 
-//namespace kiq {
 using external_log_fn = std::function<void(const char*)>;
 namespace
 {
@@ -266,6 +266,16 @@ class platform_message : public ipc_message
 public:
   platform_message(const std::string& platform, const std::string& id, const std::string& user, const std::string& content, const std::string& urls, const bool repost = false, uint32_t cmd = 0x00, const std::string& args = "", const std::string& time = "")
   {
+    std::cout << "platform message called with parameters" << std::endl;
+    std::cout << "platform: " << platform << std::endl;
+    std::cout << "id: " << id << std::endl;
+    std::cout << "user: " << user << std::endl;
+    std::cout << "content: " << content << std::endl;
+    std::cout << "urls: " << urls << std::endl;
+    std::cout << "repost: " << repost << std::endl;
+    std::cout << "cmd: " << cmd << std::endl;
+    std::cout << "args: " << args << std::endl;
+    std::cout << "time: " << time << std::endl;
     m_frames = {
       byte_buffer{},
       byte_buffer{constants::IPC_PLATFORM_TYPE},
@@ -286,6 +296,11 @@ public:
 //--------------------
   platform_message(const std::vector<byte_buffer>& data)
   {
+    std::cout << "platform_message(buffer vector)" << std::endl;
+    for (const auto& arg : data)
+    {
+      std::cout << "Arg as string: " << std::string{reinterpret_cast<const char*>(arg.data()), arg.size()} << std::endl;
+    }
     m_frames = {
       byte_buffer{},
       byte_buffer{data.at(constants::index::TYPE)},
@@ -366,10 +381,10 @@ public:
 //--------------------
   std::string time() const
   {
-    return std::string{
-      reinterpret_cast<const char*>(m_frames.at(constants::index::TIME).data()),
-      m_frames.at(constants::index::TIME).size()
-    };
+    const auto time_s = std::string{reinterpret_cast<const char*>(m_frames.at(constants::index::TIME).data()),
+                                                                  m_frames.at(constants::index::TIME).size()};
+    std::cout << "Time is: " << time_s << std::endl;
+    return time_s;
   }
 //--------------------
   std::string to_string() const override
@@ -531,7 +546,9 @@ public:
 //---------------------------------------------------------------------
 inline ipc_message::u_ipc_msg_ptr DeserializeIPCMessage(std::vector<ipc_message::byte_buffer>&& data)
 {
+  std::cout << "DeserializeIPCMessage()" << std::endl;
   uint8_t message_type = *(data.at(constants::index::TYPE).data());
+  std::cout << "message type being deserialized is " << message_type << std::endl;
 
   switch (message_type)
   {
@@ -653,15 +670,18 @@ public:
   {
     const auto     payload   = message->data();
     const size_t   frame_num = payload.size();
-
+    std::cout << "IPCTransmitterInterface::send_ipc_message() => frame num is " << frame_num << std::endl;
+    std::string info_s;
     for (int i = 0; i < frame_num; i++)
     {
       const int      flag  = (i == (frame_num - 1)) ? 0 : ZMQ_SNDMORE;
       const auto     data  = payload.at(i);
       zmq::message_t message{data.size()};
       std::memcpy(message.data(), data.data(), data.size());
+      info_s += message.to_string();
       socket().send(message, flag);
     }
+    std::cout << "Sending frame with following: " << info_s << std::endl;
   }
 
 protected:
@@ -692,4 +712,5 @@ public:
 };
 //---------------------------------------------------------------------
 using client_handlers_t = std::map<std::string_view, IPCHandlerInterface*>;
-//} // ns kiq
+
+
