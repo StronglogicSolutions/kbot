@@ -11,7 +11,7 @@
 #include <future>
 #include <zmq.hpp>
 
-//namespace kiq {
+// namespace kiq {
 using external_log_fn = std::function<void(const char*)>;
 namespace
 {
@@ -366,10 +366,8 @@ public:
 //--------------------
   std::string time() const
   {
-    return std::string{
-      reinterpret_cast<const char*>(m_frames.at(constants::index::TIME).data()),
-      m_frames.at(constants::index::TIME).size()
-    };
+    return std::string{reinterpret_cast<const char*>(m_frames.at(constants::index::TIME).data()),
+                                                     m_frames.at(constants::index::TIME).size()};
   }
 //--------------------
   std::string to_string() const override
@@ -532,7 +530,6 @@ public:
 inline ipc_message::u_ipc_msg_ptr DeserializeIPCMessage(std::vector<ipc_message::byte_buffer>&& data)
 {
   uint8_t message_type = *(data.at(constants::index::TYPE).data());
-
   switch (message_type)
   {
     case (constants::IPC_OK_TYPE):          return std::make_unique<okay_message>();
@@ -692,4 +689,5 @@ public:
 };
 //---------------------------------------------------------------------
 using client_handlers_t = std::map<std::string_view, IPCHandlerInterface*>;
-//} // ns kiq
+// } // ns kiq
+

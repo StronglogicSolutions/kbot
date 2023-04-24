@@ -82,7 +82,8 @@ namespace kbot
       .args     = message->args(),
       .urls     = BotRequest::urls_from_string(message->urls()),
       .id       = message->id(),
-      .cmd      = message->cmd()
+      .cmd      = message->cmd(),
+      .time     = message->time()
     };
   }
 
@@ -162,7 +163,10 @@ namespace kbot
     }
     else
     if (message->type() == ::constants::IPC_PLATFORM_TYPE)
+    {
+
       SendEvent(CreatePlatformEvent(static_cast<platform_message*>(message.get())));
+    }
     else
     if (message->type() == ::constants::IPC_KEEPALIVE_TYPE)
     {
@@ -266,7 +270,10 @@ namespace kbot
                                                                           request.username,
                                                                           request.data,
                                                                           request.url_string(),
-                                                                          SHOULD_REPOST));
+                                                                          SHOULD_REPOST,
+                                                                          request.cmd,
+                                                                          request.args,
+                                                                          request.time));
         else
         if (request.event == "livestream inactive")
             kbot::log("YouTube bot returned no livestreams");
@@ -285,7 +292,10 @@ namespace kbot
                                                                           request.username,
                                                                           request.data,
                                                                           request.url_string(),
-                                                                          SHOULD_NOT_REPOST));
+                                                                          SHOULD_NOT_REPOST,
+                                                                          request.cmd,
+                                                                          request.args,
+                                                                          request.time));
         }
         else
         if (request.event == "bot:error")
@@ -360,7 +370,7 @@ namespace kbot
         bot->Shutdown();
 
       while (m_yt_bot.IsRunning() || m_md_bot.IsRunning() || m_dc_bot.IsRunning() ||
-            m_bg_bot.IsRunning() || m_tg_bot.IsRunning() || m_mx_bot.IsRunning() ||  m_ig_bot.IsRunning())
+             m_bg_bot.IsRunning() || m_tg_bot.IsRunning() || m_mx_bot.IsRunning() ||  m_ig_bot.IsRunning())
 
       Worker::stop();
 

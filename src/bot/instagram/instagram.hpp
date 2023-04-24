@@ -11,7 +11,7 @@ namespace kbot
 static platform_message BotRequestToIPC(Platform platform, const BotRequest& request)
 {
   return platform_message{get_platform_name(platform), request.id,           request.username,
-                          request.data,                request.url_string(), SHOULD_NOT_REPOST};
+                          request.data,                request.url_string(), SHOULD_NOT_REPOST, request.cmd, request.args, request.time};
 }
 } // ns kbot
 //-------------------------------------------------------------
@@ -174,7 +174,7 @@ bool HandleEvent(const BotRequest& request)
     if (event == "livestream active" || event == "platform:repost" || event == "instagram:messages")
     {
 
-      m_pending = true;
+      m_pending++;
       m_worker.send(BotRequestToIPC(Platform::instagram, request));
       m_last_req = request;
       m_posts[request.id] = false;

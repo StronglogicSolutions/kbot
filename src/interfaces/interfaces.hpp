@@ -84,6 +84,7 @@ std::vector<std::string> urls;
 std::string              id;
 std::string              previous_event;
 uint32_t                 cmd{0x00};
+std::string              time;
 
 const std::string to_string() const
 {
