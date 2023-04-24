@@ -33,7 +33,7 @@ YouTubeBot::YouTubeBot()
   )
 {}
 //-----------------------------------------------------------------------
-void YouTubeBot::Init()
+void YouTubeBot::Init(bool flood_protect)
 {
   init();
 }

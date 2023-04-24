@@ -50,13 +50,13 @@ bool ReceiveIPCMessage(const bool is_request = true)
 
   if (!socket.recv(&identity))
   {
-    VLOG("Socket failed to receive");
+    kutils::log("Socket failed to receive");
     return false;
   }
 
   if (identity.empty() || identity.to_string_view() != "botbroker__worker")
   {
-    ELOG("Rejecting message from {}", identity.to_string());
+    kutils::log("Rejecting message from ", identity.to_string().c_str());
     return false;
   }
 
@@ -92,7 +92,7 @@ bool SendIPCMessage(u_ipc_msg_ptr message, const bool use_req = false)
   const auto   payload   = message->data();
   const size_t frame_num = payload.size();
   if (message->type() != ::constants::IPC_KEEPALIVE_TYPE)
-    DLOG("Sending IPC message of type ", ::constants::IPC_MESSAGE_NAMES.at(message->type()));
+    kutils::log("Sending IPC message of type ", ::constants::IPC_MESSAGE_NAMES.at(message->type()));
 
   for (int i = 0; i < frame_num; i++)
   {

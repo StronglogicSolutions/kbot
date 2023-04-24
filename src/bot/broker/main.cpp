@@ -14,7 +14,7 @@ struct SocketState
 {
 static const uint32_t TX_MAX_MISSES = 100;
 
-SocketState()
+SocketState(const std::string& arg)
 : broker([this]() { ResetChannel(); })
 {
   broker.run();
@@ -23,7 +23,7 @@ SocketState()
 
 void ResetChannel()
 {
-  WLOG("ResetChannel was called. Broker isn't happy");
+  kutils::log("ResetChannel was called. Broker isn't happy");
 }
 
 void Poll()
@@ -96,7 +96,8 @@ uint32_t    tx_misses          {0};
 int main(int argc, char** argv)
 {
   signal(SIGPIPE, sig_pipe_handler);
-  kbot::SocketState state{};
+  const auto arg = (argc > 1) ? argv[1] : "";
+  kbot::SocketState state{arg};
 
   for (;;)
   {

@@ -8,21 +8,6 @@ group("cpr_lib") {
   public_configs = [":cpr_library"]
 }
 
-config("klogger_library") {
-  include_dirs = ["//third_party/klogger/src"]
-  visibility = [":klogger"]
-  defines = ["SPDLOG_COMPILED_LIB"]
-}
-
-source_set("klogger_sources") {
-  sources = ["//third_party/klogger/src/logger.cpp"]
-}
-
-group ("klogger") {
-  public_configs = [":klogger_library"]
-  public_deps = [":klogger_sources"]
-}
-
 executable("broker") {
   public_configs = [
     "//:cppzmq",
@@ -36,8 +21,6 @@ executable("broker") {
 
 libs = [
   "zmq",
-  "fmt",
-  "//third_party/klogger/src/libspdlog.a"
 ]
 
 include_dirs = [
@@ -58,8 +41,7 @@ deps = [
 
 public_deps = [
   ":cpr_lib",
-  ":klogger"
-  ]
+]
 
 
 sources = [

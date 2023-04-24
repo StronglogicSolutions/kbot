@@ -28,6 +28,3 @@
 [submodule "third_party/HtmlBuilder"]
 	path = third_party/HtmlBuilder
 	url = https://github.com/SRombauts/HtmlBuilder
-[submodule "third_party/klogger"]
-	path = third_party/klogger
-	url = https://github.com/StronglogicSolutions/klogger

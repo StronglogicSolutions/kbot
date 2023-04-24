@@ -62,7 +62,7 @@ GettrBot& operator=(const GettrBot& bot)
   return *this;
 }
 
-virtual void Init() override
+virtual void Init(bool flood_protect) override
 {
   if (kettr::login())
     log("GettrBot logged in");

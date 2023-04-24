@@ -4,7 +4,7 @@
 #include <mutex>
 #include <condition_variable>
 
-#include <logger.hpp>
+#include <INIReader.h>
 
 #include "bot/mastodon/mastodon.hpp"
 #include "bot/youtube/youtube.hpp"
@@ -94,6 +94,12 @@ namespace kbot
   Broker(ipc_fail_fn _cb)
   : m_on_ipc_fail(_cb)
   {
+    const auto config        = INIReader{get_executable_cwd() + "../config.ini"};
+    if (config.ParseError() < 0)
+      log("Failed to load config");
+    else
+      m_flood_protect = config.GetBoolean("broker", "flood_protect", false);
+
     m_pool.push_back(&m_yt_bot);
     m_pool.push_back(&m_md_bot);
     m_pool.push_back(&m_dc_bot);
@@ -106,12 +112,12 @@ namespace kbot
     for (auto&& bot : m_pool)
     {
       bot->SetCallback(&ProcessEvent);
-      bot->Init();
+      bot->Init(m_flood_protect);
     }
 
     g_broker = this;
 
-    m_daemon.add_observer("botbroker", [] { VLOG("Heartbeat timed out"); });
+    m_daemon.add_observer("botbroker", [] { kutils::log("Heartbeat timed out"); });
   }
   //------------------------------------------------------------
   void ProcessMessage(u_ipc_msg_ptr message)
@@ -169,7 +175,7 @@ namespace kbot
   //------------------------------------------------------------
   static bool ProcessEvent(BotRequest event)
   {
-    VLOG("Processing event to broker's queue:\n{}", event.to_string());
+    kutils::log("Processing event to broker's queue: ", event.to_string().c_str());
     if (g_broker != nullptr)
     {
       g_broker->enqueue(event);
@@ -226,10 +232,10 @@ namespace kbot
         bot_ptr  = &m_ig_bot;
     }
     if (!bot_ptr)
-      return ELOG("Failed to restart bot for platform {}", get_platform_name(platform));
+      return kutils::log("Failed to restart bot for platform", get_platform_name(platform).c_str());
 
     bot_ptr->SetCallback(&ProcessEvent);
-    bot_ptr->Init();
+    bot_ptr->Init(m_flood_protect);
     bot_ptr->Start();
   }
   //------------------------------------------------------------
@@ -389,6 +395,7 @@ private:
   EventQueue                m_queue;
   std::deque<u_ipc_msg_ptr> m_outbound_queue;
   bool                      m_bots_active;
+  bool                      m_flood_protect{true};
   std::mutex                m_mutex;
   std::condition_variable   m_condition;
   kbot::YouTubeBot          m_yt_bot;
