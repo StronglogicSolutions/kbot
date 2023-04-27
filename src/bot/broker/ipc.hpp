@@ -10,6 +10,7 @@
 #include <type_traits>
 #include <future>
 #include <zmq.hpp>
+#include <iostream>
 
 // namespace kiq {
 using external_log_fn = std::function<void(const char*)>;
@@ -266,6 +267,7 @@ class platform_message : public ipc_message
 public:
   platform_message(const std::string& platform, const std::string& id, const std::string& user, const std::string& content, const std::string& urls, const bool repost = false, uint32_t cmd = 0x00, const std::string& args = "", const std::string& time = "")
   {
+    std::cout << "platform_message called with time " << time << std::endl;
     m_frames = {
       byte_buffer{},
       byte_buffer{constants::IPC_PLATFORM_TYPE},
@@ -286,6 +288,12 @@ public:
 //--------------------
   platform_message(const std::vector<byte_buffer>& data)
   {
+    std::cout << "platform_message(buffer vector)" << std::endl;
+    for (const auto& arg : data)
+    {
+      std::cout << "Arg as string: " << std::string{reinterpret_cast<const char*>(arg.data()), arg.size()} << std::endl;
+    }
+
     m_frames = {
       byte_buffer{},
       byte_buffer{data.at(constants::index::TYPE)},
