@@ -154,7 +154,9 @@ static const BotRequest CreateSuccessEvent(const BotRequest& previous_event)
     .args           = previous_event.args,
     .urls           = previous_event.urls,
     .id             = previous_event.id,
-    .previous_event = previous_event.event
+    .previous_event = previous_event.event,
+    .cmd            = previous_event.cmd,
+    .time           = previous_event.time
   };
 }
 
@@ -169,7 +171,9 @@ static const BotRequest CreateInfo(const std::string& info, const std::string& t
     .args           = type,
     .urls           = previous_event.urls,
     .id             = previous_event.id,
-    .previous_event = previous_event.event
+    .previous_event = previous_event.event,
+    .cmd            = previous_event.cmd,
+    .time           = previous_event.time
   };
 }
 
@@ -183,7 +187,9 @@ static const BotRequest CreateRequest(const std::string& message, const std::str
     .data           = message,
     .args           = args,
     .id             = previous_event.id,
-    .previous_event = previous_event.event
+    .previous_event = previous_event.event,
+    .cmd            = previous_event.cmd,
+    .time           = previous_event.time
   };
 }
 
@@ -191,12 +197,15 @@ static const BotRequest CreateErrorEvent(const std::string& error_message, const
 {
   kbot::log("Creating error event");
   return BotRequest{
-    .platform = previous_event.platform,
-    .event    = "bot:error",
-    .username = previous_event.username,
-    .data     = error_message,
-    .urls     = previous_event.urls,
-    .id       = previous_event.id
+    .platform       = previous_event.platform,
+    .event          = "bot:error",
+    .username       = previous_event.username,
+    .data           = error_message,
+    .urls           = previous_event.urls,
+    .id             = previous_event.id,
+    .previous_event = previous_event.event,
+    .cmd            = previous_event.cmd,
+    .time           = previous_event.time
   };
 }
 
