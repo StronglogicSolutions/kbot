@@ -8,6 +8,26 @@ group("cpr_lib") {
   public_configs = [":cpr_library"]
 }
 
+source_set("klogger_sources") {
+  sources = ["//third_party/klogger/src/logger.cpp"]
+  include_dirs = [
+    "//third_party/klogger/src"
+  ]
+}
+
+config("klogger_lib") {
+  include_dirs = [
+    "//third_party/klogger/src"
+  ]
+  libs = [  "//third_party/klogger/build/third_party/g3log/libg3log.so" ]
+  visibility = [ ":klogger" ]
+}
+
+group("klogger") {
+  public_configs = [":klogger_lib"]
+  public_deps = [":klogger_sources"]
+}
+
 executable("broker") {
   public_configs = [
     "//:cppzmq",
@@ -21,12 +41,15 @@ executable("broker") {
 
 libs = [
   "zmq",
+  # "//third_party/klogger/third_party/g3log/libg3log.a"
 ]
 
 include_dirs = [
   "//third_party/inih/cpp",
   "//third_party/json/include",
-  "//third_party/kjson"
+  "//third_party/kjson",
+  "//third_party/klogger/src",
+  "//third_party/klogger/third_party/g3log/src"
 ]
 
 deps = [
@@ -41,11 +64,13 @@ deps = [
 
 public_deps = [
   ":cpr_lib",
+  ":klogger"
 ]
 
 
 sources = [
-  "//src/bot/broker/main.cpp"
+  "//src/bot/broker/main.cpp",
+  # "//third_party/klogger/src/logger.cpp"
 ]
 
 }

@@ -16,6 +16,8 @@
 #include "bot/instagram/instagram.hpp"
 #include "ipc.hpp"
 
+#include <logger.hpp>
+
 #define OPENSSL_API_COMPAT 0x0908
 
 namespace kbot
@@ -95,6 +97,8 @@ namespace kbot
   Broker(ipc_fail_fn _cb)
   : m_on_ipc_fail(_cb)
   {
+    kiq::log::klogger::init("trace");
+
     const auto config        = INIReader{get_executable_cwd() + "../config.ini"};
     if (config.ParseError() < 0)
       log("Failed to load config");
@@ -236,11 +240,13 @@ namespace kbot
         bot_ptr  = &m_ig_bot;
     }
     if (!bot_ptr)
-      return kutils::log("Failed to restart bot for platform", get_platform_name(platform).c_str());
-
-    bot_ptr->SetCallback(&ProcessEvent);
-    bot_ptr->Init(m_flood_protect);
-    bot_ptr->Start();
+      KLOG("Failed to restart bot for platform %s", get_platform_name(platform));
+    else
+    {
+      bot_ptr->SetCallback(&ProcessEvent);
+      bot_ptr->Init(m_flood_protect);
+      bot_ptr->Start();
+    }
   }
   //------------------------------------------------------------
   virtual void loop() override
@@ -286,7 +292,7 @@ namespace kbot
         else
         if (request.event == SUCCESS_EVENT)
         {
-          kbot::log(platform + " successfully handled " + request.previous_event);
+          KLOG("%s successfully handled %s", platform, request.previous_event);
           m_outbound_queue.emplace_back(std::make_unique<platform_message>(platform,
                                                                           request.id,
                                                                           request.username,
@@ -300,7 +306,7 @@ namespace kbot
         else
         if (request.event == "bot:error")
         {
-          kbot::log(platform + " failed to handle " + request.previous_event);
+          KLOG("%s failed to handle %s", platform, request.previous_event);
           m_outbound_queue.emplace_back(std::make_unique<platform_error>(platform,
                                                                         request.id,
                                                                         request.username,
@@ -309,7 +315,7 @@ namespace kbot
         else
         if (request.event == "bot:restart")
         {
-          kbot::log(platform + " will be restarted");
+          KLOG("%s will be restarted", platform);
           m_outbound_queue.emplace_back(std::make_unique<platform_info>(platform,
                                                                         "restart",
                                                                         "info"));
@@ -318,7 +324,7 @@ namespace kbot
         else
         if (request.event == "bot:request")
         {
-          kbot::log(platform + " created a request in response to " + request.previous_event);
+          KLOG("%s created a request in response to %s", platform, request.previous_event);
           m_outbound_queue.emplace_back(std::make_unique<platform_request>(platform,
                                                                           request.id,
                                                                           request.username,
@@ -328,7 +334,7 @@ namespace kbot
         else
         if (request.event == INFO_EVENT)
         {
-          kbot::log(platform + " sending info in response to " + request.previous_event);
+          KLOG("%s sending info in response to %s", platform, request.previous_event);
           m_outbound_queue.emplace_back(std::make_unique<platform_info>(platform, request.data, request.args));
         }
         else
@@ -358,7 +364,7 @@ namespace kbot
       case (Platform::instagram): m_ig_bot.HandleEvent(event); break;
 
       default:
-        kbot::log("Unable to send event for unknown platform: ", std::to_string(event.platform).c_str());
+        KLOG("Unable to send event for unknown platform: %s", std::to_string(event.platform));
     }
   }
   //------------------------------------------------------------
@@ -378,7 +384,7 @@ namespace kbot
     }
     catch(const std::exception& e)
     {
-      std::cerr << e.what() << '\n';
+      ELOG("Exception caught during shutdown: %s", e.what());
 
       return false;
     }
@@ -395,7 +401,7 @@ namespace kbot
 
     u_ipc_msg_ptr message = std::move(m_outbound_queue.front());
     if (!is_keepalive(message->type()))
-      kbot::log("Dequeuing =>", message->to_string().c_str());
+      DLOG("Dequeuing => %s", message->to_string());
     m_outbound_queue.pop_front();
     return std::move(message);
   }
