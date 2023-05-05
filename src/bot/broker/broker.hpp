@@ -97,7 +97,7 @@ namespace kbot
   Broker(ipc_fail_fn _cb)
   : m_on_ipc_fail(_cb)
   {
-    kiq::log::klogger::init("trace");
+    kiq::log::klogger::init("botbroker", "trace");
 
     const auto config        = INIReader{get_executable_cwd() + "../config.ini"};
     if (config.ParseError() < 0)
