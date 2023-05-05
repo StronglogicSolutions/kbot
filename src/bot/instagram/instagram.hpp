@@ -3,6 +3,8 @@
 #include "interfaces/interfaces.hpp"
 #include "../broker/ipc.hpp"
 #include <zmq.hpp>
+#include <logger.hpp>
+
 static const char* g_addr      = "tcp://127.0.0.1:28475";
 static const char* g_recv_addr = "tcp://127.0.0.1:28476";
 //-------------------------------------------------------------
@@ -70,7 +72,10 @@ public:
 
     zmq::message_t identity;
     if (!rx_.recv(identity) || identity.empty())
-      return kbot::log("Socket failed to receive identity");
+    {
+      ELOG("Socket failed to receive identity");
+      return;
+    }
 
     buffers_t      buffer;
     zmq::message_t msg;
@@ -82,7 +87,7 @@ public:
       buffer.push_back({static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
     }
     msgs_.push_back(DeserializeIPCMessage(std::move(buffer)));
-    kbot::log("IPC message received");
+    DLOG("IPC message received");
     cb_(true);
   }
 
@@ -123,7 +128,7 @@ InstagramBot()
   m_worker([this] (auto result)
   {
     if (!m_pending)
-      log("Received worker message, but nothing is pending. Last request: ", m_last_req.id.c_str());
+      WLOG("Received worker message, but nothing is pending. Last request: %s", m_last_req.id.c_str());
     else
     {
       m_send_event_fn((result) ? CreateSuccessEvent(m_last_req) :
@@ -169,7 +174,7 @@ bool HandleEvent(const BotRequest& request)
   try
   {
     if (m_flood_protect && post_requested(request.id))
-      log(request.id + " was already requested");
+      WLOG("%s was already requested", request.id.c_str());
     else
     if (event == "livestream active" || event == "platform:repost" || event == "instagram:messages")
     {
@@ -183,7 +188,7 @@ bool HandleEvent(const BotRequest& request)
   catch (const std::exception& e)
   {
     err_msg += "Exception caught handling " + request.event + ": " + e.what();
-    log(err_msg);
+    ELOG("%s", err_msg.c_str());
     CreateErrorEvent(err_msg, request);
     error = true;
   }

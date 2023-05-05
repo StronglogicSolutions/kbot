@@ -40,16 +40,13 @@ executable("broker") {
   ]
 
 libs = [
-  "zmq",
-  # "//third_party/klogger/third_party/g3log/libg3log.a"
+  "zmq"
 ]
 
 include_dirs = [
   "//third_party/inih/cpp",
   "//third_party/json/include",
-  "//third_party/kjson",
-  "//third_party/klogger/src",
-  "//third_party/klogger/third_party/g3log/src"
+  "//third_party/kjson"
 ]
 
 deps = [
@@ -70,7 +67,6 @@ public_deps = [
 
 sources = [
   "//src/bot/broker/main.cpp",
-  # "//third_party/klogger/src/logger.cpp"
 ]
 
 }

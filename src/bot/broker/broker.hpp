@@ -101,7 +101,7 @@ namespace kbot
 
     const auto config        = INIReader{get_executable_cwd() + "../config.ini"};
     if (config.ParseError() < 0)
-      log("Failed to load config");
+      KLOG("Failed to load config");
     else
       m_flood_protect = config.GetBoolean("broker", "flood_protect", false);
 
@@ -122,7 +122,7 @@ namespace kbot
 
     g_broker = this;
 
-    m_daemon.add_observer("botbroker", [] { kutils::log("Heartbeat timed out"); });
+    m_daemon.add_observer("botbroker", [] { WLOG("Heartbeat timed out"); });
   }
   //------------------------------------------------------------
   void ProcessMessage(u_ipc_msg_ptr message)
@@ -183,7 +183,7 @@ namespace kbot
   //------------------------------------------------------------
   static bool ProcessEvent(BotRequest event)
   {
-    kutils::log("Processing event to broker's queue: ", event.to_string().c_str());
+    DLOG("Processing event to broker's queue: %s", event.to_string().c_str());
     if (g_broker != nullptr)
     {
       g_broker->enqueue(event);
@@ -240,7 +240,7 @@ namespace kbot
         bot_ptr  = &m_ig_bot;
     }
     if (!bot_ptr)
-      KLOG("Failed to restart bot for platform %s", get_platform_name(platform));
+      KLOG("Failed to restart bot for platform %s", get_platform_name(platform).c_str());
     else
     {
       bot_ptr->SetCallback(&ProcessEvent);
@@ -282,17 +282,17 @@ namespace kbot
                                                                           request.time));
         else
         if (request.event == "livestream inactive")
-            kbot::log("YouTube bot returned no livestreams");
+            WLOG("%s bot returned no livestreams", platform.c_str());
         else
         if (request.event == "comment")
-          kbot::log(platform + " bot has new comments: " + request.data);
+          KLOG("%s bot has new comments: %s", platform.c_str(), request.data.c_str());
         else
         if (request.event == "message")
-          kbot::log(platform + " bot has new messages: " + request.data);
+          KLOG("%s bot has new messages: %s", platform.c_str(), request.data.c_str());
         else
         if (request.event == SUCCESS_EVENT)
         {
-          KLOG("%s successfully handled %s", platform, request.previous_event);
+          KLOG("%s successfully handled %s", platform.c_str(), request.previous_event.c_str());
           m_outbound_queue.emplace_back(std::make_unique<platform_message>(platform,
                                                                           request.id,
                                                                           request.username,
@@ -306,7 +306,7 @@ namespace kbot
         else
         if (request.event == "bot:error")
         {
-          KLOG("%s failed to handle %s", platform, request.previous_event);
+          KLOG("%s failed to handle %s", platform.c_str(), request.previous_event.c_str());
           m_outbound_queue.emplace_back(std::make_unique<platform_error>(platform,
                                                                         request.id,
                                                                         request.username,
@@ -315,7 +315,7 @@ namespace kbot
         else
         if (request.event == "bot:restart")
         {
-          KLOG("%s will be restarted", platform);
+          KLOG("%s will be restarted", platform.c_str());
           m_outbound_queue.emplace_back(std::make_unique<platform_info>(platform,
                                                                         "restart",
                                                                         "info"));
@@ -324,7 +324,7 @@ namespace kbot
         else
         if (request.event == "bot:request")
         {
-          KLOG("%s created a request in response to %s", platform, request.previous_event);
+          KLOG("%s created a request in response to %s", platform.c_str(), request.previous_event.c_str());
           m_outbound_queue.emplace_back(std::make_unique<platform_request>(platform,
                                                                           request.id,
                                                                           request.username,
@@ -334,7 +334,7 @@ namespace kbot
         else
         if (request.event == INFO_EVENT)
         {
-          KLOG("%s sending info in response to %s", platform, request.previous_event);
+          KLOG("%s sending info in response to %s", platform.c_str(), request.previous_event.c_str());
           m_outbound_queue.emplace_back(std::make_unique<platform_info>(platform, request.data, request.args));
         }
         else
@@ -364,7 +364,7 @@ namespace kbot
       case (Platform::instagram): m_ig_bot.HandleEvent(event); break;
 
       default:
-        KLOG("Unable to send event for unknown platform: %s", std::to_string(event.platform));
+        KLOG("Unable to send event for unknown platform: %s", std::to_string(event.platform).c_str());
     }
   }
   //------------------------------------------------------------
@@ -401,7 +401,7 @@ namespace kbot
 
     u_ipc_msg_ptr message = std::move(m_outbound_queue.front());
     if (!is_keepalive(message->type()))
-      DLOG("Dequeuing => %s", message->to_string());
+      DLOG("Dequeuing => %s", message->to_string().c_str());
     m_outbound_queue.pop_front();
     return std::move(message);
   }

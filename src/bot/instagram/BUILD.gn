@@ -10,6 +10,10 @@ executable("instagram_bot") {
     "zmq"
   ]
 
+  public_deps = [
+    "//src/bot/broker:klogger"
+  ]
+
   sources = [
     "//src/bot/instagram/main.cpp"
   ]
