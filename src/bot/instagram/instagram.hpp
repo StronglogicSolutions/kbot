@@ -3,6 +3,8 @@
 #include "interfaces/interfaces.hpp"
 #include "../broker/ipc.hpp"
 #include <zmq.hpp>
+#include <logger.hpp>
+
 static const char* g_addr      = "tcp://127.0.0.1:28475";
 static const char* g_recv_addr = "tcp://127.0.0.1:28476";
 //-------------------------------------------------------------
@@ -41,12 +43,12 @@ public:
         recv(); });
 
   }
-
+  //-------------------------------------------------------------
   ~ipc_worker()
   {
     tx_.disconnect(g_addr);
   }
-
+  //-------------------------------------------------------------
   void send(platform_message msg)
   {
     const auto&  payload   = msg.data();
@@ -63,14 +65,17 @@ public:
       tx_.send(message, flag);
     }
   }
-
+  //-------------------------------------------------------------
   void recv()
   {
     using buffers_t = std::vector<ipc_message::byte_buffer>;
 
     zmq::message_t identity;
     if (!rx_.recv(identity) || identity.empty())
-      return kbot::log("Socket failed to receive identity");
+    {
+      ELOG("Socket failed to receive identity");
+      return;
+    }
 
     buffers_t      buffer;
     zmq::message_t msg;
@@ -82,7 +87,7 @@ public:
       buffer.push_back({static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
     }
     msgs_.push_back(DeserializeIPCMessage(std::move(buffer)));
-    kbot::log("IPC message received");
+    DLOG("IPC message received");
     cb_(true);
   }
 
@@ -98,22 +103,24 @@ private:
   observer_t        cb_;
 };
 
-
 namespace kbot {
 namespace kgram {
 namespace constants {
 static const uint8_t     APP_NAME_LENGTH{6};
 static const std::string USER{};
 } // namespace constants
-
+//-------------------------------------------------------------
 static std::string get_executable_cwd()
 {
   std::string full_path{realpath("/proc/self/exe", NULL)};
   return full_path.substr(0, full_path.size() - (constants::APP_NAME_LENGTH + 1));
 }
-
+//-------------------------------------------------------------
 } // ns kgram
-
+auto bool_string = [](const auto v) { return v ? "true" : "false"; };
+//-------------------------------------------------------------
+//-------------------------------------------------------------
+//-------------------------------------------------------------
 class InstagramBot : public kbot::Worker,
                      public kbot::Bot
 {
@@ -123,7 +130,7 @@ InstagramBot()
   m_worker([this] (auto result)
   {
     if (!m_pending)
-      log("Received worker message, but nothing is pending. Last request: ", m_last_req.id.c_str());
+      WLOG("Received worker message, but nothing is pending. Last request: %s", m_last_req.id.c_str());
     else
     {
       m_send_event_fn((result) ? CreateSuccessEvent(m_last_req) :
@@ -133,33 +140,34 @@ InstagramBot()
     }
   })
 {}
-
+//-------------------------------------------------------------
 InstagramBot& operator=(const InstagramBot& bot)
 {
   return *this;
 }
-
+//-------------------------------------------------------------
 virtual void Init(bool flood_protect) final
 {
   m_flood_protect = flood_protect;
+  KLOG("Setting flood protection to %s", bool_string(flood_protect));
   return;
 }
-
+//-------------------------------------------------------------
 virtual void loop() final
 {
   Worker::m_is_running = true;
 }
-
+//-------------------------------------------------------------
 void SetCallback(BrokerCallback cb_fn)
 {
   m_send_event_fn = cb_fn;
 }
-
+//-------------------------------------------------------------
 bool post_requested(const std::string& id) const
 {
   return (m_posts.find(id) != m_posts.end());
 }
-
+//-------------------------------------------------------------
 bool HandleEvent(const BotRequest& request)
 {
         bool  error = false;
@@ -169,7 +177,7 @@ bool HandleEvent(const BotRequest& request)
   try
   {
     if (m_flood_protect && post_requested(request.id))
-      log(request.id + " was already requested");
+      WLOG("%s was already requested", request.id.c_str());
     else
     if (event == "livestream active" || event == "platform:repost" || event == "instagram:messages")
     {
@@ -183,29 +191,29 @@ bool HandleEvent(const BotRequest& request)
   catch (const std::exception& e)
   {
     err_msg += "Exception caught handling " + request.event + ": " + e.what();
-    log(err_msg);
+    ELOG("%s", err_msg.c_str());
     CreateErrorEvent(err_msg, request);
     error = true;
   }
   return !error;
 }
-
+//-------------------------------------------------------------
 virtual std::unique_ptr<API> GetAPI(std::string name) final
 {
   return nullptr;
 }
-
+//-------------------------------------------------------------
 virtual bool IsRunning() final
 {
   return m_is_running;
 }
-
+//-------------------------------------------------------------
 virtual void Start() final
 {
   if (!m_is_running)
     Worker::start();
 }
-
+//-------------------------------------------------------------
 virtual void Shutdown() final
 {
   Worker::stop();
