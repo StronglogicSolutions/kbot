@@ -19,7 +19,7 @@ config("klogger_lib") {
   include_dirs = [
     "//third_party/klogger/src"
   ]
-  libs = [  "//third_party/klogger/build/third_party/g3log/libg3log.so" ]
+  libs = [  "//third_party/klogger/third_party/k3log/build/libg3log.so" ]
   visibility = [ ":klogger" ]
 }
 
