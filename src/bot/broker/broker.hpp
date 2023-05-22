@@ -20,6 +20,8 @@
 
 #define OPENSSL_API_COMPAT 0x0908
 
+using namespace kiq::log;
+
 namespace kbot
 {
   using bot_ptr       = Bot*;
@@ -98,10 +100,11 @@ namespace kbot
   : m_on_ipc_fail(_cb)
   {
     kiq::log::klogger::init("botbroker", "trace");
-
-    const auto config        = INIReader{get_executable_cwd() + "../config.ini"};
+    const auto execpath = get_executable_cwd();
+    klogger::instance().d("Exec path is {}", execpath);
+    const auto config        = INIReader{execpath + "../config.ini"};
     if (config.ParseError() < 0)
-      KLOG("Failed to load config");
+      klogger::instance().i("Failed to load config");
     else
       m_flood_protect = config.GetBoolean("broker", "flood_protect", false);
 
@@ -122,7 +125,7 @@ namespace kbot
 
     g_broker = this;
 
-    m_daemon.add_observer("botbroker", [] { WLOG("Heartbeat timed out"); });
+    m_daemon.add_observer("botbroker", [] { klogger::instance().w("Heartbeat timed out"); });
   }
   //------------------------------------------------------------
   void ProcessMessage(u_ipc_msg_ptr message)
@@ -183,7 +186,7 @@ namespace kbot
   //------------------------------------------------------------
   static bool ProcessEvent(BotRequest event)
   {
-    DLOG("Processing event to broker's queue: %s", event.to_string().c_str());
+    klogger::instance().d("Processing event to broker's queue: {}", event.to_string());
     if (g_broker != nullptr)
     {
       g_broker->enqueue(event);
@@ -240,7 +243,7 @@ namespace kbot
         bot_ptr  = &m_ig_bot;
     }
     if (!bot_ptr)
-      KLOG("Failed to restart bot for platform %s", get_platform_name(platform).c_str());
+      klogger::instance().i("Failed to restart bot for platform {}", get_platform_name(platform));
     else
     {
       bot_ptr->SetCallback(&ProcessEvent);
@@ -282,17 +285,17 @@ namespace kbot
                                                                           request.time));
         else
         if (request.event == "livestream inactive")
-            WLOG("%s bot returned no livestreams", platform.c_str());
+            klogger::instance().w("{} bot returned no livestreams", platform);
         else
         if (request.event == "comment")
-          KLOG("%s bot has new comments: %s", platform.c_str(), request.data.c_str());
+          klogger::instance().i("{} bot has new comments: {}", platform.c_str(), request.data);
         else
         if (request.event == "message")
-          KLOG("%s bot has new messages: %s", platform.c_str(), request.data.c_str());
+          klogger::instance().i("{} bot has new messages: {}", platform.c_str(), request.data);
         else
         if (request.event == SUCCESS_EVENT)
         {
-          KLOG("%s successfully handled %s", platform.c_str(), request.previous_event.c_str());
+          klogger::instance().i("{} successfully handled {}", platform.c_str(), request.previous_event);
           m_outbound_queue.emplace_back(std::make_unique<platform_message>(platform,
                                                                           request.id,
                                                                           request.username,
@@ -306,7 +309,7 @@ namespace kbot
         else
         if (request.event == "bot:error")
         {
-          KLOG("%s failed to handle %s", platform.c_str(), request.previous_event.c_str());
+          klogger::instance().i("{} failed to handle {}", platform.c_str(), request.previous_event);
           m_outbound_queue.emplace_back(std::make_unique<platform_error>(platform,
                                                                         request.id,
                                                                         request.username,
@@ -315,7 +318,7 @@ namespace kbot
         else
         if (request.event == "bot:restart")
         {
-          KLOG("%s will be restarted", platform.c_str());
+          klogger::instance().i("{} will be restarted", platform);
           m_outbound_queue.emplace_back(std::make_unique<platform_info>(platform,
                                                                         "restart",
                                                                         "info"));
@@ -324,7 +327,7 @@ namespace kbot
         else
         if (request.event == "bot:request")
         {
-          KLOG("%s created a request in response to %s", platform.c_str(), request.previous_event.c_str());
+          klogger::instance().i("{} created a request in response to {}", platform, request.previous_event);
           m_outbound_queue.emplace_back(std::make_unique<platform_request>(platform,
                                                                           request.id,
                                                                           request.username,
@@ -334,7 +337,7 @@ namespace kbot
         else
         if (request.event == INFO_EVENT)
         {
-          KLOG("%s sending info in response to %s", platform.c_str(), request.previous_event.c_str());
+          klogger::instance().i("{} sending info in response to {}", platform, request.previous_event);
           m_outbound_queue.emplace_back(std::make_unique<platform_info>(platform, request.data, request.args));
         }
         else
@@ -364,7 +367,7 @@ namespace kbot
       case (Platform::instagram): m_ig_bot.HandleEvent(event); break;
 
       default:
-        KLOG("Unable to send event for unknown platform: %s", std::to_string(event.platform).c_str());
+        klogger::instance().i("Unable to send event for unknown platform: {}", std::to_string(event.platform));
     }
   }
   //------------------------------------------------------------
@@ -384,7 +387,7 @@ namespace kbot
     }
     catch(const std::exception& e)
     {
-      ELOG("Exception caught during shutdown: %s", e.what());
+      klogger::instance().e("Exception caught during shutdown: {}", e.what());
 
       return false;
     }
@@ -401,7 +404,7 @@ namespace kbot
 
     u_ipc_msg_ptr message = std::move(m_outbound_queue.front());
     if (!is_keepalive(message->type()))
-      DLOG("Dequeuing => %s", message->to_string().c_str());
+      klogger::instance().d("Dequeuing => {}", message->to_string());
     m_outbound_queue.pop_front();
     return std::move(message);
   }
