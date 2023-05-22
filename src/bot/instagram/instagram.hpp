@@ -17,6 +17,7 @@ static platform_message BotRequestToIPC(Platform platform, const BotRequest& req
 }
 } // ns kbot
 //-------------------------------------------------------------
+using namespace kiq::log;
 using observer_t = std::function<void(bool)>;
 class ipc_worker
 {
@@ -73,7 +74,7 @@ public:
     zmq::message_t identity;
     if (!rx_.recv(identity) || identity.empty())
     {
-      ELOG("Socket failed to receive identity");
+      klogger::instance().e("Socket failed to receive identity");
       return;
     }
 
@@ -87,7 +88,7 @@ public:
       buffer.push_back({static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
     }
     msgs_.push_back(DeserializeIPCMessage(std::move(buffer)));
-    DLOG("IPC message received");
+    klogger::instance().d("IPC message received");
     cb_(true);
   }
 
@@ -117,7 +118,6 @@ static std::string get_executable_cwd()
 }
 //-------------------------------------------------------------
 } // ns kgram
-auto bool_string = [](const auto v) { return v ? "true" : "false"; };
 //-------------------------------------------------------------
 //-------------------------------------------------------------
 //-------------------------------------------------------------
@@ -130,7 +130,7 @@ InstagramBot()
   m_worker([this] (auto result)
   {
     if (!m_pending)
-      WLOG("Received worker message, but nothing is pending. Last request: %s", m_last_req.id.c_str());
+      klogger::instance().w("Received worker message, but nothing is pending. Last request: {}", m_last_req.id);
     else
     {
       m_send_event_fn((result) ? CreateSuccessEvent(m_last_req) :
@@ -149,7 +149,7 @@ InstagramBot& operator=(const InstagramBot& bot)
 virtual void Init(bool flood_protect) final
 {
   m_flood_protect = flood_protect;
-  KLOG("Setting flood protection to %s", bool_string(flood_protect));
+  klogger::instance().i("Setting flood protection to {}", flood_protect);
   return;
 }
 //-------------------------------------------------------------
@@ -177,7 +177,7 @@ bool HandleEvent(const BotRequest& request)
   try
   {
     if (m_flood_protect && post_requested(request.id))
-      WLOG("%s was already requested", request.id.c_str());
+      klogger::instance().w("{} was already requested", request.id);
     else
     if (event == "livestream active" || event == "platform:repost" || event == "instagram:messages")
     {
@@ -191,7 +191,7 @@ bool HandleEvent(const BotRequest& request)
   catch (const std::exception& e)
   {
     err_msg += "Exception caught handling " + request.event + ": " + e.what();
-    ELOG("%s", err_msg.c_str());
+    klogger::instance().e("{}", err_msg);
     CreateErrorEvent(err_msg, request);
     error = true;
   }
