@@ -8,24 +8,19 @@ group("cpr_lib") {
   public_configs = [":cpr_library"]
 }
 
-# source_set("klogger_sources") {
-#   sources = ["//third_party/klogger/src/logger.cpp"]
-#   include_dirs = [
-#     "//third_party/klogger/src"
-#   ]
-# }
-
 config("klogger_lib") {
-  include_dirs = [
-    "//third_party/klogger/src"
+  include_dirs = ["//third_party/klogger/src"]
+
+  libs = [
+    "//third_party/klogger/build/libklog.a",
+    "fmt"
   ]
-  libs = [ "//third_party/klogger/build/libklog.a", "fmt" ]
+
   visibility = [ ":klogger" ]
 }
 
 group("klogger") {
   public_configs = [":klogger_lib"]
-  # public_deps = [":klogger_sources"]
 }
 
 executable("broker") {
@@ -63,7 +58,6 @@ public_deps = [
   ":cpr_lib",
   ":klogger"
 ]
-
 
 sources = [
   "//src/bot/broker/main.cpp",

@@ -3,6 +3,7 @@
 #include "keleqram_bot.hpp"
 #include "interfaces/interfaces.hpp"
 #include "INIReader.h"
+#include <logger.hpp>
 
 namespace kbot {
 namespace keleqram {
@@ -44,6 +45,8 @@ static std::vector<std::string> GetArgs(const std::string& s)
 }
 } // ns keleqram
 
+using namespace kiq::log;
+
 class TelegramBot : public kbot::Worker,
                     public kbot::Bot,
                     public ::keleqram::KeleqramBot
@@ -74,11 +77,11 @@ virtual void loop() override
   {
     while (m_is_running)
       ::keleqram::KeleqramBot::Poll();
-    log("Telegram worker is no longer running");
+    klog().w("Telegram worker is no longer running");
   }
   catch(const std::exception& e)
   {
-    log("Exception caught while polling for updates", e.what());
+    klog().e("Exception caught while polling for updates: {}", e.what());
 
     if (!--m_retries)
     {
@@ -171,12 +174,12 @@ bool HandleEvent(const BotRequest& request)
         break;
         case (poll_cmd):
         {
-          log("Sending Poll to Telegram");
+          klog().i("Sending Poll to Telegram");
           m_send_event_fn(CreateRequest(
             REQUEST_PollStop,
             KeleqramBot::SendPoll(data, dest, GetPollArgs(args)),
             request));
-          log("IPC Response should be request to schedule PollStop");
+          klog().w("IPC Response should be request to schedule PollStop");
         }
         break;
       }
@@ -203,7 +206,7 @@ bool HandleEvent(const BotRequest& request)
   catch (const std::exception& e)
   {
     err_msg += "Exception caught handling " + request.event + ": " + e.what();
-    log(err_msg);
+    klog().e(err_msg);
     error = true;
   }
   if (reply)
