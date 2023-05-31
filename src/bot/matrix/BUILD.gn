@@ -9,8 +9,8 @@ config("katrix") {
   ]
 
   libs = [
-    "//third_party/katrix/build/libkatrixd.a",
-    "//third_party/katrix/build/third_party/mtxclient/libmatrix_client.so"
+    "//third_party/katrix/build/libkatrix.a",
+    "//third_party/katrix/third_party/mtxclient/build/libmatrix_clientd.so"
   ]
 
   visibility = [ ":katrix_lib" ]
@@ -33,6 +33,10 @@ executable("matrix_bot") {
 
 deps = [
   ":katrix_lib",
+]
+
+public_deps = [
+  "//src/bot/broker:klogger"
 ]
 
 include_dirs = [
