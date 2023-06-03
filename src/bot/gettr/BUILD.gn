@@ -32,6 +32,10 @@ deps = [
   ":kettr_lib",
 ]
 
+public_deps = [
+  "//src/bot/broker:klogger"
+]
+
 include_dirs = [
     "//src/"
 ]

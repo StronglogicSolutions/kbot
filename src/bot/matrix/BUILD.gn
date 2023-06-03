@@ -11,7 +11,7 @@ config("katrix") {
   libs = [
     "//third_party/katrix/build/libkatrix.a",
 #    "//third_party/katrix/third_party/mtxclient/build/_deps/coeurl-build/libcoeurld.so",
-    "//third_party/katrix/third_party/mtxclient/build/libmatrix_client.so",
+    "//third_party/katrix/third_party/mtxclient/build/libmatrix_clientd.so",
     "bsd",
     "olm"
   ]

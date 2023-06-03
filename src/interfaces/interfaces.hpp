@@ -6,6 +6,9 @@
 #include <vector>
 
 #include "util/util.hpp"
+#include <bot/broker/ipc.hpp>
+#include <zmq.hpp>
+#include <logger.hpp>
 
 class API {
  public:
@@ -16,6 +19,9 @@ class API {
 };
 
 namespace kbot {
+
+using namespace kiq::log;
+
 class  Broker;
 
 enum Platform
@@ -30,7 +36,6 @@ enum Platform
   instagram = 0x07,
   unknown   = 0x08
 };
-
 
 
 static const char* g_YouTube_str   = "YouTube";
@@ -264,6 +269,97 @@ struct PlatformQuery
   std::string              subject;
   std::string              text;
   std::vector<std::string> urls;
+};
+
+using observer_t = std::function<void(bool)>;
+class ipc_worker
+{
+public:
+  explicit ipc_worker(const char* addr, const char* recv_addr, const observer_t& cb)
+  : ctx_(1),
+    tx_(ctx_, ZMQ_DEALER),
+    rx_(ctx_, ZMQ_ROUTER),
+    cb_(cb),
+    addr_(addr),
+    recv_addr_(recv_addr)
+  {
+    tx_.set(zmq::sockopt::linger, 0);
+    rx_.set(zmq::sockopt::linger, 0);
+    tx_.set(zmq::sockopt::tcp_keepalive, 1);
+    rx_.set(zmq::sockopt::tcp_keepalive, 1);
+    tx_.set(zmq::sockopt::tcp_keepalive_idle,  300);
+    tx_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
+    rx_.set(zmq::sockopt::tcp_keepalive_idle,  300);
+    rx_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
+    tx_.connect(addr_);
+    rx_.bind   (recv_addr_);
+
+    fut_ = std::async(std::launch::async, [this] {
+      while (active_)
+        recv(); });
+
+  }
+  //-------------------------------------------------------------
+  ~ipc_worker()
+  {
+    tx_.disconnect(addr_);
+    rx_.disconnect(recv_addr_);
+  }
+  //-------------------------------------------------------------
+  void send(platform_message msg)
+  {
+    const auto&  payload   = msg.data();
+    const size_t frame_num = payload.size();
+
+    for (int i = 0; i < frame_num; i++)
+    {
+      auto flag = i == (frame_num - 1) ? zmq::send_flags::none : zmq::send_flags::sndmore;
+      auto data = payload.at(i);
+
+      zmq::message_t message{data.size()};
+      std::memcpy(message.data(), data.data(), data.size());
+
+      tx_.send(message, flag);
+    }
+  }
+  //-------------------------------------------------------------
+  void recv()
+  {
+    using buffers_t = std::vector<ipc_message::byte_buffer>;
+
+    zmq::message_t identity;
+    if (!rx_.recv(identity) || identity.empty())
+    {
+      klogger::instance().e("Socket failed to receive identity");
+      return;
+    }
+
+    buffers_t      buffer;
+    zmq::message_t msg;
+    int            more_flag{1};
+
+    while (more_flag && rx_.recv(msg))
+    {
+      more_flag = rx_.get(zmq::sockopt::rcvmore);
+      buffer.push_back({static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
+    }
+    msgs_.push_back(DeserializeIPCMessage(std::move(buffer)));
+    klogger::instance().d("IPC message received");
+    cb_(true);
+  }
+
+private:
+  using ipc_msgs_t = std::vector<ipc_message::u_ipc_msg_ptr>;
+
+  zmq::context_t    ctx_;
+  zmq::socket_t     tx_;
+  zmq::socket_t     rx_;
+  std::future<void> fut_;
+  bool              active_{true};
+  ipc_msgs_t        msgs_;
+  observer_t        cb_;
+  std::string       addr_;
+  std::string       recv_addr_;
 };
 
 
