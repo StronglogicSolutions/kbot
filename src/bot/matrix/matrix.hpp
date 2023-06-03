@@ -134,8 +134,25 @@ public:
       }},
     m_room_id(katrix::GetRoomID()),
     m_files_to_send(0),
-    m_retries(50)
+    m_retries(50),
+    m_worker("tcp://127.0.0.1:28477", "tcp://127.0.0.1:28478",
+    [this] (auto result) {
+      if (!m_pending)
+      klogger::instance().w("Received worker message, but nothing is pending. Last request: {}", m_last_req.id);
+      else
+      {
+        m_send_event_fn((result) ? CreateSuccessEvent(m_last_req) :
+                                  CreateErrorEvent("Failed to handle request", m_last_req));
+        m_pending--;
+        m_posts[m_last_req.id] = true;
+      }
+    })
   {}
+//-----------------------------------------------------------------------
+MatrixBot& operator=(const MatrixBot& m)
+{
+  return *this;
+}
 //-----------------------------------------------------------------------
   virtual void Init(bool flood_protect) final
   {
@@ -236,6 +253,7 @@ public:
 private:
   using files_t    = std::vector<std::string>;
   using requests_t = std::deque<BotRequest>;
+  using post_map_t = std::map<std::string, bool>;
 
   BrokerCallback m_send_event_fn;
   BotRequest     m_last_request;
@@ -245,5 +263,9 @@ private:
   uint32_t       m_retries;
   timer<3000>    m_timer;
   requests_t     m_requests;
+  ipc_worker     m_worker;
+  unsigned int   m_pending {0};
+  BotRequest     m_last_req{};
+  post_map_t     m_posts;
 };
 } // namespace kbot

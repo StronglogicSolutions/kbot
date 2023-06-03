@@ -12,7 +12,7 @@
 #include "bot/telegram/telegram.hpp"
 #include "bot/matrix/matrix.hpp"
 #include "bot/blog/blog.hpp"
-// #include "bot/gettr/gettr.hpp"
+#include "bot/gettr/gettr.hpp"
 #include "bot/instagram/instagram.hpp"
 #include "ipc.hpp"
 
@@ -234,10 +234,10 @@ namespace kbot
         m_mx_bot = kbot::MatrixBot{};
         bot_ptr  = & m_mx_bot;
       break;
-      // case Platform::gettr:
-      //   m_gt_bot = kbot::GettrBot{};
-      //   bot_ptr  = &m_gt_bot;
-      // break;
+      case Platform::gettr:
+        m_gt_bot = kbot::GettrBot{};
+        bot_ptr  = &m_gt_bot;
+      break;
       case Platform::instagram:
         m_ig_bot = kbot::InstagramBot{};
         bot_ptr  = &m_ig_bot;
@@ -423,7 +423,7 @@ private:
   kbot::BlogBot             m_bg_bot;
   kbot::TelegramBot         m_tg_bot;
   kbot::MatrixBot           m_mx_bot;
-  // kbot::GettrBot            m_gt_bot;
+  kbot::GettrBot            m_gt_bot;
   kbot::InstagramBot        m_ig_bot;
   session_daemon            m_daemon;
   ipc_fail_fn               m_on_ipc_fail;
