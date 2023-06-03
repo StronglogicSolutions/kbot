@@ -84,6 +84,16 @@ auto FetchFiles = [](const auto& urls)
   return fetched;
 };
 
+auto error_to_string(katrix::RequestError err) -> std::string
+{
+  if (err.has_value())
+  {
+    const auto e = err.value();
+    return fmt::format("Matrix: {}\nParsed: {}\nErrcode: {}", e.matrix_error.error, e.parse_error, e.error_code);
+  }
+  return "";
+}
+
 class MatrixBot : public kbot::Worker,
                   public kbot::Bot,
                   public katrix::KatrixBot
@@ -100,25 +110,25 @@ public:
         switch (type)
         {
           case (katrix::ResponseType::created):
-            m_send_event_fn((e) ? CreateErrorEvent(katrix::error_to_string(e), m_last_request) :
+            m_send_event_fn((e) ? CreateErrorEvent(error_to_string(e), m_last_request) :
                                   CreateSuccessEvent(m_last_request));
           break;
           case (katrix::ResponseType::user_info):
-            m_send_event_fn((e) ? CreateErrorEvent(katrix::error_to_string(e), m_last_request) :
+            m_send_event_fn((e) ? CreateErrorEvent(error_to_string(e), m_last_request) :
                                   CreateInfo(res, "presence", m_last_request));
           break;
           case (katrix::ResponseType::rooms):
-            m_send_event_fn((e) ? CreateErrorEvent(katrix::error_to_string(e), m_last_request) :
+            m_send_event_fn((e) ? CreateErrorEvent(error_to_string(e), m_last_request) :
                                   CreateInfo(res, "rooms", m_last_request));
           break;
           case (katrix::ResponseType::file_created):
-            katrix::log("File created");
+            katrix::klog().d("File created");
           break;
           case (katrix::ResponseType::file_uploaded):
-            katrix::log("File uploaded");
+            katrix::klog().d("File uploaded");
           break;
           default:
-            katrix::log("Unknown response");
+            katrix::klog().w("Unknown response");
           break;
         }
       }},
@@ -129,7 +139,7 @@ public:
 //-----------------------------------------------------------------------
   virtual void Init(bool flood_protect) final
   {
-    kbot::log("Katrix logging in");
+    katrix::klog().d("Katrix logging in");
     katrix::KatrixBot::login();
   }
 //-----------------------------------------------------------------------
@@ -137,7 +147,7 @@ public:
   {
     if (katrix::KatrixBot::logged_in())
     {
-      kbot::log("Katrix not logged in yet");
+      katrix::klog().t("Katrix not logged in yet");
       while (IsRunning())
         katrix::KatrixBot::run();
     }
@@ -162,7 +172,7 @@ public:
 
     if (!katrix::KatrixBot::logged_in())
     {
-      log("Matrix still authenticating");
+      katrix::klog().t("Matrix still authenticating");
       std::this_thread::sleep_for(std::chrono::milliseconds(300));
       m_retries--;
       HandleEvent(request);
@@ -185,7 +195,7 @@ public:
     }
     catch(const std::exception& e)
     {
-      log("Exception thrown: ", e.what());
+      katrix::klog().e("Exception thrown: {}", e.what());
       return false;
     }
     return true;
