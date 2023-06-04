@@ -21,7 +21,7 @@ config("katrix") {
 
 group("katrix_lib") {
   public_configs = [
-    ":katrix",
+    # ":katrix",
     "//src/bot/youtube:inih",
   ]
 
@@ -38,7 +38,7 @@ deps = [
   ":katrix_lib",
 ]
 
-libs = ["event"]
+libs = ["zmq"]
 
 public_deps = [
   "//src/bot/broker:klogger"

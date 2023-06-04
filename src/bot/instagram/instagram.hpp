@@ -1,16 +1,6 @@
 #pragma once
 
 #include "interfaces/interfaces.hpp"
-
-//-------------------------------------------------------------
-namespace kbot
-{
-static platform_message BotRequestToIPC(Platform platform, const BotRequest& request)
-{
-  return platform_message{get_platform_name(platform), request.id,           request.username,
-                          request.data,                request.url_string(), SHOULD_NOT_REPOST, request.cmd, request.args, request.time};
-}
-} // ns kbot
 //-------------------------------------------------------------
 namespace kbot {
 namespace kgram {
@@ -100,7 +90,7 @@ bool HandleEvent(const BotRequest& request)
   catch (const std::exception& e)
   {
     err_msg += "Exception caught handling " + request.event + ": " + e.what();
-    klogger::instance().e("{}", err_msg);
+    klogger::instance().e(err_msg);
     CreateErrorEvent(err_msg, request);
     error = true;
   }

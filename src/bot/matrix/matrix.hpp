@@ -1,7 +1,7 @@
 #pragma once
 
 #include <INIReader.h>
-#include "katrix.hpp"
+// #include "katrix.hpp"
 #include "interfaces/interfaces.hpp"
 #include "util/util.hpp"
 
@@ -84,54 +84,54 @@ auto FetchFiles = [](const auto& urls)
   return fetched;
 };
 
-auto error_to_string(katrix::RequestError err) -> std::string
-{
-  if (err.has_value())
-  {
-    const auto e = err.value();
-    return fmt::format("Matrix: {}\nParsed: {}\nErrcode: {}", e.matrix_error.error, e.parse_error, e.error_code);
-  }
-  return "";
-}
+// auto error_to_string(katrix::RequestError err) -> std::string
+// {
+//   if (err.has_value())
+//   {
+//     const auto e = err.value();
+//     return fmt::format("Matrix: {}\nParsed: {}\nErrcode: {}", e.matrix_error.error, e.parse_error, e.error_code);
+//   }
+//   return "";
+// }
 
 class MatrixBot : public kbot::Worker,
-                  public kbot::Bot,
-                  public katrix::KatrixBot
+                  public kbot::Bot
+                  // public katrix::KatrixBot
 {
 public:
   MatrixBot()
   : kbot::Bot{"logicp"},
-    katrix::KatrixBot{
-      "matrix.org",
-      katrix::GetUsername(),
-      katrix::GetPassword(),
-      [this](auto res, katrix::ResponseType type, katrix::RequestError e)
-      {
-        switch (type)
-        {
-          case (katrix::ResponseType::created):
-            m_send_event_fn((e) ? CreateErrorEvent(error_to_string(e), m_last_request) :
-                                  CreateSuccessEvent(m_last_request));
-          break;
-          case (katrix::ResponseType::user_info):
-            m_send_event_fn((e) ? CreateErrorEvent(error_to_string(e), m_last_request) :
-                                  CreateInfo(res, "presence", m_last_request));
-          break;
-          case (katrix::ResponseType::rooms):
-            m_send_event_fn((e) ? CreateErrorEvent(error_to_string(e), m_last_request) :
-                                  CreateInfo(res, "rooms", m_last_request));
-          break;
-          case (katrix::ResponseType::file_created):
-            katrix::klog().d("File created");
-          break;
-          case (katrix::ResponseType::file_uploaded):
-            katrix::klog().d("File uploaded");
-          break;
-          default:
-            katrix::klog().w("Unknown response");
-          break;
-        }
-      }},
+    // katrix::KatrixBot{
+    //   "matrix.org",
+    //   katrix::GetUsername(),
+    //   katrix::GetPassword(),
+    //   [this](auto res, katrix::ResponseType type, katrix::RequestError e)
+    //   {
+    //     switch (type)
+    //     {
+    //       case (katrix::ResponseType::created):
+    //         m_send_event_fn((e) ? CreateErrorEvent(error_to_string(e), m_last_request) :
+    //                               CreateSuccessEvent(m_last_request));
+    //       break;
+    //       case (katrix::ResponseType::user_info):
+    //         m_send_event_fn((e) ? CreateErrorEvent(error_to_string(e), m_last_request) :
+    //                               CreateInfo(res, "presence", m_last_request));
+    //       break;
+    //       case (katrix::ResponseType::rooms):
+    //         m_send_event_fn((e) ? CreateErrorEvent(error_to_string(e), m_last_request) :
+    //                               CreateInfo(res, "rooms", m_last_request));
+    //       break;
+    //       case (katrix::ResponseType::file_created):
+    //         katrix::klog().d("File created");
+    //       break;
+    //       case (katrix::ResponseType::file_uploaded):
+    //         katrix::klog().d("File uploaded");
+    //       break;
+    //       default:
+    //         katrix::klog().w("Unknown response");
+    //       break;
+    //     }
+    //   }},
     m_room_id(katrix::GetRoomID()),
     m_files_to_send(0),
     m_retries(50),
@@ -156,18 +156,18 @@ MatrixBot& operator=(const MatrixBot& m)
 //-----------------------------------------------------------------------
   virtual void Init(bool flood_protect) final
   {
-    katrix::klog().d("Katrix logging in");
-    katrix::KatrixBot::login();
+    klog().d("Katrix logging in");
+    // katrix::KatrixBot::login();
   }
 //-----------------------------------------------------------------------
   virtual void loop() final
   {
-    if (katrix::KatrixBot::logged_in())
-    {
-      katrix::klog().t("Katrix not logged in yet");
-      while (IsRunning())
-        katrix::KatrixBot::run();
-    }
+    // if (katrix::KatrixBot::logged_in())
+    // {
+    //   katrix::klog().t("Katrix not logged in yet");
+    //   while (IsRunning())
+    //     katrix::KatrixBot::run();
+    // }
   }
 //-----------------------------------------------------------------------
   void SetCallback(BrokerCallback cb_fn) final
@@ -177,7 +177,7 @@ MatrixBot& operator=(const MatrixBot& m)
 //-----------------------------------------------------------------------
   bool HandleEvent(const BotRequest& request) final
   {
-    using Message = katrix::Msg_t;
+    // using Message = katrix::Msg_t;
 
     if (!m_timer.check_and_update())
     {
@@ -187,32 +187,42 @@ MatrixBot& operator=(const MatrixBot& m)
 
     m_last_request = request;
 
-    if (!katrix::KatrixBot::logged_in())
-    {
-      katrix::klog().t("Matrix still authenticating");
-      std::this_thread::sleep_for(std::chrono::milliseconds(300));
-      m_retries--;
-      HandleEvent(request);
-    }
+    // if (!katrix::KatrixBot::logged_in())
+    // {
+    //   katrix::klog().t("Matrix still authenticating");
+    //   std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    //   m_retries--;
+    //   HandleEvent(request);
+    // }
 
     try
     {
-      if (request.event == "matrix:info")
-        katrix::KatrixBot::get_user_info();
-      else
-      if (request.event == "matrix:rooms")
-        katrix::KatrixBot::get_rooms();
+      if (m_flood_protect && post_requested(request.id))
+        klogger::instance().w("{} was already requested", request.id);
+      // if (request.event == "matrix:info")
+      //   katrix::KatrixBot::get_user_info();
+      // else
+      // if (request.event == "matrix:rooms")
+      //   katrix::KatrixBot::get_rooms();
+      // else
+      // {
+      //   if (!request.urls.empty())
+      //     katrix::KatrixBot::send_media_message(m_room_id, {request.data}, FetchFiles(request.urls));
+      //   else
+      //     katrix::KatrixBot::send_message(m_room_id, Message{request.data});
+      // }
       else
       {
-        if (!request.urls.empty())
-          katrix::KatrixBot::send_media_message(m_room_id, {request.data}, FetchFiles(request.urls));
-        else
-          katrix::KatrixBot::send_message(m_room_id, Message{request.data});
+
+        m_pending++;
+        m_worker.send(BotRequestToIPC(Platform::instagram, request));
+        m_last_req = request;
+        m_posts[request.id] = false;
       }
     }
     catch(const std::exception& e)
     {
-      katrix::klog().e("Exception thrown: {}", e.what());
+      klog().e("Exception thrown: {}", e.what());
       return false;
     }
     return true;
@@ -222,6 +232,11 @@ MatrixBot& operator=(const MatrixBot& m)
   {
     return nullptr;
   }
+//-------------------------------------------------------------
+  bool post_requested(const std::string& id) const
+  {
+    return (m_posts.find(id) != m_posts.end());
+  }
 //-----------------------------------------------------------------------
   virtual bool IsRunning() final
   {
@@ -230,7 +245,7 @@ MatrixBot& operator=(const MatrixBot& m)
 //-----------------------------------------------------------------------
   virtual void Start() final
   {
-    while (!katrix::KatrixBot::logged_in());
+    // while (!katrix::KatrixBot::logged_in());
     if (!m_is_running)
       Worker::start();
   }
@@ -267,5 +282,6 @@ private:
   unsigned int   m_pending {0};
   BotRequest     m_last_req{};
   post_map_t     m_posts;
+  bool           m_flood_protect{false};
 };
 } // namespace kbot

@@ -362,5 +362,11 @@ private:
   std::string       recv_addr_;
 };
 
+//-------------------------------------------------------------
+static platform_message BotRequestToIPC(Platform platform, const BotRequest& request)
+{
+  return platform_message{get_platform_name(platform), request.id,           request.username,
+                          request.data,                request.url_string(), SHOULD_NOT_REPOST, request.cmd, request.args, request.time};
+}
 
 } // namespace kbot
