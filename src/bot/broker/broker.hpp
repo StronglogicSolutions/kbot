@@ -135,7 +135,7 @@ namespace kbot
     auto MDMessage = [](auto msg) { return msg.find("mastodon") != std::string::npos; };
     auto DCMessage = [](auto msg) { return msg.find("discord")  != std::string::npos; };
     auto MXMessage = [](auto msg) { return msg.find("matrix")   != std::string::npos; };
-    // auto GTMessage = [](auto msg) { return msg.find("gettr")    != std::string::npos; };
+    auto GTMessage = [](auto msg) { return msg.find("gettr")    != std::string::npos; };
     auto IGMessage = [](auto msg) { return msg.find("instagram")!= std::string::npos; };
 
     if (message->type() == ::constants::IPC_KIQ_MESSAGE)
@@ -160,8 +160,8 @@ namespace kbot
         if (TGMessage(command)) platform = Platform::telegram;
         else
         if (MXMessage(command)) platform = Platform::matrix;
-        // else
-        // if (GTMessage(command)) platform = Platform::gettr;
+        else
+        if (GTMessage(command)) platform = Platform::gettr;
         else
         if (IGMessage(command)) platform = Platform::instagram;
 
@@ -363,7 +363,7 @@ namespace kbot
       case (Platform::blog):      m_bg_bot.HandleEvent(event); break;
       case (Platform::telegram):  m_tg_bot.HandleEvent(event); break;
       case (Platform::matrix):    m_mx_bot.HandleEvent(event); break;
-      // case (Platform::gettr):     m_gt_bot.HandleEvent(event); break;
+      case (Platform::gettr):     m_gt_bot.HandleEvent(event); break;
       case (Platform::instagram): m_ig_bot.HandleEvent(event); break;
 
       default:
