@@ -18,6 +18,12 @@ static std::string get_executable_cwd()
   return full_path.substr(0, full_path.size() - (constants::APP_NAME_LENGTH  + 1));
 }
 //-----------------------------------------------------------------------
+static std::string get_media_dir()
+{
+  std::string cwd = get_executable_cwd();
+  return cwd.substr(0, cwd.find_last_of('/'));
+}
+//-----------------------------------------------------------------------
 static const INIReader GetConfig()
 {
   return INIReader{get_executable_cwd() + "/../" + constants::DEFAULT_CONFIG_PATH};
@@ -36,6 +42,15 @@ static std::string GetPassword()
 static std::string GetRoomID()
 {
   return GetConfig().GetString("matrix_bot", "room_id", "");
+}
+//-----------------------------------------------------------------------
+using paths_t = std::vector<std::string>;
+static paths_t FetchFiles(const paths_t& urls)
+{
+  static const auto dir = get_media_dir();
+  paths_t fetched;
+  for (const auto& url : urls) if (!url.empty()) fetched.push_back(dir + '/' + kbot::FetchTemporaryFile(url));
+  return fetched;
 }
 
 } // ns katrix
@@ -74,13 +89,6 @@ private:
   }
 //-----------------------------------------------------------------------
   time_point_t _last{now()};
-};
-
-auto FetchFiles = [](const auto& urls)
-{
-  std::vector<std::string> fetched;
-  for (const auto& url : urls) if (!url.empty()) fetched.push_back(FetchTemporaryFile(url));
-  return fetched;
 };
 
 class MatrixBot : public kbot::Worker,
@@ -143,8 +151,12 @@ MatrixBot& operator=(const MatrixBot& m)
       else
       {
         m_pending++;
-        m_worker.send(BotRequestToIPC(Platform::instagram, request));
-        m_last_req = request;
+        BotRequest outbound = request;
+        if (!request.urls.empty())
+          outbound.urls = katrix::FetchFiles(request.urls);
+        klog().d("Sending request {} to Katrix", outbound.id);
+        m_worker.send(BotRequestToIPC(Platform::instagram, outbound));
+        m_last_req = outbound;
         m_posts[request.id] = false;
       }
     }
