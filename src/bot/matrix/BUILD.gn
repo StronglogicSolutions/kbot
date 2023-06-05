@@ -1,27 +1,5 @@
-
-config("katrix") {
-  include_dirs = [
-    "//third_party/katrix/src",
-    "//third_party/katrix/third_party/mtxclient/include",
-    "//third_party/katrix/third_party/kutils/include",
-    "//third_party/katrix/build/_deps/coeurl-src/include",
-    "//third_party/json/include"
-  ]
-
-  libs = [
-    "//third_party/katrix/build/libkatrix.a",
-#    "//third_party/katrix/third_party/mtxclient/build/_deps/coeurl-build/libcoeurld.so",
-    "//third_party/katrix/third_party/mtxclient/build/libmatrix_client.so",
-    "bsd",
-    "olm"
-  ]
-
-  visibility = [ ":katrix_lib" ]
-}
-
 group("katrix_lib") {
   public_configs = [
-    ":katrix",
     "//src/bot/youtube:inih",
   ]
 
@@ -38,7 +16,7 @@ deps = [
   ":katrix_lib",
 ]
 
-libs = ["event"]
+libs = ["zmq"]
 
 public_deps = [
   "//src/bot/broker:klogger"

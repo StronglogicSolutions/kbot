@@ -1,7 +1,8 @@
 executable("ut_kbot") {
 
   public_deps = [
-    "//src/bot/youtube:youtube_bot_sources"
+    "//src/bot/youtube:youtube_bot_sources",
+    "//src/bot/broker:klogger"
   ]
   testonly = true
 

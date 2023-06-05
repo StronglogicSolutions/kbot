@@ -38,6 +38,7 @@ deps = [
 
 public_deps = [
   "//src/bot/broker:cpr_lib",
+  "//src/bot/broker:klogger"
 ]
 
 sources = [

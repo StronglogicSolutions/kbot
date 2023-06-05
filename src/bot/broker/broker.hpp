@@ -12,7 +12,7 @@
 #include "bot/telegram/telegram.hpp"
 #include "bot/matrix/matrix.hpp"
 #include "bot/blog/blog.hpp"
-// #include "bot/gettr/gettr.hpp"
+#include "bot/gettr/gettr.hpp"
 #include "bot/instagram/instagram.hpp"
 #include "ipc.hpp"
 
@@ -135,7 +135,7 @@ namespace kbot
     auto MDMessage = [](auto msg) { return msg.find("mastodon") != std::string::npos; };
     auto DCMessage = [](auto msg) { return msg.find("discord")  != std::string::npos; };
     auto MXMessage = [](auto msg) { return msg.find("matrix")   != std::string::npos; };
-    // auto GTMessage = [](auto msg) { return msg.find("gettr")    != std::string::npos; };
+    auto GTMessage = [](auto msg) { return msg.find("gettr")    != std::string::npos; };
     auto IGMessage = [](auto msg) { return msg.find("instagram")!= std::string::npos; };
 
     if (message->type() == ::constants::IPC_KIQ_MESSAGE)
@@ -160,8 +160,8 @@ namespace kbot
         if (TGMessage(command)) platform = Platform::telegram;
         else
         if (MXMessage(command)) platform = Platform::matrix;
-        // else
-        // if (GTMessage(command)) platform = Platform::gettr;
+        else
+        if (GTMessage(command)) platform = Platform::gettr;
         else
         if (IGMessage(command)) platform = Platform::instagram;
 
@@ -234,10 +234,10 @@ namespace kbot
         m_mx_bot = kbot::MatrixBot{};
         bot_ptr  = & m_mx_bot;
       break;
-      // case Platform::gettr:
-      //   m_gt_bot = kbot::GettrBot{};
-      //   bot_ptr  = &m_gt_bot;
-      // break;
+      case Platform::gettr:
+        m_gt_bot = kbot::GettrBot{};
+        bot_ptr  = &m_gt_bot;
+      break;
       case Platform::instagram:
         m_ig_bot = kbot::InstagramBot{};
         bot_ptr  = &m_ig_bot;
@@ -363,7 +363,7 @@ namespace kbot
       case (Platform::blog):      m_bg_bot.HandleEvent(event); break;
       case (Platform::telegram):  m_tg_bot.HandleEvent(event); break;
       case (Platform::matrix):    m_mx_bot.HandleEvent(event); break;
-      // case (Platform::gettr):     m_gt_bot.HandleEvent(event); break;
+      case (Platform::gettr):     m_gt_bot.HandleEvent(event); break;
       case (Platform::instagram): m_ig_bot.HandleEvent(event); break;
 
       default:
@@ -423,7 +423,7 @@ private:
   kbot::BlogBot             m_bg_bot;
   kbot::TelegramBot         m_tg_bot;
   kbot::MatrixBot           m_mx_bot;
-  // kbot::GettrBot            m_gt_bot;
+  kbot::GettrBot            m_gt_bot;
   kbot::InstagramBot        m_ig_bot;
   session_daemon            m_daemon;
   ipc_fail_fn               m_on_ipc_fail;

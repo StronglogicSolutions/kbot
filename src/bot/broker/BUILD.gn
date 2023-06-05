@@ -30,8 +30,7 @@ executable("broker") {
     "//src/bot/mastodon:nlp",
     "//src/bot/discord:kscord",
     "//src/bot/telegram:keleqram",
-    "//src/bot/matrix:katrix",
-    # "//src/bot/gettr:kettr",
+    "//src/bot/gettr:kettr",
   ]
 
 libs = [

@@ -21,6 +21,10 @@ source_set("korean") {
     ":kjson"
   ]
 
+  public_deps = [
+    "//src/bot/broker:klogger"
+  ]
+
   include_dirs = [
     "//src",
     "//third_party/",
@@ -115,7 +119,10 @@ source_set("youtube_bot_sources") {
     "//third_party/",
   ]
 
-  public_deps = ["//src/bot/broker:cpr_lib"]
+  public_deps = [
+    "//src/bot/broker:cpr_lib",
+    "//src/bot/broker:klogger"
+  ]
 
 sources = [
     "youtube.cpp",
