@@ -170,12 +170,13 @@ virtual bool HandleEvent(const BotRequest& request) override
   if (request.event == "platform:repost")
     if (PostBlog(request.data, request.urls))
     {
+      klog().i("Succesfully created a new post");
       m_send_event_fn(CreateSuccessEvent(request));
       return true;
     }
     else
       m_send_event_fn(CreateErrorEvent("Failed to post blog", request));
-
+  klog().e("Failed to handle post: {}", request.id);
   return false;
 }
 
