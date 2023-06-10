@@ -101,13 +101,21 @@ public:
     m_files_to_send(0),
     m_retries(50),
     m_worker("tcp://127.0.0.1:28477", "tcp://127.0.0.1:28478",
-    [this] (auto result) {
+    [this] (auto result)
+    {
+      klog().t("Worker returned result {}", result);
       if (!m_pending)
       klogger::instance().w("Received worker message, but nothing is pending. Last request: {}", m_last_req.id);
       else
       {
-        m_send_event_fn((result) ? CreateSuccessEvent(m_last_req) :
-                                   CreateErrorEvent("Failed to handle request", m_last_req));
+        auto   ret = BotRequest{};
+        auto&& msg = m_worker.pop_last();
+        if (msg->type() == ::constants::IPC_PLATFORM_TYPE)
+          ret = CreatePlatformEvent(static_cast<platform_message*>(msg.get()));
+        else
+          klog().t("Received message of type {} from Katrix", ::constants::IPC_MESSAGE_NAMES.at(msg->type()));
+        m_send_event_fn((result) ? CreateSuccessEvent(ret) :
+                                   CreateErrorEvent("Failed to handle request", ret));
         m_pending--;
         m_posts[m_last_req.id] = true;
       }

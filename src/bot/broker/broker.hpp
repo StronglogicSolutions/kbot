@@ -75,21 +75,6 @@ namespace kbot
       options = std::vector<std::string>{data.begin() + IPC_OPTIONS_INDEX, data.end()};
     return CreateArgs(options);
   }
-  //------------------------------------------------------------
-  static const BotRequest CreatePlatformEvent(platform_message* message)
-  {
-    return BotRequest{
-      .platform = get_platform(message->platform()),
-      .event    = "platform:repost",
-      .username = UnescapeQuotes(message->user()),
-      .data     = UnescapeQuotes(message->content()),
-      .args     = message->args(),
-      .urls     = BotRequest::urls_from_string(message->urls()),
-      .id       = message->id(),
-      .cmd      = message->cmd(),
-      .time     = message->time()
-    };
-  }
 
   Broker* g_broker;
 
@@ -170,10 +155,7 @@ namespace kbot
     }
     else
     if (message->type() == ::constants::IPC_PLATFORM_TYPE)
-    {
-
       SendEvent(CreatePlatformEvent(static_cast<platform_message*>(message.get())));
-    }
     else
     if (message->type() == ::constants::IPC_KEEPALIVE_TYPE)
     {
