@@ -87,4 +87,13 @@ static std::string FetchTemporaryFile(const std::string& full_url, const bool ve
   return filename;
 }
 
+//-----------------------------------------------------------------------
+using paths_t = std::vector<std::string>;
+static paths_t FetchFiles(const paths_t& urls, const std::string& dir = "")
+{
+  paths_t fetched;
+  for (const auto& url : urls) if (!url.empty()) fetched.push_back(dir + '/' + kbot::FetchTemporaryFile(url));
+  return fetched;
+}
+
 } // namespace kbot
