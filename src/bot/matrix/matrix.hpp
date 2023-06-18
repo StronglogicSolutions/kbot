@@ -44,15 +44,10 @@ static std::string GetRoomID()
   return GetConfig().GetString("matrix_bot", "room_id", "");
 }
 //-----------------------------------------------------------------------
-using paths_t = std::vector<std::string>;
-static paths_t FetchFiles(const paths_t& urls)
+static bool is_url(std::string_view s)
 {
-  static const auto dir = get_media_dir();
-  paths_t fetched;
-  for (const auto& url : urls) if (!url.empty()) fetched.push_back(dir + '/' + kbot::FetchTemporaryFile(url));
-  return fetched;
+  return s.find("https://") != s.npos || s.find("http://") != s.npos;
 }
-
 } // ns katrix
 namespace kbot
 {
@@ -105,13 +100,13 @@ public:
     {
       klog().t("Worker returned result {}", result);
       if (!m_pending)
-      klogger::instance().w("Received worker message, but nothing is pending. Last request: {}", m_last_req.id);
+        klog().w("Received worker message, but nothing is pending. Last request: {}", m_last_req.id);
       else
       {
         auto   ret = BotRequest{};
         auto&& msg = m_worker.pop_last();
         if (msg->type() == ::constants::IPC_PLATFORM_TYPE)
-          ret = CreatePlatformEvent(static_cast<platform_message*>(msg.get()));
+          ret = CreatePlatformEvent(static_cast<platform_message*>(msg.get()), "bot:request");
         else
           klog().t("Received message of type {} from Katrix", ::constants::IPC_MESSAGE_NAMES.at(msg->type()));
         m_send_event_fn((result) ? CreateSuccessEvent(ret) :
@@ -160,8 +155,8 @@ MatrixBot& operator=(const MatrixBot& m)
       {
         m_pending++;
         BotRequest outbound = request;
-        if (!request.urls.empty())
-          outbound.urls = katrix::FetchFiles(request.urls);
+        if (!request.urls.empty() && katrix::is_url(request.urls.front()))
+          outbound.urls = FetchFiles(request.urls, katrix::get_media_dir());
         klog().d("Sending request {} to Katrix", outbound.id);
         m_worker.send(BotRequestToIPC(Platform::instagram, outbound));
         m_last_req = outbound;
