@@ -75,21 +75,6 @@ namespace kbot
       options = std::vector<std::string>{data.begin() + IPC_OPTIONS_INDEX, data.end()};
     return CreateArgs(options);
   }
-  //------------------------------------------------------------
-  static const BotRequest CreatePlatformEvent(platform_message* message)
-  {
-    return BotRequest{
-      .platform = get_platform(message->platform()),
-      .event    = "platform:repost",
-      .username = UnescapeQuotes(message->user()),
-      .data     = UnescapeQuotes(message->content()),
-      .args     = message->args(),
-      .urls     = BotRequest::urls_from_string(message->urls()),
-      .id       = message->id(),
-      .cmd      = message->cmd(),
-      .time     = message->time()
-    };
-  }
 
   Broker* g_broker;
 
@@ -170,10 +155,7 @@ namespace kbot
     }
     else
     if (message->type() == ::constants::IPC_PLATFORM_TYPE)
-    {
-
       SendEvent(CreatePlatformEvent(static_cast<platform_message*>(message.get())));
-    }
     else
     if (message->type() == ::constants::IPC_KEEPALIVE_TYPE)
     {
@@ -355,20 +337,20 @@ namespace kbot
   //------------------------------------------------------------
   void SendEvent(const BotRequest& event)
   {
-    switch (event.platform)
-    {
-      case (Platform::discord):   m_dc_bot.HandleEvent(event); break;
-      case (Platform::mastodon):  m_md_bot.HandleEvent(event); break;
-      case (Platform::youtube):   m_yt_bot.HandleEvent(event); break;
-      case (Platform::blog):      m_bg_bot.HandleEvent(event); break;
-      case (Platform::telegram):  m_tg_bot.HandleEvent(event); break;
-      case (Platform::matrix):    m_mx_bot.HandleEvent(event); break;
-      case (Platform::gettr):     m_gt_bot.HandleEvent(event); break;
-      case (Platform::instagram): m_ig_bot.HandleEvent(event); break;
+    static const std::map<Platform, std::function<bool(())>> methods{
+      {(Platform::discord),   [this, &event] { return m_dc_bot.HandleEvent(event);}},
+      {(Platform::mastodon),  [this, &event] { return m_md_bot.HandleEvent(event);}},
+      {(Platform::youtube),   [this, &event] { return m_yt_bot.HandleEvent(event);}},
+      {(Platform::blog),      [this, &event] { return m_bg_bot.HandleEvent(event);}},
+      {(Platform::telegram),  [this, &event] { return m_tg_bot.HandleEvent(event);}},
+      {(Platform::matrix),    [this, &event] { return m_mx_bot.HandleEvent(event);}},
+      {(Platform::gettr),     [this, &event] { return m_gt_bot.HandleEvent(event);}},
+      {(Platform::instagram), [this, &event] { return m_ig_bot.HandleEvent(event);}}};
 
-      default:
-        klogger::instance().i("Unable to send event for unknown platform: {}", std::to_string(event.platform));
-    }
+    if (methods.at(event.platform)())
+      klog().i("Request handled by {}", get_platform_name(event.platform));
+    else
+      klog().e("Request failed by {}",  get_platform_name(event.platform));
   }
   //------------------------------------------------------------
   bool Shutdown()
@@ -377,20 +359,20 @@ namespace kbot
     {
       for (auto&& bot : m_pool)
         bot->Shutdown();
-
-      while (m_yt_bot.IsRunning() || m_md_bot.IsRunning() || m_dc_bot.IsRunning() ||
-             m_bg_bot.IsRunning() || m_tg_bot.IsRunning() || m_mx_bot.IsRunning() ||  m_ig_bot.IsRunning())
-
       Worker::stop();
+
+      if (m_yt_bot.IsRunning() || m_md_bot.IsRunning() || m_dc_bot.IsRunning() ||
+          m_bg_bot.IsRunning() || m_tg_bot.IsRunning() || m_mx_bot.IsRunning() ||  m_ig_bot.IsRunning())
+        klog().w("Bot(s) still running");
 
       return true;
     }
     catch(const std::exception& e)
     {
       klogger::instance().e("Exception caught during shutdown: {}", e.what());
-
-      return false;
     }
+
+    return false;
   }
   //------------------------------------------------------------
   const bool Poll() const
@@ -400,12 +382,12 @@ namespace kbot
   //------------------------------------------------------------
   u_ipc_msg_ptr DeQueue()
   {
-    auto is_keepalive = [](auto type) { return type == ::constants::IPC_KEEPALIVE_TYPE; };
-
     u_ipc_msg_ptr message = std::move(m_outbound_queue.front());
-    if (!is_keepalive(message->type()))
-      klogger::instance().d("Dequeuing => {}", message->to_string());
     m_outbound_queue.pop_front();
+
+    if (message->type() != ::constants::IPC_KEEPALIVE_TYPE)
+      klogger::instance().d("Dequeued: {}", message->to_string());
+
     return std::move(message);
   }
 

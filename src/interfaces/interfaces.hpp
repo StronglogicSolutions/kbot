@@ -323,6 +323,17 @@ public:
     }
   }
   //-------------------------------------------------------------
+  ipc_message::u_ipc_msg_ptr
+  pop_last()
+  {
+    if (msgs_.empty())
+      return nullptr;
+
+    auto&& msg = std::move(msgs_.back());
+    msgs_.pop_back();
+    return std::move(msg);
+  }
+  //-------------------------------------------------------------
   void recv()
   {
     using buffers_t = std::vector<ipc_message::byte_buffer>;
@@ -356,7 +367,7 @@ private:
   zmq::socket_t     rx_;
   std::future<void> fut_;
   bool              active_{true};
-  ipc_msgs_t        msgs_;
+  ipc_msgs_t        msgs_;         // TODO: Use a queue
   observer_t        cb_;
   std::string       addr_;
   std::string       recv_addr_;
@@ -368,5 +379,19 @@ static platform_message BotRequestToIPC(Platform platform, const BotRequest& req
   return platform_message{get_platform_name(platform), request.id,           request.username,
                           request.data,                request.url_string(), SHOULD_NOT_REPOST, request.cmd, request.args, request.time};
 }
-
+//--------------------------------------------------------------
+static const BotRequest CreatePlatformEvent(platform_message* message)
+{
+  return BotRequest{
+    .platform = get_platform(message->platform()),
+    .event    = "platform:repost",
+    .username = UnescapeQuotes(message->user()),
+    .data     = UnescapeQuotes(message->content()),
+    .args     = message->args(),
+    .urls     = BotRequest::urls_from_string(message->urls()),
+    .id       = message->id(),
+    .cmd      = message->cmd(),
+    .time     = message->time()
+  };
+}
 } // namespace kbot

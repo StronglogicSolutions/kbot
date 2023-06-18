@@ -72,59 +72,69 @@ void SetCallback(BrokerCallback cb_fn) {
   m_send_event_fn = cb_fn;
 }
 
-bool HandleEvent(const BotRequest& request) {
-  bool error{false};
-  const auto event = request.event;
-
-  if (!request.username.empty()                        &&
-       kstodon::Bot::GetUsername() != request.username &&
-      !kstodon::Bot::SetUser(request.username))
-      error = true;
-  else
+bool HandleEvent(const BotRequest& request)
+{
+  try
   {
-    if (event == "comments find")
-    {
-      std::stringstream ss{};
-      for (const kstodon::Status& status : FindComments())
-        ss << status;
+    bool error{false};
+    const auto event = request.event;
 
-      std::string comment_string = ss.str();
-      if (!comment_string.empty())
-        m_send_event_fn(BotRequest{
-          .platform = Platform::mastodon,
-          .event    = "comment",
-          .username = request.username,
-          .data     = comment_string
-        });
-
-      return true;
-    }
-    else
-    if (event == "livestream active")
-    {
-      if (!PostStatus(kstodon::Status{request.data}, request.urls))
+    if (!request.username.empty()                        &&
+        kstodon::Bot::GetUsername() != request.username &&
+        !kstodon::Bot::SetUser(request.username))
         error = true;
+    else
+    {
+      if (event == "comments find")
+      {
+        std::stringstream ss{};
+        for (const kstodon::Status& status : FindComments())
+          ss << status;
+
+        std::string comment_string = ss.str();
+        if (!comment_string.empty())
+          m_send_event_fn(BotRequest{
+            .platform = Platform::mastodon,
+            .event    = "comment",
+            .username = request.username,
+            .data     = comment_string
+          });
+
+        return true;
+      }
+      else
+      if (event == "livestream active")
+      {
+        if (!PostStatus(kstodon::Status{request.data}, request.urls))
+          error = true;
+      }
+      else
+      if (event == "platform:repost")
+      {
+        kstodon::Status          status{request.data};
+        std::vector<std::string> urls = (request.urls.empty()) ? std::vector<std::string>{} :
+                                                                std::vector<std::string>{request.urls.front()};
+        error = !PostStatus(status, urls);
+      }
+    }
+
+    if (error)
+    {
+      std::string error_message{"Failed to handle " + request.event + " event\nLast error: " + GetLastError()};
+      klog().e(error_message);
+      m_send_event_fn(CreateErrorEvent(error_message, request));
     }
     else
-    if (event == "platform:repost")
-    {
-      kstodon::Status          status{request.data};
-      std::vector<std::string> urls = (request.urls.empty()) ? std::vector<std::string>{} :
-                                                               std::vector<std::string>{request.urls.front()};
-      error = !PostStatus(status, urls);
-    }
-  }
+      m_send_event_fn(CreateSuccessEvent(request));
 
-  if (error)
+    return (!error);
+  }
+  catch (const std::exception& e)
   {
-    std::string error_message{"Failed to handle " + request.event + " event\nLast error: " + GetLastError()};
-    kbot::log(error_message);
-    m_send_event_fn(CreateErrorEvent(error_message, request));
+    klog().e("Exception caught: {}", e.what());
+    m_send_event_fn(CreateErrorEvent(e.what(), request));
   }
-  else
-    m_send_event_fn(CreateSuccessEvent(request));
-
-  return (!error);
+  return false;
 }
 
 virtual std::unique_ptr<API> GetAPI(std::string name) override
