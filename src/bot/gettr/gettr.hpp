@@ -65,15 +65,15 @@ GettrBot& operator=(const GettrBot& bot)
 virtual void Init(bool flood_protect) override
 {
   if (kettr::login())
-    log("GettrBot logged in");
+    klog().i("GettrBot logged in");
   else
-    log("GettrBot failed to login");
+    klog().e("GettrBot failed to login");
 }
 
 virtual void loop() override
 {
   Worker::m_is_running = true;
-  log("Gettr worker doesn't need to loop");
+  klog().d("Gettr worker doesn't need to loop");
 }
 //--------------------------------------------------------
 void SetCallback(BrokerCallback cb_fn)
@@ -104,7 +104,7 @@ bool HandleEvent(const BotRequest& request)
   {
     error    = true;
     err_msg += "Exception caught handling " + request.event + ": " + e.what();
-    log(err_msg);
+    klog().e(err_msg);
     m_send_event_fn(CreateErrorEvent(err_msg, request));
   }
 
