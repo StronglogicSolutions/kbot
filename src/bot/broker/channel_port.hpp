@@ -3,6 +3,7 @@
 #include <zmq.hpp>
 #include "util/util.hpp"
 #include "ipc.hpp"
+#include <logger.hpp>
 
 namespace kbot {
 const std::string DATA_REQUEST{"Get Results"};
@@ -50,13 +51,13 @@ bool ReceiveIPCMessage(const bool is_request = true)
 
   if (!socket.recv(&identity))
   {
-    kutils::log("Socket failed to receive");
+    kiq::log::klog().w("Socket failed to receive");
     return false;
   }
 
   if (identity.empty() || identity.to_string_view() != "botbroker__worker")
   {
-    kutils::log("Rejecting message from ", identity.to_string().c_str());
+    kiq::log::klog().w("Rejecting message from {}", identity.to_string());
     return false;
   }
 
@@ -92,7 +93,7 @@ bool SendIPCMessage(u_ipc_msg_ptr message, const bool use_req = false)
   const auto   payload   = message->data();
   const size_t frame_num = payload.size();
   if (message->type() != ::constants::IPC_KEEPALIVE_TYPE)
-    kutils::log("Sending IPC message of type ", ::constants::IPC_MESSAGE_NAMES.at(message->type()));
+    kiq::log::klog().d("Sending IPC message of type ", ::constants::IPC_MESSAGE_NAMES.at(message->type()));
 
   for (int i = 0; i < frame_num; i++)
   {
@@ -101,7 +102,6 @@ bool SendIPCMessage(u_ipc_msg_ptr message, const bool use_req = false)
 
     zmq::message_t message{data.size()};
     std::memcpy(message.data(), data.data(), data.size());
-
     socket.send(message, flag);
   }
 

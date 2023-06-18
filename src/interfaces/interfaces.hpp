@@ -145,6 +145,7 @@ static const std::vector<std::string> urls_from_string(std::string input_string)
 static const bool SHOULD_REPOST{true};
 static const bool SHOULD_NOT_REPOST{false};
 static const std::string SUCCESS_EVENT{"bot:success"};
+static const std::string ERROR_EVENT  {"bot:error"};
 static const std::string INFO_EVENT   {"bot:info"};
 static const std::string RESTART_EVENT{"bot:restart"};
 
@@ -197,7 +198,7 @@ static const BotRequest CreateErrorEvent(const std::string& error_message, const
   kbot::log("Creating error event");
   return BotRequest{
     .platform = previous_event.platform,
-    .event    = "bot:error",
+    .event    = ERROR_EVENT,
     .username = previous_event.username,
     .data     = error_message,
     .urls     = previous_event.urls,
@@ -306,8 +307,9 @@ public:
     rx_.disconnect(recv_addr_);
   }
   //-------------------------------------------------------------
-  void send(platform_message msg)
+  void send(ipc_message::u_ipc_msg_ptr ptr)
   {
+          auto&  msg       = *(ptr.get());
     const auto&  payload   = msg.data();
     const size_t frame_num = payload.size();
 
@@ -329,8 +331,13 @@ public:
     if (msgs_.empty())
       return nullptr;
 
-    auto&& msg = std::move(msgs_.back());
-    msgs_.pop_back();
+    klog().d("worker has {} messages", msgs_.size());
+    auto&& msg = ipc_message::clone(*(msgs_.front().get()));
+    if (!msg)
+      klog().w("Last message is null");
+    else
+      klog().d("Msg is: {}", msg->to_string());
+    msgs_.pop_front();
     return std::move(msg);
   }
   //-------------------------------------------------------------
@@ -360,7 +367,7 @@ public:
   }
 
 private:
-  using ipc_msgs_t = std::vector<ipc_message::u_ipc_msg_ptr>;
+  using ipc_msgs_t = std::deque<ipc_message::u_ipc_msg_ptr>;
 
   zmq::context_t    ctx_;
   zmq::socket_t     tx_;
@@ -371,20 +378,27 @@ private:
   observer_t        cb_;
   std::string       addr_;
   std::string       recv_addr_;
+  bool              must_pop_;
 };
 
 //-------------------------------------------------------------
-static platform_message BotRequestToIPC(Platform platform, const BotRequest& request)
+template <uint8_t M = ::constants::IPC_PLATFORM_TYPE>
+static ipc_message::u_ipc_msg_ptr
+BotRequestToIPC(Platform platform, const BotRequest& request)
 {
-  return platform_message{get_platform_name(platform), request.id,           request.username,
-                          request.data,                request.url_string(), SHOULD_NOT_REPOST, request.cmd, request.args, request.time};
+  if (M == ::constants::IPC_PLATFORM_TYPE)
+    return std::make_unique<platform_message>(get_platform_name(platform), request.id,           request.username,
+                            request.data,                request.url_string(), SHOULD_NOT_REPOST, request.cmd, request.args, request.time);
+  else
+  if (M == ::constants::IPC_KIQ_MESSAGE)
+    return std::make_unique<kiq_message>(request.data);
 }
 //--------------------------------------------------------------
-static const BotRequest CreatePlatformEvent(platform_message* message)
+static const BotRequest CreatePlatformEvent(const platform_message* message, const char* event = "platform:repost")
 {
   return BotRequest{
     .platform = get_platform(message->platform()),
-    .event    = "platform:repost",
+    .event    = event,
     .username = UnescapeQuotes(message->user()),
     .data     = UnescapeQuotes(message->content()),
     .args     = message->args(),

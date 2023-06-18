@@ -95,6 +95,14 @@ class ipc_message
 public:
 using byte_buffer   = std::vector<uint8_t>;
 using u_ipc_msg_ptr = std::unique_ptr<ipc_message>;
+
+ipc_message() = default;
+//--------------------
+ipc_message(const ipc_message& msg)
+{
+  m_frames = msg.m_frames;
+}
+//--------------------
 virtual ~ipc_message() {}
 //--------------------
 uint8_t type() const
@@ -112,6 +120,11 @@ std::vector<byte_buffer> m_frames;
 virtual std::string to_string() const
 {
   return constants::IPC_MESSAGE_NAMES.at(type());
+}
+//--------------------
+static u_ipc_msg_ptr clone(const ipc_message& msg)
+{
+  return std::make_unique<ipc_message>(msg);
 }
 };
 //---------------------------------------------------------------------

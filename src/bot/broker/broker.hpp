@@ -134,6 +134,9 @@ namespace kbot
         const auto& payload = args.at(IPC_PAYLOAD_INDEX);
         const auto& user    = args.at(IPC_USER_INDEX);
         const auto& options = GetOptions(args);
+
+        klog().d("Received KIQ message with command: {}, payload: {}, user: {}, options: {}",
+          command, payload, user, options);
         Platform    platform;
 
         if (YTMessage(command)) platform = Platform::youtube;
@@ -150,6 +153,7 @@ namespace kbot
         else
         if (IGMessage(command)) platform = Platform::instagram;
 
+        klog().d("Sending bot request to {}", get_platform_name(platform));
         SendEvent(BotRequest{platform, command, user, payload, options});
       }
     }

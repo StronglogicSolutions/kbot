@@ -28,15 +28,33 @@ InstagramBot()
   m_worker("tcp://127.0.0.1:28475", "tcp://127.0.0.1:28476",
   [this] (auto result)
   {
-    if (!m_pending)
-      klogger::instance().w("Received worker message, but nothing is pending. Last request: {}", m_last_req.id);
-    else
+    const auto&& msg = m_worker.pop_last();
+    if (!msg)
     {
-      m_send_event_fn((result) ? CreateSuccessEvent(m_last_req) :
-                                 CreateErrorEvent("Failed to handle request", m_last_req));
-      m_pending--;
-      m_posts[m_last_req.id] = true;
+      klog().w("Worker provided result {} but no message found", result);
+      return;
     }
+
+    BotRequest ret{kbot::Platform::instagram, (result) ? SUCCESS_EVENT : ERROR_EVENT};
+    const auto type = msg->type();
+
+    klog().t("Worker returned result {}", result);
+
+    if (!m_pending)
+      klog().w("Received worker message, but nothing is pending. Last request: {}", m_last_req.id);
+    else
+    if (type == ::constants::IPC_PLATFORM_TYPE)
+    {
+      const auto* msg_ptr = static_cast<platform_message*>(msg.get());
+      if (!m_pending && !msg_ptr->repost())
+        klog().w("No replies pending. Ignoring this message from worker: {}", msg_ptr->to_string());
+      else
+        m_send_event_fn(CreatePlatformEvent(msg_ptr, "platform:post"));
+      return;
+    }
+
+    m_send_event_fn((result) ? CreateSuccessEvent(ret) :
+                               CreateErrorEvent("Failed to handle request", ret));
   })
 {}
 //-------------------------------------------------------------
@@ -83,6 +101,14 @@ bool HandleEvent(const BotRequest& request)
 
       m_pending++;
       m_worker.send(BotRequestToIPC(Platform::instagram, request));
+      m_last_req = request;
+      m_posts[request.id] = false;
+    }
+    else
+    if (event == "instagram:query")
+    {
+      m_pending++;
+      m_worker.send(BotRequestToIPC<::constants::IPC_KIQ_MESSAGE>(Platform::instagram, request));
       m_last_req = request;
       m_posts[request.id] = false;
     }
