@@ -87,7 +87,7 @@ namespace kbot
     kiq::log::klogger::init("botbroker", "trace");
 
     const auto execpath = get_executable_cwd();
-    const auto config   = INIReader{execpath + "../config/config.ini"};
+    const auto config   = INIReader{execpath + "/../config/config.ini"};
 
     klog().d("Exec path is {}", execpath);
 
