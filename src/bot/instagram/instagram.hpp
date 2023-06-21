@@ -66,7 +66,7 @@ InstagramBot& operator=(const InstagramBot& bot)
 virtual void Init(bool flood_protect) final
 {
   m_flood_protect = flood_protect;
-  klogger::instance().i("Setting flood protection to {}", flood_protect);
+  klog().i("Setting flood protection to {}", flood_protect);
   return;
 }
 //-------------------------------------------------------------
@@ -93,11 +93,13 @@ bool HandleEvent(const BotRequest& request)
   std::string err_msg;
   try
   {
-    if (m_flood_protect && post_requested(request.id))
-      klogger::instance().w("{} was already requested", request.id);
-    else
     if (event == "livestream active" || event == "platform:repost" || event == "instagram:messages")
     {
+      if (m_flood_protect && post_requested(request.id))
+      {
+        klogger::instance().w("{} was already requested", request.id);
+        return false;
+      }
 
       m_pending++;
       m_worker.send(BotRequestToIPC(Platform::instagram, request));
