@@ -85,11 +85,14 @@ namespace kbot
   : m_on_ipc_fail(_cb)
   {
     kiq::log::klogger::init("botbroker", "trace");
+
     const auto execpath = get_executable_cwd();
-    klogger::instance().d("Exec path is {}", execpath);
-    const auto config        = INIReader{execpath + "../config.ini"};
+    const auto config   = INIReader{execpath + "../config/config.ini"};
+
+    klog().d("Exec path is {}", execpath);
+
     if (config.ParseError() < 0)
-      klogger::instance().i("Failed to load config");
+      klog().i("Failed to load config");
     else
       m_flood_protect = config.GetBoolean("broker", "flood_protect", false);
 
@@ -99,7 +102,7 @@ namespace kbot
     m_pool.push_back(&m_bg_bot);
     m_pool.push_back(&m_tg_bot);
     m_pool.push_back(&m_mx_bot);
-    // m_pool.push_back(&m_gt_bot);
+    m_pool.push_back(&m_gt_bot);
     m_pool.push_back(&m_ig_bot);
 
     for (auto&& bot : m_pool)

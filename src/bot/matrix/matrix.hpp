@@ -155,9 +155,12 @@ MatrixBot& operator=(const MatrixBot& m)
       {
         m_pending++;
         BotRequest outbound = request;
+
         if (!request.urls.empty() && katrix::is_url(request.urls.front()))
           outbound.urls = FetchFiles(request.urls, katrix::get_media_dir());
+
         klog().d("Sending request {} to Katrix", outbound.id);
+
         m_worker.send(BotRequestToIPC(Platform::instagram, outbound));
         m_last_req = outbound;
         m_posts[request.id] = false;
