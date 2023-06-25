@@ -58,12 +58,14 @@ static void save_as_file(const std::string& data, const std::string& path)
 [[ maybe_unused ]]
 static std::string ExtractFilename(const std::string& full_url)
 {
-  auto FindProt  = []         (const auto& s) { auto i = s.find_last_of("://"); return (i != s.npos) ? i + 1 : 0; };
-  auto FindQuery = []         (const auto& s) { auto i = s.find_first_of('?');  return (i != s.npos) ? i : 0;     };
-  auto FindExt   = []         (const auto& s) { auto i = s.find_last_of('.');   return (i != s.npos) ? i : 0;     };
-  auto SimpleURL = [FindQuery](const auto& s) {                                 return s.substr(0, FindQuery(s)); };
-  auto Filename  = [SimpleURL, FindProt, FindExt](const auto& full_url)
+  auto Filename  = [](const auto& full_url)
   {
+    auto FindProt  = []         (const auto& s) { auto i = s.find_last_of("://"); return (i != s.npos) ? i + 1 : 0; };
+    auto FindQuery = []         (const auto& s) { auto i = s.find_first_of('?');  return (i != s.npos) ? i : 0;     };
+    auto FindExt   = []         (const auto& s) { auto i = s.find_last_of('.');   return (i != s.npos) ? i : 0;     };
+    auto SimpleURL = [FindQuery](const auto& s) {                                 return s.substr(0, FindQuery(s)); };
+    auto clean_str = []         (      auto& s) { s.erase(remove_if(s.begin(), s.end(), [](char c)
+                                                { return !(c>=0 && c <128); }), s.end()); };
     const auto s_url     = SimpleURL(full_url);
     const auto url       = (s_url.empty()) ? full_url : s_url;
     const auto uri       = url.substr(FindProt(url));
@@ -71,7 +73,9 @@ static std::string ExtractFilename(const std::string& full_url)
     const auto sub_uri   = (ext) ? uri.substr(0, ext) : uri;
     const auto extension = uri.substr(ext);
     const auto sub_ext   = FindExt(sub_uri);
-    return (sub_ext) ? sub_uri.substr(sub_ext) + extension : sub_uri + extension;
+          auto ret_s     = (sub_ext) ? sub_uri.substr(sub_ext) + extension : sub_uri + extension;
+    clean_str(ret_s);
+    return ret_s;
   };
 
   return Filename(full_url);
