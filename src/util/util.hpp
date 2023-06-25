@@ -5,6 +5,7 @@
 #include <iostream>
 #include <algorithm>
 #include <cpr/cpr.h>
+#include <logger.hpp>
 namespace kbot {
 /**
  * Poor man's log
@@ -99,5 +100,39 @@ static paths_t FetchFiles(const paths_t& urls, const std::string& dir = "")
   for (const auto& url : urls) if (!url.empty()) fetched.push_back(dir + '/' + kbot::FetchTemporaryFile(url));
   return fetched;
 }
+//-----------------------------------------------------------------------
+template <int64_t INTERVAL = 3000>
+class timer
+{
+using time_point_t = std::chrono::time_point<std::chrono::system_clock>;
+using ms_t         = std::chrono::milliseconds;
+using duration_t   = std::chrono::duration<std::chrono::system_clock, ms_t>;
 
+public:
+  bool
+  check_and_update()
+  {
+    if (const auto tp = now(); ready(tp))
+    {
+      _last = tp;
+      return true;
+    }
+    return false;
+  }
+
+private:
+  bool
+  ready(const time_point_t t) const
+  {
+    return (std::chrono::duration_cast<ms_t>(t - _last).count() > INTERVAL);
+  }
+//-----------------------------------------------------------------------
+  time_point_t
+  now()
+  {
+    return std::chrono::system_clock::now();
+  }
+//-----------------------------------------------------------------------
+  time_point_t _last{now()};
+};
 } // namespace kbot
