@@ -26,35 +26,45 @@ public:
 InstagramBot()
 : kbot::Bot{kgram::constants::USER},
   m_worker("tcp://127.0.0.1:28475", "tcp://127.0.0.1:28476",
-  [this] (auto result)
+  [this]
   {
-    const auto&& msg = m_worker.pop_last();
-    if (!msg)
+    const auto&& msg  = m_worker.pop_last();
+          bool result = true;
+          auto    ret = BotRequest{};
+
+    switch (msg->type())
     {
-      klog().w("Worker provided result {} but no message found", result);
-      return;
+      case ::constants::IPC_PLATFORM_TYPE:
+        ret = CreatePlatformEvent(static_cast<platform_message*>(msg.get()), "bot:request");
+      break;
+      case ::constants::IPC_OK_TYPE:
+      {
+        const auto id = static_cast<okay_message*>(msg.get())->id();
+        const auto it = m_requests.find(id);
+        if (it != m_requests.end())
+          ret = CreateSuccessEvent(it->second);
+        else
+          klog().w("Received OK message, but id {} not matched", id);
+          return;
+      }
+      case ::constants::IPC_FAIL_TYPE:
+      {
+        result = false;
+        const auto id = static_cast<fail_message*>(msg.get())->id();
+        const auto it = m_requests.find(id);
+        if (it != m_requests.end())
+          ret = CreateErrorEvent("Katrix returned error", it->second);
+        else
+          klog().w("Received OK message, but id {} not matched", id);
+          return;
+      }
+      break;
+      default:
+        klog().w("IPC type {} returned from worker, but not handled", ::constants::IPC_MESSAGE_NAMES.at(msg->type()));
+        return;
     }
 
-    BotRequest ret{kbot::Platform::instagram, (result) ? SUCCESS_EVENT : ERROR_EVENT};
-    const auto type = msg->type();
-
-    klog().t("Worker returned result {}", result);
-
-    if (!m_pending)
-      klog().w("Received worker message, but nothing is pending. Last request: {}", m_last_req.id);
-    else
-    if (type == ::constants::IPC_PLATFORM_TYPE)
-    {
-      const auto* msg_ptr = static_cast<platform_message*>(msg.get());
-      if (!m_pending && !msg_ptr->repost())
-        klog().w("No replies pending. Ignoring this message from worker: {}", msg_ptr->to_string());
-      else
-        m_send_event_fn(CreatePlatformEvent(msg_ptr, "platform:post"));
-      return;
-    }
-
-    m_send_event_fn((result) ? CreateSuccessEvent(ret) :
-                               CreateErrorEvent("Failed to handle request", ret));
+    m_send_event_fn(ret);
   })
 {}
 //-------------------------------------------------------------
@@ -87,6 +97,7 @@ bool post_requested(const std::string& id) const
 //-------------------------------------------------------------
 bool HandleEvent(const BotRequest& request)
 {
+  m_requests[request.id] = request;
         bool  error = false;
         bool  reply = true;
   const auto  event = request.event;
@@ -148,12 +159,14 @@ virtual void Shutdown() final
 
 private:
   using post_map_t = std::map<std::string, bool>;
+  using requests_t = std::map<std::string, BotRequest>;
 
   BrokerCallback m_send_event_fn;
   ipc_worker     m_worker;
   BotRequest     m_last_req{};
   unsigned int   m_pending {0};
   post_map_t     m_posts;
+  requests_t     m_requests;
   bool           m_flood_protect{true};
 };
 } // namespace kgram

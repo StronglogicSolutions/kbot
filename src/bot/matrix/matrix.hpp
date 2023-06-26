@@ -63,9 +63,9 @@ public:
     m_worker("tcp://127.0.0.1:28477", "tcp://127.0.0.1:28478",
     [this]
     {
-      bool result = true;
-      auto    ret = BotRequest{};
-      auto&&  msg = m_worker.pop_last();
+      const auto&&  msg = m_worker.pop_last();
+            bool result = true;
+            auto    ret = BotRequest{};
 
       switch (msg->type())
       {
