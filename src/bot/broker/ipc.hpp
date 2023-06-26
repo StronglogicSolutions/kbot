@@ -200,29 +200,65 @@ std::string to_string() const override
 class okay_message : public ipc_message
 {
 public:
-  okay_message()
+  okay_message(const std::string& platform = "", const std::string id = "")
   {
     m_frames = {
       byte_buffer{},
-      byte_buffer{constants::IPC_OK_TYPE}};
+      byte_buffer{constants::IPC_OK_TYPE},
+      byte_buffer{platform.data(), platform.data() + platform.size()},
+      byte_buffer{id.data(), id.data() + id.size() }};
+  }
+//--------------------
+  okay_message(const std::vector<byte_buffer>& data)
+  {
+    m_frames = {
+    byte_buffer{},
+    byte_buffer{data.at(constants::index::TYPE)},
+    byte_buffer{data.at(constants::index::PLATFORM)},
+    byte_buffer{data.at(constants::index::ID)}};
   }
 //--------------------
   virtual ~okay_message() override {}
+//--------------------
+  std::string id() const
+  {
+    return std::string{
+      reinterpret_cast<const char*>(m_frames.at(constants::index::ID).data()),
+      m_frames.at(constants::index::ID).size()
+    };
+  }
 };
 //---------------------------------------------------------------------
 class fail_message : public ipc_message
 {
 public:
-  fail_message()
+  fail_message(const std::string& platform = "", const std::string id = "")
   {
     m_frames = {
       byte_buffer{},
-      byte_buffer{constants::IPC_FAIL_TYPE}};
-
-
+      byte_buffer{constants::IPC_FAIL_TYPE},
+      byte_buffer{platform.data(), platform.data() + platform.size()},
+      byte_buffer{id.data(), id.data() + id.size() }};
+  }
+//--------------------
+  fail_message(const std::vector<byte_buffer>& data)
+  {
+    m_frames = {
+    byte_buffer{},
+    byte_buffer{data.at(constants::index::TYPE)},
+    byte_buffer{data.at(constants::index::PLATFORM)},
+    byte_buffer{data.at(constants::index::ID)}};
   }
 //--------------------
   virtual ~fail_message() override {}
+//--------------------
+  std::string id() const
+  {
+    return std::string{
+      reinterpret_cast<const char*>(m_frames.at(constants::index::ID).data()),
+      m_frames.at(constants::index::ID).size()
+    };
+  }
 };
 //---------------------------------------------------------------------
 class keepalive : public ipc_message
@@ -545,14 +581,14 @@ inline ipc_message::u_ipc_msg_ptr DeserializeIPCMessage(std::vector<ipc_message:
   uint8_t message_type = *(data.at(constants::index::TYPE).data());
   switch (message_type)
   {
-    case (constants::IPC_OK_TYPE):          return std::make_unique<okay_message>();
+    case (constants::IPC_OK_TYPE):          return std::make_unique<okay_message>(data);
     case (constants::IPC_KEEPALIVE_TYPE):   return std::make_unique<keepalive>();
     case (constants::IPC_KIQ_MESSAGE):      return std::make_unique<kiq_message>(data);
     case (constants::IPC_PLATFORM_TYPE):    return std::make_unique<platform_message>(data);
     case (constants::IPC_PLATFORM_INFO):    return std::make_unique<platform_info>(data);
     case (constants::IPC_PLATFORM_ERROR):   return std::make_unique<platform_error>(data);
     case (constants::IPC_PLATFORM_REQUEST): return std::make_unique<platform_request>(data);
-    case (constants::IPC_FAIL_TYPE):        return std::make_unique<fail_message>();
+    case (constants::IPC_FAIL_TYPE):        return std::make_unique<fail_message>(data);
     default:                                return nullptr;
   }
 }
