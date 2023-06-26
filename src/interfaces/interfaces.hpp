@@ -272,7 +272,7 @@ struct PlatformQuery
   std::vector<std::string> urls;
 };
 
-using observer_t = std::function<void(bool)>;
+using observer_t = std::function<void()>;
 class ipc_worker
 {
 public:
@@ -363,7 +363,7 @@ public:
     }
     msgs_.push_back(DeserializeIPCMessage(std::move(buffer)));
     klogger::instance().d("IPC message received");
-    cb_(true);
+    cb_();
   }
 
 private:
