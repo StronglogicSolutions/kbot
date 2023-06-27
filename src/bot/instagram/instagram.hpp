@@ -35,7 +35,7 @@ InstagramBot()
     switch (msg->type())
     {
       case ::constants::IPC_PLATFORM_TYPE:
-        ret = CreatePlatformEvent(static_cast<platform_message*>(msg.get()), "bot:request");
+        ret = CreatePlatformEvent(static_cast<platform_message*>(msg.get()), "platform:post");
       break;
       case ::constants::IPC_OK_TYPE:
       {
