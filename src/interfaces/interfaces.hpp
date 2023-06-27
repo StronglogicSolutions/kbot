@@ -272,7 +272,7 @@ struct PlatformQuery
   std::vector<std::string> urls;
 };
 
-using observer_t = std::function<void(bool)>;
+using observer_t = std::function<void()>;
 class ipc_worker
 {
 public:
@@ -348,9 +348,11 @@ public:
     zmq::message_t identity;
     if (!rx_.recv(identity) || identity.empty())
     {
-      klogger::instance().e("Socket failed to receive identity");
+      klog().e("Socket failed to receive identity");
       return;
     }
+
+    klog().d("Receiving IPC from {}", identity.to_string());
 
     buffers_t      buffer;
     zmq::message_t msg;
@@ -359,11 +361,12 @@ public:
     while (more_flag && rx_.recv(msg))
     {
       more_flag = rx_.get(zmq::sockopt::rcvmore);
+      klog().d("Frame: {}", msg.to_string());
       buffer.push_back({static_cast<char*>(msg.data()), static_cast<char*>(msg.data()) + msg.size()});
     }
     msgs_.push_back(DeserializeIPCMessage(std::move(buffer)));
-    klogger::instance().d("IPC message received");
-    cb_(true);
+    klog().d("IPC message received");
+    cb_();
   }
 
 private:
