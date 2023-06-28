@@ -64,42 +64,38 @@ public:
     [this]
     {
       const auto&&  msg = m_worker.pop_last();
-            bool result = true;
-            auto    ret = BotRequest{};
-
       switch (msg->type())
       {
         case ::constants::IPC_PLATFORM_TYPE:
-          ret = CreatePlatformEvent(static_cast<platform_message*>(msg.get()), "bot:request");
+          klog().t("Sending bot:request to broker");
+          m_send_event_fn(CreatePlatformEvent(static_cast<platform_message*>(msg.get()), "bot:request"));
         break;
         case ::constants::IPC_OK_TYPE:
         {
+          klog().t("Matrix bot received OK from Katrix");
           const auto id = static_cast<okay_message*>(msg.get())->id();
           const auto it = m_requests.find(id);
           if (it != m_requests.end())
-            ret = CreateSuccessEvent(it->second);
+            m_send_event_fn(CreateSuccessEvent(it->second));
           else
             klog().w("Received OK message, but id {} not matched", id);
-            return;
         }
+        break;
         case ::constants::IPC_FAIL_TYPE:
         {
-          result = false;
+          klog().t("Matrix bot received FAIL from Katrix");
           const auto id = static_cast<fail_message*>(msg.get())->id();
           const auto it = m_requests.find(id);
           if (it != m_requests.end())
-            ret = CreateErrorEvent("Katrix returned error", it->second);
+            m_send_event_fn(CreateErrorEvent("Katrix returned error", it->second));
           else
             klog().w("Received OK message, but id {} not matched", id);
-            return;
         }
         break;
         default:
           klog().w("IPC type {} returned from worker, but not handled", ::constants::IPC_MESSAGE_NAMES.at(msg->type()));
-          return;
+        break;
       }
-
-      m_send_event_fn(ret);
     })
   {}
 //-----------------------------------------------------------------------
