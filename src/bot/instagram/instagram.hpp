@@ -28,43 +28,39 @@ InstagramBot()
   m_worker("tcp://127.0.0.1:28475", "tcp://127.0.0.1:28476",
   [this]
   {
-    const auto&& msg  = m_worker.pop_last();
-          bool result = true;
-          auto    ret = BotRequest{};
-
+    const auto&& msg = m_worker.pop_last();
     switch (msg->type())
     {
-      case ::constants::IPC_PLATFORM_TYPE:
-        ret = CreatePlatformEvent(static_cast<platform_message*>(msg.get()), "platform:post");
+      case ::constants::IPC_PLATFORM_TYPE:                          // REQUEST
+        klog().t("Sending bot:request to broker");
+        m_send_event_fn(CreatePlatformEvent(static_cast<platform_message*>(msg.get()), "bot:request"));
       break;
-      case ::constants::IPC_OK_TYPE:
+      case ::constants::IPC_OK_TYPE:                                // SUCCESS
       {
+        klog().t("Matrix bot received OK from KGram");
         const auto id = static_cast<okay_message*>(msg.get())->id();
         const auto it = m_requests.find(id);
         if (it != m_requests.end())
-          ret = CreateSuccessEvent(it->second);
+          m_send_event_fn(CreateSuccessEvent(it->second));
         else
           klog().w("Received OK message, but id {} not matched", id);
-          return;
       }
-      case ::constants::IPC_FAIL_TYPE:
+      break;
+      case ::constants::IPC_FAIL_TYPE:                              // FAIL
       {
-        result = false;
+        klog().t("Matrix bot received FAIL from KGram");
         const auto id = static_cast<fail_message*>(msg.get())->id();
         const auto it = m_requests.find(id);
         if (it != m_requests.end())
-          ret = CreateErrorEvent("Katrix returned error", it->second);
+          m_send_event_fn(CreateErrorEvent("Katrix returned error", it->second));
         else
           klog().w("Received OK message, but id {} not matched", id);
-          return;
       }
       break;
-      default:
+      default:                                                      // UNKNOWN
         klog().w("IPC type {} returned from worker, but not handled", ::constants::IPC_MESSAGE_NAMES.at(msg->type()));
-        return;
+      break;
     }
-
-    m_send_event_fn(ret);
   })
 {}
 //-------------------------------------------------------------
@@ -92,7 +88,7 @@ void SetCallback(BrokerCallback cb_fn)
 //-------------------------------------------------------------
 bool post_requested(const std::string& id) const
 {
-  return (m_posts.find(id) != m_posts.end());
+  return (m_requests.find(id) != m_requests.end());
 }
 //-------------------------------------------------------------
 bool HandleEvent(const BotRequest& request)
@@ -112,18 +108,14 @@ bool HandleEvent(const BotRequest& request)
         return false;
       }
 
-      m_pending++;
       m_worker.send(BotRequestToIPC(Platform::instagram, request));
-      m_last_req = request;
-      m_posts[request.id] = false;
+      m_requests[request.id] = request;
     }
     else
     if (event == "instagram:query")
     {
-      m_pending++;
       m_worker.send(BotRequestToIPC<::constants::IPC_KIQ_MESSAGE>(Platform::instagram, request));
-      m_last_req = request;
-      m_posts[request.id] = false;
+      m_requests[request.id] = request;
     }
   }
   catch (const std::exception& e)
@@ -158,14 +150,10 @@ virtual void Shutdown() final
 }
 
 private:
-  using post_map_t = std::map<std::string, bool>;
   using requests_t = std::map<std::string, BotRequest>;
 
   BrokerCallback m_send_event_fn;
   ipc_worker     m_worker;
-  BotRequest     m_last_req{};
-  unsigned int   m_pending {0};
-  post_map_t     m_posts;
   requests_t     m_requests;
   bool           m_flood_protect{true};
 };
