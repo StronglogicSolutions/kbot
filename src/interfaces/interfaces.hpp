@@ -395,6 +395,9 @@ BotRequestToIPC(Platform platform, const BotRequest& request)
   else
   if (M == ::constants::IPC_KIQ_MESSAGE)
     return std::make_unique<kiq_message>(request.data);
+  else
+  if (M == ::constants::IPC_PLATFORM_INFO)
+    return std::make_unique<platform_info>(get_platform_name(platform), "", request.data);
 }
 //--------------------------------------------------------------
 static const BotRequest CreatePlatformEvent(const platform_message* message, const char* event = "platform:repost")

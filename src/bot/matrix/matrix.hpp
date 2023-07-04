@@ -132,8 +132,9 @@ MatrixBot& operator=(const MatrixBot& m)
 
         if (!request.urls.empty() && katrix::is_url(request.urls.front()))
           outbound.urls = FetchFiles(request.urls, katrix::get_media_dir());
-
-        m_worker.send(BotRequestToIPC(Platform::matrix, outbound));
+        auto&& ipc_msg = request.event == "matrix:info" ? BotRequestToIPC<::constants::IPC_PLATFORM_INFO>(Platform::matrix, outbound) :
+                                                          BotRequestToIPC                                (Platform::matrix, outbound);
+        m_worker.send(std::move(ipc_msg));
         m_requests[request.id] = request;
       }
     }
