@@ -91,6 +91,10 @@ public:
           else
             klog().w("Received OK message, but id {} not matched", id);
         }
+        case ::constants::IPC_PLATFORM_INFO:                          // INFO
+          klog().t("Sending bot:info to broker");
+          m_send_event_fn(CreateInfo(static_cast<platform_info*>(msg.get())->info(), "matrix:info"));
+        break;
         break;
         default:                                                      // UNKNOWN
           klog().w("IPC type {} returned from worker, but not handled", ::constants::IPC_MESSAGE_NAMES.at(msg->type()));
