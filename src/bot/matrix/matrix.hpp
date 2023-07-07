@@ -68,7 +68,7 @@ public:
       {
         case ::constants::IPC_PLATFORM_TYPE:                          // REQUEST
           klog().t("Sending bot:request to broker");
-          m_send_event_fn(CreatePlatformEvent(static_cast<platform_message*>(msg.get()), "bot:request"));
+          m_send_event_fn(CreatePlatformEvent(static_cast<platform_message*>(msg.get()), "platform:post"));
         break;
         case ::constants::IPC_OK_TYPE:                                // SUCCESS
         {
