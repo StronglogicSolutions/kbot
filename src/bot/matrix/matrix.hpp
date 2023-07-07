@@ -68,7 +68,7 @@ public:
       {
         case ::constants::IPC_PLATFORM_TYPE:                          // REQUEST
           klog().t("Sending bot:request to broker");
-          m_send_event_fn(CreatePlatformEvent(static_cast<platform_message*>(msg.get()), "bot:request"));
+          m_send_event_fn(CreatePlatformEvent(static_cast<platform_message*>(msg.get()), "platform:post"));
         break;
         case ::constants::IPC_OK_TYPE:                                // SUCCESS
         {
@@ -91,6 +91,10 @@ public:
           else
             klog().w("Received OK message, but id {} not matched", id);
         }
+        case ::constants::IPC_PLATFORM_INFO:                          // INFO
+          klog().t("Sending bot:info to broker");
+          m_send_event_fn(CreateInfo(static_cast<platform_info*>(msg.get())->info(), "matrix:info"));
+        break;
         break;
         default:                                                      // UNKNOWN
           klog().w("IPC type {} returned from worker, but not handled", ::constants::IPC_MESSAGE_NAMES.at(msg->type()));
@@ -132,8 +136,9 @@ MatrixBot& operator=(const MatrixBot& m)
 
         if (!request.urls.empty() && katrix::is_url(request.urls.front()))
           outbound.urls = FetchFiles(request.urls, katrix::get_media_dir());
-
-        m_worker.send(BotRequestToIPC(Platform::matrix, outbound));
+        auto&& ipc_msg = request.event == "matrix:info" ? BotRequestToIPC<::constants::IPC_PLATFORM_INFO>(Platform::matrix, outbound) :
+                                                          BotRequestToIPC                                (Platform::matrix, outbound);
+        m_worker.send(std::move(ipc_msg));
         m_requests[request.id] = request;
       }
     }

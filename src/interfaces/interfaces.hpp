@@ -164,7 +164,7 @@ static const BotRequest CreateSuccessEvent(const BotRequest& previous_event)
   };
 }
 
-static const BotRequest CreateInfo(const std::string& info, const std::string& type, const BotRequest& previous_event)
+static const BotRequest CreateInfo(const std::string& info, const std::string& type, const BotRequest& previous_event = BotRequest{})
 {
   kbot::log("Creating info event");
   return BotRequest{
@@ -390,11 +390,14 @@ static ipc_message::u_ipc_msg_ptr
 BotRequestToIPC(Platform platform, const BotRequest& request)
 {
   if (M == ::constants::IPC_PLATFORM_TYPE)
-    return std::make_unique<platform_message>(get_platform_name(platform), request.id,           request.username,
-                            request.data,                request.url_string(), SHOULD_NOT_REPOST, request.cmd, request.args, request.time);
+    return std::make_unique<platform_message>(get_platform_name(platform), request.id, request.username, request.data,
+                                              request.url_string(), SHOULD_NOT_REPOST, request.cmd, request.args, request.time);
   else
   if (M == ::constants::IPC_KIQ_MESSAGE)
     return std::make_unique<kiq_message>(request.data);
+  else
+  if (M == ::constants::IPC_PLATFORM_INFO)
+    return std::make_unique<platform_info>(get_platform_name(platform), "", "info");
 }
 //--------------------------------------------------------------
 static const BotRequest CreatePlatformEvent(const platform_message* message, const char* event = "platform:repost")
