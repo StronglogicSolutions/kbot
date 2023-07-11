@@ -78,7 +78,9 @@ virtual void Init(bool flood_protect) final
 //-------------------------------------------------------------
 virtual void loop() final
 {
-  Worker::m_is_running = true;
+  static timer<86400000> timer;
+  if (timer.check_and_update())
+    m_worker.reset();
 }
 //-------------------------------------------------------------
 void SetCallback(BrokerCallback cb_fn)
