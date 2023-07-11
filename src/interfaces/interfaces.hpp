@@ -292,19 +292,37 @@ public:
     tx_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
     rx_.set(zmq::sockopt::tcp_keepalive_idle,  300);
     rx_.set(zmq::sockopt::tcp_keepalive_intvl, 300);
-    tx_.connect(addr_);
-    rx_.bind   (recv_addr_);
 
-    fut_ = std::async(std::launch::async, [this] {
-      while (active_)
-        recv(); });
-
+    start();
   }
   //-------------------------------------------------------------
   ~ipc_worker()
   {
+    stop();
+  }
+  //-------------------------------------------------------------
+  void start()
+  {
+    tx_.connect(addr_);
+    rx_.bind   (recv_addr_);
+
+    fut_ = std::async(std::launch::async, [this]
+    {
+      while (active_)
+        recv();
+    });
+  }
+  //-------------------------------------------------------------
+  void stop()
+  {
     tx_.disconnect(addr_);
     rx_.disconnect(recv_addr_);
+  }
+  //-------------------------------------------------------------
+  void reset()
+  {
+    stop();
+    start();
   }
   //-------------------------------------------------------------
   void send(ipc_message::u_ipc_msg_ptr ptr)
