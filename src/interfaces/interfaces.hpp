@@ -315,8 +315,12 @@ public:
   //-------------------------------------------------------------
   void stop()
   {
+    active_ = false;
     tx_.disconnect(addr_);
     rx_.disconnect(recv_addr_);
+    if (fut_.valid())
+      fut_.wait();
+    klog().t("Server has stopped");
   }
   //-------------------------------------------------------------
   void reset()
