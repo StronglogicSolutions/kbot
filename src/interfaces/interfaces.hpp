@@ -367,6 +367,8 @@ public:
   {
     using buffers_t = std::vector<ipc_message::byte_buffer>;
 
+    klog().d("############recv()");
+
     zmq::message_t identity;
     if (!rx_.recv(identity) || identity.empty())
     {
