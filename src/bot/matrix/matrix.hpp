@@ -51,6 +51,20 @@ static bool is_url(std::string_view s)
 } // ns katrix
 namespace kbot
 {
+auto to_info = [](auto req, std::string_view type)
+{
+  klog().d("to_info for type {}", type);
+  req.data = type;
+  return BotRequestToIPC<::constants::IPC_PLATFORM_INFO>(Platform::matrix, req);
+};
+//-------------------------------------------------------------------------------------------------
+std::map<std::string_view, std::function<ipc_message::u_ipc_msg_ptr(BotRequest)>>
+req_to_ipc{
+  {"matrix:info",     [](const auto& req) { return to_info(req, "matrix:info" ); }},
+  {"matrix:rooms",    [](const auto& req) { klog().d("making info request for matrix rooms"); return to_info(req, "matrix:rooms"); }},
+  {"platform:repost", [](const auto& req) { return BotRequestToIPC(Platform::matrix, req); }}
+};
+//-------------------------------------------------------------------------------------------------
 class MatrixBot : public kbot::Worker,
                   public kbot::Bot
 {
@@ -92,8 +106,11 @@ public:
             klog().w("Received OK message, but id {} not matched", id);
         }
         case ::constants::IPC_PLATFORM_INFO:                          // INFO
+        {
+          const auto info_msg = static_cast<platform_info*>(msg.get());
           klog().t("Sending bot:info to broker");
-          m_send_event_fn(CreateInfo(static_cast<platform_info*>(msg.get())->info(), "matrix:info"));
+          m_send_event_fn(CreateInfo(info_msg->info(), info_msg->type(), m_requests.at(info_msg->type())));
+        }
         break;
         break;
         default:                                                      // UNKNOWN
@@ -125,21 +142,21 @@ MatrixBot& operator=(const MatrixBot& m)
 //-----------------------------------------------------------------------
   bool HandleEvent(const BotRequest& request) final
   {
+    klog().d("Bot Request.\n{}", request.to_string());
     try
     {
       if (m_flood_protect && post_requested(request.id))
         klog().w("{} was already requested", request.id);
       else
       {
-
         BotRequest outbound = request;
 
         if (!request.urls.empty() && katrix::is_url(request.urls.front()))
           outbound.urls = FetchFiles(request.urls, katrix::get_media_dir());
-        auto&& ipc_msg = request.event == "matrix:info" ? BotRequestToIPC<::constants::IPC_PLATFORM_INFO>(Platform::matrix, outbound) :
-                                                          BotRequestToIPC                                (Platform::matrix, outbound);
+        auto&& ipc_msg = req_to_ipc.at(request.event)(outbound);
+        const auto id = (request.id.empty()) ? request.event : request.id;
         m_worker.send(std::move(ipc_msg));
-        m_requests[request.id] = request;
+        m_requests[id] = request;
       }
     }
     catch(const std::exception& e)

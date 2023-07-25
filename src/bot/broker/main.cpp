@@ -95,6 +95,8 @@ uint32_t    tx_misses          {0};
 
 int main(int argc, char** argv)
 {
+  kiq::log::klogger::init("botbroker", "trace");
+
   signal(SIGPIPE, sig_pipe_handler);
   const auto arg = (argc > 1) ? argv[1] : "";
   kbot::SocketState state{arg};
