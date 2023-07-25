@@ -102,7 +102,8 @@ const std::string to_string() const
          "Id:             " + id + '\n' +
          "Previous_event: " + previous_event + '\n' +
          "Args:           " + args + '\n' +
-         "Cmd:            " + std::to_string(cmd) + '\n';
+         "Cmd:            " + std::to_string(cmd) + '\n' +
+         "Time:           " + time;
 }
 
 const std::string url_string() const
@@ -413,6 +414,7 @@ template <uint8_t M = ::constants::IPC_PLATFORM_TYPE>
 static ipc_message::u_ipc_msg_ptr
 BotRequestToIPC(Platform platform, const BotRequest& request)
 {
+  klog().d("BotRequest for {}", M);
   if (M == ::constants::IPC_PLATFORM_TYPE)
     return std::make_unique<platform_message>(get_platform_name(platform), request.id, request.username, request.data,
                                               request.url_string(), SHOULD_NOT_REPOST, request.cmd, request.args, request.time);
@@ -421,7 +423,7 @@ BotRequestToIPC(Platform platform, const BotRequest& request)
     return std::make_unique<kiq_message>(request.data);
   else
   if (M == ::constants::IPC_PLATFORM_INFO)
-    return std::make_unique<platform_info>(get_platform_name(platform), "", "info");
+    return std::make_unique<platform_info>(get_platform_name(platform), "", request.event);
 }
 //--------------------------------------------------------------
 static const BotRequest CreatePlatformEvent(const platform_message* message, const char* event = "platform:repost")
