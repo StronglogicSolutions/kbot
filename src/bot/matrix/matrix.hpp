@@ -48,6 +48,13 @@ static bool is_url(std::string_view s)
 {
   return s.find("https://") != s.npos || s.find("http://") != s.npos;
 }
+//-----------------------------------------------------------------------
+static bool is_local(std::string_view s)
+{
+  return s.find("file://") != s.npos;
+}
+//-----------------------------------------------------------------------
+auto strpprot = [](const auto url) { return url.substr(url.find("://") + 3); };
 } // ns katrix
 namespace kbot
 {
@@ -151,8 +158,14 @@ MatrixBot& operator=(const MatrixBot& m)
       {
         BotRequest outbound = request;
 
-        if (!request.urls.empty() && katrix::is_url(request.urls.front()))
-          outbound.urls = FetchFiles(request.urls, katrix::get_media_dir());
+        if (!request.urls.empty())
+        {
+          if (katrix::is_url(request.urls.front()))
+            outbound.urls = FetchFiles(request.urls, katrix::get_media_dir());
+          else
+          if (katrix::is_local(request.urls.front()))
+            outbound.urls = {katrix::strpprot(request.urls.front())};
+        }
         auto&& ipc_msg = req_to_ipc.at(request.event)(outbound);
         const auto id = (request.id.empty()) ? request.event : request.id;
         m_worker.send(std::move(ipc_msg));
