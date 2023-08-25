@@ -22,6 +22,8 @@ static std::string get_executable_cwd()
 class InstagramBot : public kbot::Worker,
                      public kbot::Bot
 {
+static constexpr const char* const s_name = "instagram_bot";
+
 public:
 InstagramBot()
 : kbot::Bot{kgram::constants::USER},
@@ -57,12 +59,22 @@ InstagramBot()
           klog().w("Received OK message, but id {} not matched", id);
       }
       break;
+      case ::constants::IPC_KEEPALIVE_TYPE:
+        if (!m_daemon.validate(s_name))
+          klog().e("KGram timed out");
+        m_daemon.reset();
       default:                                                      // UNKNOWN
         klog().w("IPC type {} returned from worker, but not handled", ::constants::IPC_MESSAGE_NAMES.at(msg->type()));
       break;
     }
   })
-{}
+{
+  m_daemon.add_observer(s_name, [this]
+  {
+    klog().d("Keep alive was not renewed. Resetting {} worker", s_name);
+    m_worker.reset();
+  });
+}
 //-------------------------------------------------------------
 InstagramBot& operator=(const InstagramBot& bot)
 {
@@ -158,5 +170,6 @@ private:
   ipc_worker     m_worker;
   requests_t     m_requests;
   bool           m_flood_protect{true};
+  session_daemon m_daemon;
 };
 } // namespace kgram
