@@ -15,7 +15,11 @@ struct SocketState
 static const uint32_t TX_MAX_MISSES = 100;
 
 SocketState(const std::string& arg)
-: broker([this]() { ResetChannel(); })
+: broker([this]()
+  {
+    klog().t("Channel port keepalive not renewed. Resetting channel");
+    ResetChannel();
+  })
 {
   broker.run();
   channel.SendIPCMessage(std::make_unique<keepalive>(), true);

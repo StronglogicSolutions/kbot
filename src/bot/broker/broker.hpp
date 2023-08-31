@@ -164,9 +164,9 @@ namespace kbot
     else
     if (message->type() == ::constants::IPC_KEEPALIVE_TYPE)
     {
-      m_daemon.reset();
       if (!m_daemon.validate("botbroker"))
         m_on_ipc_fail();
+      m_daemon.reset();
       m_outbound_queue.emplace_back(std::make_unique<keepalive>());
     }
   }
