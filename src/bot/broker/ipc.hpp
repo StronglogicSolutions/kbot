@@ -595,8 +595,8 @@ inline ipc_message::u_ipc_msg_ptr DeserializeIPCMessage(std::vector<ipc_message:
 //---------------------------------------------------------------------
 using timepoint = std::chrono::time_point<std::chrono::system_clock>;
 using duration  = std::chrono::milliseconds;
-static const duration time_limit = std::chrono::milliseconds(600000);
-static const duration hb_rate    = std::chrono::milliseconds(20000);
+static const duration time_limit = std::chrono::milliseconds(6000);
+static const duration hb_rate    = std::chrono::milliseconds(300);
 class session_daemon {
 public:
   using hbtime_t = std::pair<timepoint, duration>;
