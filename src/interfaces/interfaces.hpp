@@ -414,17 +414,17 @@ static ipc_message::u_ipc_msg_ptr
 BotRequestToIPC(Platform platform, const BotRequest& request)
 {
   klog().d("BotRequest for {}", M);
-  if (M == ::constants::IPC_PLATFORM_TYPE)
+  if constexpr (M == ::constants::IPC_PLATFORM_TYPE)
     return std::make_unique<platform_message>(get_platform_name(platform), request.id, request.username, request.data,
                                               request.url_string(), SHOULD_NOT_REPOST, request.cmd, request.args, request.time);
   else
-  if (M == ::constants::IPC_KIQ_MESSAGE)
+  if constexpr (M == ::constants::IPC_KIQ_MESSAGE)
     return std::make_unique<kiq_message>(request.data);
   else
-  if (M == ::constants::IPC_PLATFORM_INFO)
+  if constexpr (M == ::constants::IPC_PLATFORM_INFO)
     return std::make_unique<platform_info>(get_platform_name(platform), "", request.event);
   else
-  if (M == ::constants::IPC_STATUS)
+  if constexpr (M == ::constants::IPC_STATUS)
     return std::make_unique<status_check>();
 }
 //--------------------------------------------------------------
