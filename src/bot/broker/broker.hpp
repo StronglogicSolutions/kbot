@@ -84,8 +84,6 @@ namespace kbot
   Broker(ipc_fail_fn _cb)
   : m_on_ipc_fail(_cb)
   {
-    kiq::log::klogger::init("botbroker", "trace");
-
     const auto execpath = get_executable_cwd();
     const auto config   = INIReader{execpath + "/../config/config.ini"};
 
