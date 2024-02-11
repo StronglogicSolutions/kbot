@@ -42,6 +42,7 @@ static const uint8_t IPC_PLATFORM_ERROR  {0x04};
 static const uint8_t IPC_PLATFORM_REQUEST{0x05};
 static const uint8_t IPC_PLATFORM_INFO   {0x06};
 static const uint8_t IPC_FAIL_TYPE       {0x07};
+static const uint8_t IPC_STATUS          {0x08};
 
 static const std::unordered_map<uint8_t, const char*> IPC_MESSAGE_NAMES{
   {IPC_OK_TYPE,          "IPC_OK_TYPE"},
@@ -51,7 +52,8 @@ static const std::unordered_map<uint8_t, const char*> IPC_MESSAGE_NAMES{
   {IPC_PLATFORM_ERROR,   "IPC_PLATFORM_ERROR"},
   {IPC_PLATFORM_REQUEST, "IPC_PLATFORM_REQUEST"},
   {IPC_PLATFORM_INFO,    "IPC_PLATFORM_INFO"},
-  {IPC_FAIL_TYPE,        "IPC_FAIL_TYPE"}
+  {IPC_FAIL_TYPE,        "IPC_FAIL_TYPE"},
+  {IPC_STATUS,           "IPC_STATUS"}
 };
 
 namespace index {
@@ -574,21 +576,36 @@ public:
             "(Type):"    + type()                   + ',' +
             "(Info):"    + info();
   }
-  };
+};
+//---------------------------------------------------------------------
+class status_check : public ipc_message
+{
+public:
+  status_check()
+  {
+    m_frames = {
+      byte_buffer{},
+      byte_buffer{constants::IPC_STATUS}
+    };
+  }
+//--------------------
+  virtual ~status_check() override = default;
+};
 //---------------------------------------------------------------------
 inline ipc_message::u_ipc_msg_ptr DeserializeIPCMessage(std::vector<ipc_message::byte_buffer>&& data)
 {
   uint8_t message_type = *(data.at(constants::index::TYPE).data());
   switch (message_type)
   {
-    case (constants::IPC_OK_TYPE):          return std::make_unique<okay_message>(data);
-    case (constants::IPC_KEEPALIVE_TYPE):   return std::make_unique<keepalive>();
-    case (constants::IPC_KIQ_MESSAGE):      return std::make_unique<kiq_message>(data);
+    case (constants::IPC_OK_TYPE):          return std::make_unique<okay_message>    (data);
+    case (constants::IPC_KEEPALIVE_TYPE):   return std::make_unique<keepalive>       ();
+    case (constants::IPC_KIQ_MESSAGE):      return std::make_unique<kiq_message>     (data);
     case (constants::IPC_PLATFORM_TYPE):    return std::make_unique<platform_message>(data);
-    case (constants::IPC_PLATFORM_INFO):    return std::make_unique<platform_info>(data);
-    case (constants::IPC_PLATFORM_ERROR):   return std::make_unique<platform_error>(data);
+    case (constants::IPC_PLATFORM_INFO):    return std::make_unique<platform_info>   (data);
+    case (constants::IPC_PLATFORM_ERROR):   return std::make_unique<platform_error>  (data);
     case (constants::IPC_PLATFORM_REQUEST): return std::make_unique<platform_request>(data);
-    case (constants::IPC_FAIL_TYPE):        return std::make_unique<fail_message>(data);
+    case (constants::IPC_FAIL_TYPE):        return std::make_unique<fail_message>    (data);
+    case (constants::IPC_STATUS):           return std::make_unique<status_check>    (    );
     default:                                return nullptr;
   }
 }
