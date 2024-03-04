@@ -13,8 +13,8 @@ static void StripWrappingQuotes(std::string& s)
   }
 }
 
-static kbot::BotRequest ParseRuntimeArguments(int argc, char** argv) {
-  kbot::BotRequest request{};
+static kiq::kbot::BotRequest ParseRuntimeArguments(int argc, char** argv) {
+  kiq::kbot::BotRequest request{};
 
   for (int i = 1; i < argc; i++) {
     std::string argument = argv[i];
@@ -45,19 +45,19 @@ static kbot::BotRequest ParseRuntimeArguments(int argc, char** argv) {
 }
 
 
-int main(int argc, char** argv) {
-  using namespace kbot;
+int main(int argc, char** argv)
+{
   auto event = ParseRuntimeArguments(argc, argv);
-  YouTubeBot bot{};
+  kiq::kbot::YouTubeBot bot{};
   bot.Init(false);
 
   if (bot.HandleEvent(event))
   {
-    kbot::log("Request handled successfully");
+    kiq::kbot::log("Request handled successfully");
     return 0;
   }
 
-  kbot::log("Request failed");
+  kiq::kbot::log("Request failed");
 
   return 1;
 }

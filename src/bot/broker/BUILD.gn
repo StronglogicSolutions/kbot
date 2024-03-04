@@ -40,7 +40,8 @@ libs = [
 include_dirs = [
   "//third_party/inih/cpp",
   "//third_party/json/include",
-  "//third_party/kjson"
+  "//third_party/kjson",
+  "//third_party/kproto/include/kproto"
 ]
 
 deps = [

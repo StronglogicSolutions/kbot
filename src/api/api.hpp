@@ -3,6 +3,8 @@
 #include <cpr/cpr.h>
 #include "interfaces/interfaces.hpp"
 
+namespace kiq
+{
 class DefaultAPI : public API {
 public:
 
@@ -27,5 +29,5 @@ class RequestAPI : public API {
     return r.text;
   }
 };
-
+} // ns kiq
 #endif // __API_HPP__

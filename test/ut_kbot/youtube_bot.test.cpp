@@ -156,7 +156,7 @@
 // }
 
 TEST(YouTubeBotTest, CommentHasBeenRepliedTo) {
-  kbot::YouTubeBot  bot{};
+  kiq::kbot::YouTubeBot  bot{};
   const std::string TEST_COMMENT_ID{"zzzxxx"};
   bool has_replied = bot.HaveReplied(TEST_COMMENT_ID);
 

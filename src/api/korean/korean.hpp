@@ -6,7 +6,7 @@
 
 using json = nlohmann::json;
 
-namespace korean {
+namespace kiq::korean {
 namespace constants {
 extern const std::vector<std::string> KoreanInterestWords;
 
@@ -49,6 +49,6 @@ std::string Translate(std::string s) {
 }
 
 };
-} // namespace korean
+} // namespace kiq::korean
 
 #endif // __KOREAN_HPP__

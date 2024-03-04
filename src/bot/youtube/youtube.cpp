@@ -1,7 +1,7 @@
 #include "youtube.hpp"
 #include "constants.hpp"
 
-namespace kbot {
+namespace kiq::kbot {
 
 const std::string DEFAULT_API_NAME{"YouTube Data API"};
 const std::string DEFAULT_USERNAME{"@WHO"};
@@ -394,4 +394,4 @@ void YouTubeBot::Shutdown()
   Worker::stop();
 }
 
-} // ns kbot
+} // ns kiq::kbot

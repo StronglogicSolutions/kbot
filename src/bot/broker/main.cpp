@@ -9,7 +9,7 @@ static void sig_pipe_handler(int signal)
   const std::string message{"Latest signal " + std::to_string(signal) + " at " + kutils::get_simple_datetime()};
   kutils::SaveToFile(message, path);
 }
-namespace kbot {
+namespace kiq::kbot {
 struct SocketState
 {
 static const uint32_t TX_MAX_MISSES = 100;
@@ -37,6 +37,7 @@ void Poll()
     std::mutex                   mtx;
     std::unique_lock<std::mutex> lock{mtx};
     mask = channel.Poll();
+    klog().t("Poll mask {}", mask);
   }
 
   broker_has_messages = broker.Poll();
@@ -95,7 +96,7 @@ bool        channel_can_send   {true};
 bool        should_reset_tx    {false};
 uint32_t    tx_misses          {0};
 };
-} // ks kbot
+} // ks kiq::kbot
 
 int main(int argc, char** argv)
 {
@@ -103,7 +104,7 @@ int main(int argc, char** argv)
 
   signal(SIGPIPE, sig_pipe_handler);
   const auto arg = (argc > 1) ? argv[1] : "";
-  kbot::SocketState state{arg};
+  kiq::kbot::SocketState state{arg};
 
   for (;;)
   {

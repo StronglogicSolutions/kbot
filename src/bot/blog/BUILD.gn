@@ -13,7 +13,8 @@ executable("blog_bot") {
   ]
 
   include_dirs = [
-    "//src/"
+    "//src/",
+    "//third_party/kproto/include/kproto"
   ]
 
   sources = [

@@ -5,7 +5,7 @@
 #include "ipc.hpp"
 #include <logger.hpp>
 
-namespace kbot {
+namespace kiq::kbot {
 const std::string DATA_REQUEST{"Get Results"};
 const std::string TX_ADDR{"tcp://localhost:28474"};
 const std::string RX_ADDR{"tcp://0.0.0.0:28473"};
@@ -40,6 +40,7 @@ m_retries   {0}
   m_rx.set(zmq::sockopt::routing_id, "botrouter");
   m_tx.connect(TX_ADDR);
   m_rx.bind   (RX_ADDR);
+
 }
 
 bool ReceiveIPCMessage(const bool is_request = true)
@@ -70,7 +71,6 @@ bool ReceiveIPCMessage(const bool is_request = true)
     socket.recv(&message, static_cast<int>(zmq::recv_flags::none));
     size_t size = sizeof(more_flag);
     socket.getsockopt(ZMQ_RCVMORE, &more_flag, &size);
-
     received_message.push_back(std::vector<unsigned char>{
         static_cast<char*>(message.data()), static_cast<char*>(message.data()) + message.size()
     });
@@ -92,8 +92,8 @@ bool SendIPCMessage(u_ipc_msg_ptr message, const bool use_req = false)
         auto&  socket    = (use_req) ? m_tx : m_rx;
   const auto   payload   = message->data();
   const size_t frame_num = payload.size();
-  if (message->type() != ::constants::IPC_KEEPALIVE_TYPE)
-    kiq::log::klog().d("Sending IPC message of type ", ::constants::IPC_MESSAGE_NAMES.at(message->type()));
+  if (message->type() != kiq::constants::IPC_KEEPALIVE_TYPE)
+    kiq::log::klog().d("Sending IPC message of type ", kiq::constants::IPC_MESSAGE_NAMES.at(message->type()));
 
   for (int i = 0; i < frame_num; i++)
   {
@@ -141,4 +141,4 @@ uint8_t        m_retries;
 bool           m_tx_ready;
 
 };
-} // ns kbot
+} // ns kiq::kbot

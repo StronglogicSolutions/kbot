@@ -28,6 +28,7 @@ source_set("korean") {
   include_dirs = [
     "//src",
     "//third_party/",
+    "//third_party/kproto/include/kproto"
   ]
 
   sources = [
@@ -73,7 +74,8 @@ config("html") {
 config("ktube") {
   include_dirs = [
     "//third_party/ktube/src",
-    "//third_party/ktube/third_party/kjson"
+    "//third_party/ktube/third_party/kjson",
+    "//third_party/kproto/include/kproto"
   ]
 
   libs = ["//third_party/ktube/out/libktube_lib.so"]

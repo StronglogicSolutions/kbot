@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <cpr/cpr.h>
 #include <logger.hpp>
+namespace kiq
+{
 namespace kbot {
 /**
  * Poor man's log
@@ -136,3 +138,4 @@ private:
   time_point_t _last{now()};
 };
 } // namespace kbot
+} // ns kiq

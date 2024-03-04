@@ -3,7 +3,7 @@
 #include "kscord/kscord.hpp"
 #include "interfaces/interfaces.hpp"
 
-namespace kbot {
+namespace kiq::kbot {
 namespace constants {
 const std::string USER{""};
 } // namespace constants
@@ -104,4 +104,4 @@ private:
 BrokerCallback m_send_event_fn;
 
 };
-} // namespace kbot
+} // namespace kiq::kbot

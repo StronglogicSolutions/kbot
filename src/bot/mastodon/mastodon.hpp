@@ -3,7 +3,7 @@
 #include "kstodon/config.hpp"
 #include "interfaces/interfaces.hpp"
 
-namespace kbot {
+namespace kiq::kbot {
 namespace constants {
 const std::string USERNAME{
   kstodon::GetConfigReader().GetString("kstodon", "user", "kstodonbot")
@@ -163,4 +163,4 @@ private:
 BrokerCallback m_send_event_fn;
 
 };
-} // namespace kbot
+} // namespace kiq::kbot

@@ -21,7 +21,8 @@ config("nlp") {
 
 config("kbot_includes") {
   include_dirs = [
-    "//src/"
+    "//src/",
+    "//third_party/kproto/include/kproto"
   ]
 }
 

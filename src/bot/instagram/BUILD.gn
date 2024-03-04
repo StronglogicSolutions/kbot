@@ -2,7 +2,8 @@
 executable("instagram_bot") {
   include_dirs = [
     "//src",
-    "//src/bot/instagram"
+    "//src/bot/instagram",
+    "//third_party/kproto/include/kproto"
   ]
 
   libs = [

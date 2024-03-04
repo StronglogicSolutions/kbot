@@ -56,13 +56,13 @@ static bool is_local(std::string_view s)
 //-----------------------------------------------------------------------
 auto strpprot = [](const auto url) { return url.substr(url.find("://") + 3); };
 } // ns katrix
-namespace kbot
+namespace kiq::kbot
 {
 auto to_info = [](auto req, std::string_view type)
 {
   klog().d("to_info for type {}", type);
   req.data = type;
-  return BotRequestToIPC<::constants::IPC_PLATFORM_INFO>(Platform::matrix, req);
+  return BotRequestToIPC<kiq::constants::IPC_PLATFORM_INFO>(Platform::matrix, req);
 };
 //-------------------------------------------------------------------------------------------------
 std::map<std::string_view, std::function<ipc_message::u_ipc_msg_ptr(BotRequest)>>
@@ -87,11 +87,10 @@ public:
       const auto&& msg = m_worker.pop_last();
       switch (msg->type())
       {
-        case ::constants::IPC_PLATFORM_TYPE:                          // REQUEST
-          klog().t("Sending bot:request to broker");
+        case kiq::constants::IPC_PLATFORM_TYPE:                          // REQUEST
           m_send_event_fn(CreatePlatformEvent(static_cast<platform_message*>(msg.get()), "platform:post"));
         break;
-        case ::constants::IPC_OK_TYPE:                                // SUCCESS
+        case kiq::constants::IPC_OK_TYPE:                                // SUCCESS
         {
           klog().t("Matrix bot received OK from Katrix");
           const auto id = static_cast<okay_message*>(msg.get())->id();
@@ -102,7 +101,7 @@ public:
             klog().w("Received OK message, but id {} not matched", id);
         }
         break;
-        case ::constants::IPC_FAIL_TYPE:                              // FAIL
+        case kiq::constants::IPC_FAIL_TYPE:                              // FAIL
         {
           klog().t("Matrix bot received FAIL from Katrix");
           const auto id = static_cast<fail_message*>(msg.get())->id();
@@ -112,16 +111,17 @@ public:
           else
             klog().w("Received OK message, but id {} not matched", id);
         }
-        case ::constants::IPC_PLATFORM_INFO:                          // INFO
+        break;
+        case kiq::constants::IPC_PLATFORM_INFO:                          // INFO
         {
           const auto info_msg = static_cast<platform_info*>(msg.get());
           klog().t("Sending bot:info to broker");
           m_send_event_fn(CreateInfo(info_msg->info(), info_msg->type(), m_requests.at(info_msg->type())));
         }
         break;
-        break;
         default:                                                      // UNKNOWN
-          klog().w("IPC type {} returned from worker, but not handled", ::constants::IPC_MESSAGE_NAMES.at(msg->type()));
+          klog().w("IPC type {} returned from worker, but not handled",
+            kiq::constants::IPC_MESSAGE_NAMES.at(msg->type()));
         break;
       }
     })
@@ -219,4 +219,4 @@ private:
   requests_t     m_requests;
   bool           m_flood_protect{false};
 };
-} // namespace kbot
+} // namespace kiq::kbot
