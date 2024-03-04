@@ -1,6 +1,8 @@
 #pragma once
 
 #include "interfaces/interfaces.hpp"
+namespace kiq
+{
 //-------------------------------------------------------------
 namespace kbot {
 namespace kgram {
@@ -33,11 +35,11 @@ InstagramBot()
     const auto&& msg = m_worker.pop_last();
     switch (msg->type())
     {
-      case ::constants::IPC_PLATFORM_TYPE:                          // REQUEST
+      case kiq::constants::IPC_PLATFORM_TYPE:                          // REQUEST
         klog().t("Sending bot:request to broker");
         m_send_event_fn(CreatePlatformEvent(static_cast<platform_message*>(msg.get()), "platform:post"));
       break;
-      case ::constants::IPC_OK_TYPE:                                // SUCCESS
+      case kiq::constants::IPC_OK_TYPE:                                // SUCCESS
       {
         klog().t("Matrix bot received OK from KGram");
         const auto id = static_cast<okay_message*>(msg.get())->id();
@@ -48,7 +50,7 @@ InstagramBot()
           klog().w("Received OK message, but id {} not matched", id);
       }
       break;
-      case ::constants::IPC_FAIL_TYPE:                              // FAIL
+      case kiq::constants::IPC_FAIL_TYPE:                              // FAIL
       {
         klog().t("Matrix bot received FAIL from KGram");
         const auto id = static_cast<fail_message*>(msg.get())->id();
@@ -59,12 +61,13 @@ InstagramBot()
           klog().w("Received OK message, but id {} not matched", id);
       }
       break;
-      case ::constants::IPC_KEEPALIVE_TYPE:
+      case kiq::constants::IPC_KEEPALIVE_TYPE:
         if (!m_daemon.validate(s_name))
           klog().e("KGram timed out");
         m_daemon.reset();
       default:                                                      // UNKNOWN
-        klog().w("IPC type {} returned from worker, but not handled", ::constants::IPC_MESSAGE_NAMES.at(msg->type()));
+        klog().w("IPC type {} returned from worker, but not handled",
+          kiq::constants::IPC_MESSAGE_NAMES.at(msg->type()));
       break;
     }
   })
@@ -128,13 +131,13 @@ bool HandleEvent(const BotRequest& request)
     else
     if (event == "instagram:query")
     {
-      m_worker.send(BotRequestToIPC<::constants::IPC_KIQ_MESSAGE>(Platform::instagram, request));
+      m_worker.send(BotRequestToIPC<kiq::constants::IPC_KIQ_MESSAGE>(Platform::instagram, request));
       m_requests[request.id] = request;
     }
     else
     if (event == "instagram:status")
     {
-      m_worker.send(BotRequestToIPC<::constants::IPC_STATUS>(Platform::instagram, request));
+      m_worker.send(BotRequestToIPC<kiq::constants::IPC_STATUS>(Platform::instagram, request));
       m_requests[request.id] = request;
     }
   }
@@ -179,3 +182,4 @@ private:
   session_daemon m_daemon;
 };
 } // namespace kgram
+} // ns kiq

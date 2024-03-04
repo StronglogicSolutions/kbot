@@ -2,7 +2,7 @@
 
 int main(int argc, char** argv)
 {
-  kbot::MastodonBot bot{};
+  kiq::kbot::MastodonBot bot{};
 
   std::cout << "Mastodon bot!" << std::endl;
 

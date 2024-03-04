@@ -5,7 +5,7 @@
 #include "INIReader.h"
 #include <fstream>
 
-namespace kbot {
+namespace kiq::kbot {
 namespace constants::blog {
 const std::string USER{""};
 const uint8_t     APP_NAME_LENGTH{6};
@@ -206,4 +206,4 @@ private:
 BrokerCallback m_send_event_fn;
 
 };
-} // namespace kbot
+} // namespace kiq::kbot

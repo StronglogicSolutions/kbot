@@ -23,7 +23,8 @@ public_deps = [
 ]
 
 include_dirs = [
-    "//src/"
+    "//src/",
+    "//third_party/kproto/include/kproto"
 ]
 
 sources = [

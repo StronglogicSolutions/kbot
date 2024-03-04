@@ -13,7 +13,7 @@
 #include <ktube/ktube.hpp>
 #include <psqlorm.hpp>
 
-namespace kbot {
+namespace kiq::kbot {
 
 using LiveMessages   = ktube::LiveMessages;
 using LiveChatMap    = ktube::LiveChatMap;
@@ -65,4 +65,4 @@ private:
   Database::PSQLORM        m_db;
 };
 
-} // namespace kbot
+} // namespace kiq::kbot

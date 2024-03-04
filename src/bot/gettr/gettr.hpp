@@ -4,7 +4,7 @@
 #include "interfaces/interfaces.hpp"
 #include "INIReader.h"
 
-namespace kbot {
+namespace kiq::kbot {
 namespace kettr {
 namespace constants {
 static const uint8_t     APP_NAME_LENGTH{6};
@@ -136,7 +136,7 @@ private:
 BrokerCallback m_send_event_fn;
 unsigned int   m_retries;
 };
-} // namespace kbot
+} // namespace kiq::kbot
 
 
 

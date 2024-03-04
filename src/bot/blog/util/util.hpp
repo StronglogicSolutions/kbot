@@ -3,7 +3,7 @@
 #include <fstream>
 #include <algorithm>
 
-namespace kbot
+namespace kiq::kbot
 {
 static void SaveToFile(const std::string& data, const std::string& path)
 {
@@ -39,4 +39,4 @@ static const std::string FetchFile(const std::string& full_url, const std::strin
 
   return "";
 }
-} // ns kbot
+} // ns kiq::kbot

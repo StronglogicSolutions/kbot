@@ -22,7 +22,7 @@
 
 using namespace kiq::log;
 
-namespace kbot
+namespace kiq::kbot
 {
   using bot_ptr       = Bot*;
   using BotPool       = std::vector<bot_ptr>;
@@ -124,7 +124,7 @@ namespace kbot
     auto GTMessage = [](auto msg) { return msg.find("gettr")    != std::string::npos; };
     auto IGMessage = [](auto msg) { return msg.find("instagram")!= std::string::npos; };
 
-    if (message->type() == ::constants::IPC_KIQ_MESSAGE)
+    if (message->type() == kiq::constants::IPC_KIQ_MESSAGE)
     {
       kiq_message* kiq_msg = static_cast<kiq_message*>(message.get());
       auto         args    = GetArgs(kiq_msg->payload());
@@ -159,10 +159,10 @@ namespace kbot
       }
     }
     else
-    if (message->type() == ::constants::IPC_PLATFORM_TYPE)
+    if (message->type() == kiq::constants::IPC_PLATFORM_TYPE)
       SendEvent(CreatePlatformEvent(static_cast<platform_message*>(message.get())));
     else
-    if (message->type() == ::constants::IPC_KEEPALIVE_TYPE)
+    if (message->type() == kiq::constants::IPC_KEEPALIVE_TYPE)
     {
       if (!m_daemon.validate("botbroker"))
         m_on_ipc_fail();
@@ -390,7 +390,7 @@ namespace kbot
     u_ipc_msg_ptr message = std::move(m_outbound_queue.front());
     m_outbound_queue.pop_front();
 
-    if (message->type() != ::constants::IPC_KEEPALIVE_TYPE)
+    if (message->type() != kiq::constants::IPC_KEEPALIVE_TYPE)
       klogger::instance().d("Dequeued: {}", message->to_string());
 
     return std::move(message);
@@ -416,4 +416,4 @@ private:
   ipc_fail_fn               m_on_ipc_fail;
 };
 
-} // namespace kbot
+} // namespace kiq::kbot

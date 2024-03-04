@@ -2,6 +2,6 @@
 
 int main(int argc, char** argv)
 {
-  kbot::MatrixBot bot;
+  kiq::kbot::MatrixBot bot;
   return 0;
 }

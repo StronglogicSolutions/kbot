@@ -6,10 +6,12 @@
 #include <vector>
 
 #include "util/util.hpp"
-#include <bot/broker/ipc.hpp>
+#include <ipc.hpp>
 #include <zmq.hpp>
 #include <logger.hpp>
 
+namespace kiq
+{
 class API {
  public:
   virtual std::string GetType() = 0;
@@ -409,22 +411,22 @@ private:
 };
 
 //-------------------------------------------------------------
-template <uint8_t M = ::constants::IPC_PLATFORM_TYPE>
+template <uint8_t M = constants::IPC_PLATFORM_TYPE>
 static ipc_message::u_ipc_msg_ptr
 BotRequestToIPC(Platform platform, const BotRequest& request)
 {
   klog().d("BotRequest for {}", M);
-  if constexpr (M == ::constants::IPC_PLATFORM_TYPE)
+  if constexpr (M == constants::IPC_PLATFORM_TYPE)
     return std::make_unique<platform_message>(get_platform_name(platform), request.id, request.username, request.data,
                                               request.url_string(), SHOULD_NOT_REPOST, request.cmd, request.args, request.time);
   else
-  if constexpr (M == ::constants::IPC_KIQ_MESSAGE)
+  if constexpr (M == constants::IPC_KIQ_MESSAGE)
     return std::make_unique<kiq_message>(request.data);
   else
-  if constexpr (M == ::constants::IPC_PLATFORM_INFO)
+  if constexpr (M == constants::IPC_PLATFORM_INFO)
     return std::make_unique<platform_info>(get_platform_name(platform), "", request.event);
   else
-  if constexpr (M == ::constants::IPC_STATUS)
+  if constexpr (M == constants::IPC_STATUS)
     return std::make_unique<status_check>();
 }
 //--------------------------------------------------------------
@@ -443,3 +445,4 @@ static const BotRequest CreatePlatformEvent(const platform_message* message, con
   };
 }
 } // namespace kbot
+} // ns kiq
