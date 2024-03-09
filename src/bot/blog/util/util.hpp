@@ -28,9 +28,9 @@ static const std::string FetchFile(const std::string& full_url, const std::strin
   if (is_local(url))
   {
     const auto file_path = strpprot(url);
-    const auto save_path = file_path + "/" + url.substr(url.find_last_of('/') + 1);
-    std::system(std::string{"cp " + file_path + save_path}.c_str());
-    return save_path;
+    const auto filename  = url.substr(url.find_last_of('/') + 1);
+    std::system(std::string{"cp " + file_path + " " + path + "/" + filename}.c_str());
+    return filename;
   }
 
   const auto ext_beg = url.find_last_of('.');
