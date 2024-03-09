@@ -29,9 +29,7 @@ static const std::string FetchFile(const std::string& full_url, const std::strin
   {
     const auto file_path = strpprot(url);
     const auto filename  = url.substr(url.find_last_of('/') + 1);
-    const auto save_path = path + "/" + filename;
-    const auto cp_cmd = std::string{"cp " + file_path + " " + save_path};
-    std::system(cp_cmd.c_str());
+    std::system(std::string{"cp " + file_path + " " + path + "/" + filename}.c_str());
     return filename;
   }
 
