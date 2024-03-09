@@ -117,7 +117,7 @@ static BlogPost CreateBlogPost(const std::string&              text,
     klog().t("Handling URL: {}", url);
     const auto& filename = FetchFile(url, GetBlogImagePath());
     if (!filename.empty())
-      blog_post += CreateMarkdownImage((GetBlogImagePath() + '/' + filename)) + '\n';
+      blog_post += CreateMarkdownImage(("/img/" + filename)) + '\n';
   }
   blog_post += text;
   blog_post += '\n';
