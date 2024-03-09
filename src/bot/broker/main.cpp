@@ -37,7 +37,6 @@ void Poll()
     std::mutex                   mtx;
     std::unique_lock<std::mutex> lock{mtx};
     mask = channel.Poll();
-    klog().t("Poll mask {}", mask);
   }
 
   broker_has_messages = broker.Poll();
