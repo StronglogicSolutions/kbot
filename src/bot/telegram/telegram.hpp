@@ -157,7 +157,7 @@ bool HandleEvent(const BotRequest& request)
   std::string err_msg;
   try
   {
-    if (event == "livestream active" || event == "platform:repost" || event == "telegram:messages")
+    if (event == "livestream active" || event == "platform:repost" || event == "message")
     {
       switch (cmd)
       {
