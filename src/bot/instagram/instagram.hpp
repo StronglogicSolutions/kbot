@@ -117,7 +117,7 @@ bool HandleEvent(const BotRequest& request)
   std::string err_msg;
   try
   {
-    if (event == "livestream active" || event == "platform:repost" || event == "instagram:messages")
+    if (event == "livestream active" || event == "platform:repost" || event == "messages")
     {
       if (m_flood_protect && post_requested(request.id))
       {
