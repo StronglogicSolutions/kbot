@@ -134,7 +134,7 @@ namespace kiq::kbot
         const auto& command = (args.size() > 0) ? args.at(IPC_COMMAND_INDEX) : "";
         const auto& payload = (args.size() > 1) ? args.at(IPC_PAYLOAD_INDEX) : "";
         const auto& user    = (args.size() > 2) ? args.at(IPC_USER_INDEX)    : "";
-        const auto& options = GetOptions(args);
+        const auto& options = (args.size() > 3) ? args.at(IPC_OPTIONS_INDEX) : "";
 
         klog().d("Received KIQ message with command: {}, payload: {}, user: {}, options: {}",
           command, payload, user, options);
@@ -155,7 +155,7 @@ namespace kiq::kbot
         if (IGMessage(command)) platform = Platform::instagram;
 
         klog().d("Sending bot request to {}", get_platform_name(platform));
-        SendEvent(BotRequest{platform, "message", user, payload, command});
+        SendEvent(BotRequest{platform, command, user, payload, options});
       }
     }
     else
