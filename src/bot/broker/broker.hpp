@@ -131,14 +131,14 @@ namespace kiq::kbot
 
       if (ValidIPCArguments(args));
       {
-        const auto& command = args.at(IPC_COMMAND_INDEX);
-        const auto& payload = args.at(IPC_PAYLOAD_INDEX);
-        const auto& user    = args.at(IPC_USER_INDEX);
+        const auto& command = (args.size() > 0) ? args.at(IPC_COMMAND_INDEX) : "";
+        const auto& payload = (args.size() > 1) ? args.at(IPC_PAYLOAD_INDEX) : "";
+        const auto& user    = (args.size() > 2) ? args.at(IPC_USER_INDEX)    : "";
         const auto& options = GetOptions(args);
 
         klog().d("Received KIQ message with command: {}, payload: {}, user: {}, options: {}",
           command, payload, user, options);
-        Platform    platform;
+        Platform    platform = get_platform(kiq_msg->platform());
 
         if (YTMessage(command)) platform = Platform::youtube;
         else
@@ -155,7 +155,7 @@ namespace kiq::kbot
         if (IGMessage(command)) platform = Platform::instagram;
 
         klog().d("Sending bot request to {}", get_platform_name(platform));
-        SendEvent(BotRequest{platform, command, user, payload, options});
+        SendEvent(BotRequest{platform, "message", user, payload, command});
       }
     }
     else

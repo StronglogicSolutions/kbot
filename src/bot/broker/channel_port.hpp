@@ -93,7 +93,7 @@ bool SendIPCMessage(u_ipc_msg_ptr message, const bool use_req = false)
   const auto   payload   = message->data();
   const size_t frame_num = payload.size();
   if (message->type() != kiq::constants::IPC_KEEPALIVE_TYPE)
-    kiq::log::klog().d("Sending IPC message of type ", kiq::constants::IPC_MESSAGE_NAMES.at(message->type()));
+    kiq::log::klog().d("Sending IPC message of type {}", kiq::constants::IPC_MESSAGE_NAMES.at(message->type()));
 
   for (int i = 0; i < frame_num; i++)
   {
