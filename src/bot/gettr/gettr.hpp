@@ -86,7 +86,7 @@ bool HandleEvent(const BotRequest& request)
   using namespace kbot::kettr::constants;
 
   auto post_event = [](const auto& e) { return (e == "livestream active" || e == "platform:repost" ||
-                                                e == "gettr:messages"); };
+                                                e == "messages"); };
         bool   error = false;
   const auto&  event = request.event;
   const auto&  data  = request.data;

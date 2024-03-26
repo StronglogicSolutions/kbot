@@ -54,8 +54,7 @@ bool HandleEvent(const BotRequest& request) {
       error = true;
   else
   {
-    if (event == "livestream active" ||
-        event == "discord:messages"    )
+    if (event == "livestream active" || event == "messages"    )
     {
       error = !kscord::Client::PostMessage(request.data);
     }
