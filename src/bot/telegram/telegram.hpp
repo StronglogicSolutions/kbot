@@ -185,19 +185,19 @@ bool HandleEvent(const BotRequest& request)
       }
     }
     else
-    if (event == "telegram:delete")
+    if (event == "delete")
     {
       reply = false;
       KeleqramBot::DeleteMessages(dest, ::keleqram::DeleteAction{"/delete last " + args.at(1)});
     }
     else
-    if (event == "telegram:rooms")
+    if (event == "rooms")
     {
       reply = false;
       m_send_event_fn(CreateInfo(KeleqramBot::GetRooms(), "rooms", request));
     }
     else
-    if (event == "telegram:restart")
+    if (event == "restart")
     {
       reply = false;
       m_send_event_fn(BotRequest{Platform::telegram, kbot::RESTART_EVENT});

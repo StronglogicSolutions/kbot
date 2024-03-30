@@ -129,13 +129,13 @@ bool HandleEvent(const BotRequest& request)
       m_requests[request.id] = request;
     }
     else
-    if (event == "instagram:query")
+    if (event == "query")
     {
       m_worker.send(BotRequestToIPC<kiq::constants::IPC_KIQ_MESSAGE>(Platform::instagram, request));
       m_requests[request.id] = request;
     }
     else
-    if (event == "instagram:status")
+    if (event == "status")
     {
       m_worker.send(BotRequestToIPC<kiq::constants::IPC_STATUS>(Platform::instagram, request));
       m_requests[request.id] = request;
