@@ -198,7 +198,7 @@ bool YouTubeBot::HandleEvent(const BotRequest& request)
   bool error{false};
   const auto event = request.event;
 
-  if (event == "youtube:livestream")
+  if (event == "livestream")
   {
     VideoDetails video_info = m_api.GetLiveDetails();
 
@@ -226,14 +226,14 @@ bool YouTubeBot::HandleEvent(const BotRequest& request)
 
   }
   else
-  if (event == "youtube:comment_on_video")
+  if (event == "comment_on_video")
   {
     auto comment_id = m_api.PostComment(Comment{"", request.id, request.data, "Emmanuel", "UCK0xH_L9OBM0CVwC438bMGA"});
     if (comment_id.empty())
       error = true;
   }
   else
-  if (event == "youtube:comment")
+  if (event == "comment")
   {
     using namespace ktube;
     // std::string reply_text{"좋은 영상입니다 👏 외국인과 언어교환하고 싶은 분은 여기로 방문해 주세요 👉 https://discord.gg/j5Rjhk96"};
